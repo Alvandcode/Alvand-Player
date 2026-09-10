@@ -98,9 +98,9 @@ jobs:
             app/build/outputs/bundle/release/*.aab
           generate_release_notes: true
 
-      # ۲) پوش عادی روی main/master → ریلیز شناور Latest خودکار به‌روز می‌شود (بدون هیچ کار دستی)
+      # ۲) بعد از هر بیلد موفق (به‌جز PR) → ریلیز شناور Latest خودکار ساخته/به‌روز می‌شود
       - name: Update rolling Latest release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
