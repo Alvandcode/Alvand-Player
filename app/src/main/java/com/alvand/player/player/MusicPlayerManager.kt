@@ -75,7 +75,8 @@ class MusicPlayerManager(context: Context) {
                         .build()
                 ).build()
         }
-        player.setMediaItems(items, startIndex.coerceIn(items.indices.ifEmpty { 0..0 }), 0)
+        if (items.isEmpty()) return
+        player.setMediaItems(items, startIndex.coerceIn(items.indices), 0)
         player.prepare()
         _ui.value = _ui.value.copy(queue = songs)
         if (autoplay) player.play()
