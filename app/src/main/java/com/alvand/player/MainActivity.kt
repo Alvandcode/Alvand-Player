@@ -107,7 +107,7 @@ private fun BottomBar(nav: androidx.navigation.NavController, current: String) {
     )
     val icons = listOf(Icons.Default.Home, Icons.Default.Search, Icons.Default.LibraryMusic, Icons.Default.Diamond)
     Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
-        NavigationBar(containerColor = Color.White.copy(0.12f)) {
+        NavigationBar(containerColor = Color.White.copy(0.20f)) {
             labels.forEachIndexed { i, t ->
                 NavigationBarItem(selected = sel == i, onClick = {
                     sel = i

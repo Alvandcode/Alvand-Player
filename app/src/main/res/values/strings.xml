@@ -45,4 +45,7 @@
     <string name="copy">Copy</string>
     <string name="copied">Copied ✓</string>
     <string name="version_fmt">Version %1$s</string>
+    <string name="play_error">Cannot play this file (format or access problem).</string>
+    <string name="allow_access">To see your on-device songs, allow access to music files.</string>
+    <string name="allow">Allow</string>
 </resources>

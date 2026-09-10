@@ -2,7 +2,9 @@ package com.alvand.player.player
 
 import android.content.Context
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -26,7 +28,8 @@ data class PlayerUiState(
     val durationMs: Long = 0L,
     val queue: List<Song> = emptyList(),
     val shuffle: Boolean = false,
-    val repeatOne: Boolean = false
+    val repeatOne: Boolean = false,
+    val error: String? = null
 )
 
 /**
@@ -41,8 +44,10 @@ class MusicPlayerManager(context: Context) {
     val eqManager = EqualizerManager()
 
     val player: ExoPlayer by lazy {
-        val dataSourceFactory = OkHttpDataSource.Factory(okhttp)
+        // ترکیب هوشمند: فایل لوکال (content/file) با سورس سیستمی، لینک http(s) با OkHttp
+        val httpFactory = OkHttpDataSource.Factory(okhttp)
             .setUserAgent("AlvandPlayer/1.0")
+        val dataSourceFactory = DefaultDataSource.Factory(app, httpFactory)
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
         ExoPlayer.Builder(app)
             .setMediaSourceFactory(mediaSourceFactory)
@@ -53,6 +58,10 @@ class MusicPlayerManager(context: Context) {
                     override fun onMediaItemTransition(item: MediaItem?, r: Int) { push() }
                     override fun onAudioSessionIdChanged(id: Int) {
                         eqManager.attach(id)
+                    }
+                    override fun onPlayerError(error: PlaybackException) {
+                        _ui.value = _ui.value.copy(error = "play_error")
+                        push()
                     }
                 })
             }
@@ -96,13 +105,30 @@ class MusicPlayerManager(context: Context) {
     }
 
     fun togglePlayPause() {
-        if (player.isPlaying) player.pause() else player.play()
+        if (player.isPlaying) player.pause()
+        else {
+            // بعد از خطا، پلیر به prepare مجدد نیاز دارد
+            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+            player.play()
+        }
         push()
     }
-    fun next() { if (player.hasNextMediaItem()) player.seekToNextMediaItem() }
-    fun prev() {
-        if (player.currentPosition > 3000) player.seekTo(0) else player.seekToPreviousMediaItem()
+    fun next() {
+        if (player.hasNextMediaItem()) {
+            player.seekToNextMediaItem()
+            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+            push()
+        }
     }
+    fun prev() {
+        if (player.currentPosition > 3000) player.seekTo(0)
+        else if (player.hasPreviousMediaItem()) {
+            player.seekToPreviousMediaItem()
+            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+        }
+        push()
+    }
+    fun clearError() { _ui.value = _ui.value.copy(error = null) }
     fun seekTo(ms: Long) { player.seekTo(ms); push() }
     fun toggleShuffle() {
         _ui.value = _ui.value.copy(shuffle = !_ui.value.shuffle)

@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import android.widget.Toast
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +38,13 @@ fun PlayerScreen(vm: AppViewModel, onBack: () -> Unit) {
     var tab by remember { mutableIntStateOf(0) } // 0=player 1=lyrics 2=EQ
     var manual by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val ctx = LocalContext.current
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            Toast.makeText(ctx, ctx.getString(R.string.play_error), Toast.LENGTH_LONG).show()
+            vm.manager.clearError()
+        }
+    }
     val tabs = listOf(
         stringResource(R.string.tab_player),
         stringResource(R.string.tab_lyrics),
@@ -81,13 +90,20 @@ fun PlayerScreen(vm: AppViewModel, onBack: () -> Unit) {
                             Text(current?.title ?: "Night Changes", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
                             Text(current?.artist ?: "One Direction", color = Color.White.copy(0.7f), fontSize = 13.sp)
                         }
-                        IconButton(onClick = {}) { Icon(Icons.Default.FavoriteBorder, null, tint = Color.White) }
+                        val likedSongs by vm.liked.collectAsState()
+                        val isLiked = likedSongs.contains(current?.id)
+                        IconButton(onClick = { current?.let { vm.toggleLike(it.id) } }) {
+                            Icon(
+                                if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                null, tint = if (isLiked) Color(0xFFF3A8FF) else Color.White
+                            )
+                        }
                     }
                     Slider(
                         value = state.positionMs.toFloat(),
                         onValueChange = { vm.manager.seekTo(it.toLong()) },
                         valueRange = 0f..(state.durationMs.coerceAtLeast(1L).toFloat()),
-                        colors = SliderDefaults.colors(thumbColor = AlvandPurple, activeTrackColor = AlvandPurple)
+                        colors = SliderDefaults.colors(thumbColor = AlvandPurple, activeTrackColor = AlvandPurple, inactiveTrackColor = Color.White.copy(alpha = 0.25f))
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(fmt(state.positionMs), color = Color.White.copy(0.6f), fontSize = 11.sp)

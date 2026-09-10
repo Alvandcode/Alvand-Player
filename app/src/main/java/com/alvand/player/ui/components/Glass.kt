@@ -33,31 +33,33 @@ fun AlvandBackground(modifier: Modifier = Modifier, dark: Boolean = false) {
     Box(
         modifier.background(
             Brush.verticalGradient(
-                if (dark) listOf(Color(0xFF12082E), Color(0xFF2A1558), Color(0xFF4A2A8A))
-                else listOf(Color(0xFF8E7BFF), Color(0xFFC9B8FF), Color(0xFFFFD9C4))
+                if (dark) listOf(Color(0xFF150A33), Color(0xFF241547), Color(0xFF3A2070))
+                else listOf(Color(0xFF3A2066), Color(0xFF241547), Color(0xFF120A2A))
             )
         )
     ) {
-        // هلال شناور (فیک هلال با دو دایره)
+        // هلال کوچک و کم‌رنگ بالا تا زیر متن‌ها نیاید
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
-            val floatY = (sin(t * 2 * PI) * 14).toFloat()
-            val crescentCut = if (dark) Color(0xFF1A0E38) else Color(0xFF9A86FF)
-            Canvas(Modifier.size(190.dp).offset(x = (-28).dp, y = (60 + floatY).dp)) {
-                drawCircle(Color(0xFFFFF3D6), radius = size.minDimension / 2)
+            val floatY = (sin(t * 2 * PI) * 12).toFloat()
+            val crescentCut = if (dark) Color(0xFF1A0E38) else Color(0xFF3A2066)
+            Canvas(Modifier.size(140.dp).offset(x = (-14).dp, y = (40 + floatY).dp)) {
+                drawCircle(Color(0xFFFFF3D6).copy(alpha = 0.85f), radius = size.minDimension / 2)
                 drawCircle(
                     crescentCut, radius = size.minDimension / 2.2f,
                     center = Offset(size.width * 0.68f, size.height * 0.32f)
                 )
             }
         }
-        // ابرهای شیشه‌ای پایین
+        // ابرهای خیلی کم‌رنگ پایین
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            Canvas(Modifier.fillMaxWidth().height(170.dp)) {
+            Canvas(Modifier.fillMaxWidth().height(150.dp)) {
                 val w = size.width; val h = size.height
-                drawOval(Color.White.copy(alpha = 0.35f), Offset(w * 0.1f, h * 0.3f), androidx.compose.ui.geometry.Size(w * 0.8f, h))
-                drawOval(Color.White.copy(alpha = 0.25f), Offset(w * -0.1f, h * 0.5f), androidx.compose.ui.geometry.Size(w * 0.7f, h))
+                drawOval(Color.White.copy(alpha = 0.10f), Offset(w * 0.1f, h * 0.3f), androidx.compose.ui.geometry.Size(w * 0.8f, h))
+                drawOval(Color.White.copy(alpha = 0.07f), Offset(w * -0.1f, h * 0.5f), androidx.compose.ui.geometry.Size(w * 0.7f, h))
             }
         }
+        // سایه تیره برای خوانایی متن‌ها
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.22f)))
     }
 }
 

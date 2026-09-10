@@ -57,8 +57,15 @@ fun DetailScreen(vm: AppViewModel, onBack: () -> Unit, onOpenPlayer: () -> Unit)
                         Button(onClick = { vm.playList(songs, 0); onOpenPlayer() }, shape = RoundedCornerShape(20.dp)) {
                             Icon(Icons.Default.PlayArrow, null); Text(stringResource(R.string.play_all))
                         }
-                        IconButton(onClick = {}) { Icon(Icons.Default.FavoriteBorder, null, tint = Color.White) }
-                        IconButton(onClick = {}) { Icon(Icons.Default.Download, null, tint = Color.White) }
+                        val likedSongs by vm.liked.collectAsState()
+                        val favId = state.current?.id ?: songs.firstOrNull()?.id
+                        val isFav = favId != null && likedSongs.contains(favId)
+                        IconButton(onClick = { favId?.let { vm.toggleLike(it) } }) {
+                            Icon(
+                                if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                null, tint = if (isFav) Color(0xFFF3A8FF) else Color.White
+                            )
+                        }
                     }
                     EqBars(state.isPlaying, Modifier.padding(top = 8.dp))
                 }

@@ -28,13 +28,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _lyricsLoading = MutableStateFlow(false)
     val lyricsLoading: StateFlow<Boolean> = _lyricsLoading
 
-    init {
+    private val _liked = MutableStateFlow<Set<Long>>(emptySet())
+    val liked: StateFlow<Set<Long>> = _liked
+
+    fun toggleLike(id: Long) {
+        _liked.value = if (id in _liked.value) _liked.value - id else _liked.value + id
+    }
+
+    /** بارگذاری (مجدد) آهنگ‌های دستگاه — بعد از دادن دسترسی صدا زده می‌شود */
+    fun reloadLocalSongs() {
         viewModelScope.launch {
             runCatching {
                 val local = repo.loadLocalSongs()
-                if (local.isNotEmpty()) _songs.value = local + _songs.value
+                val remote = _songs.value.filter { it.isRemote }
+                _songs.value = local + remote.ifEmpty { repo.demoPlaylist() }
             }
         }
+    }
+
+    init {
+        reloadLocalSongs()
         // لود لیریک هر آهنگ جدید: اول لوکال/امبدد، بعد آنلاین
         viewModelScope.launch {
             playerState.map { it.current }.distinctUntilChanged().collect { song ->

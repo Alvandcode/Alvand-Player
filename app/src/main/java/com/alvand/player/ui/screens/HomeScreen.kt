@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,37 @@ fun HomeScreen(
     var showLang by remember { mutableStateOf(false) }
     var link by remember { mutableStateOf("") }
     var linkError by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val ctx = LocalContext.current
+    val audioPerm = if (android.os.Build.VERSION.SDK_INT >= 33)
+        android.Manifest.permission.READ_MEDIA_AUDIO
+    else android.Manifest.permission.READ_EXTERNAL_STORAGE
+    fun hasAudioPerm() = androidx.core.content.ContextCompat.checkSelfPermission(
+        ctx, audioPerm
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    var audioOk by remember { mutableStateOf(hasAudioPerm()) }
+    var askedPerm by remember { mutableStateOf(false) }
+    val reqPerm = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        audioOk = granted
+        if (granted) vm.reloadLocalSongs()
+        else if (askedPerm &&
+            (ctx as? android.app.Activity)?.shouldShowRequestPermissionRationale(audioPerm) == false
+        ) {
+            ctx.startActivity(
+                android.content.Intent(
+                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:" + ctx.packageName)
+                )
+            )
+        }
+        askedPerm = true
+    }
+    val visibleSongs = remember(songs, query) {
+        if (query.isBlank()) songs
+        else songs.filter { (it.title + " " + it.artist).contains(query.trim(), ignoreCase = true) }
+    }
 
     Box(Modifier.fillMaxSize()) {
         AlvandBackground(Modifier.fillMaxSize())
@@ -60,29 +92,51 @@ fun HomeScreen(
                         IconButton(onClick = { showLang = true }) {
                             Icon(Icons.Default.Language, null, tint = Color.White)
                         }
-                        IconButton(onClick = {}) {
-                            Icon(Icons.Default.Notifications, null, tint = Color.White)
-                        }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.good_evening), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Text(stringResource(R.string.vibe_subtitle), color = Color.White.copy(0.75f), fontSize = 13.sp)
                 Spacer(Modifier.height(10.dp))
-                // سرچ + دکمه لینک مستقیم و فایل
-                GlassCard {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Search, null, tint = Color.White.copy(0.7f))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.search_hint), color = Color.White.copy(0.6f), fontSize = 13.sp)
-                    }
-                }
+                // جستجو + دکمه لینک مستقیم و فایل
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text(stringResource(R.string.search_hint), fontSize = 13.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedPlaceholderColor = Color.White.copy(0.55f),
+                        unfocusedPlaceholderColor = Color.White.copy(0.55f),
+                        focusedBorderColor = AlvandCardBorder,
+                        unfocusedBorderColor = AlvandCardBorder,
+                        focusedLeadingIconColor = Color.White.copy(0.85f),
+                        unfocusedLeadingIconColor = Color.White.copy(0.85f),
+                        focusedContainerColor = Color.White.copy(0.12f),
+                        unfocusedContainerColor = Color.White.copy(0.12f),
+                        cursorColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     FilledTonalButton(onClick = { showLink = true }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.Link, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.direct_link))
                     }
                     FilledTonalButton(onClick = onPickFile, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.FolderOpen, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.audio_file))
+                    }
+                }
+                if (!audioOk) {
+                    GlassCard(Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.allow_access), color = Color.White, fontSize = 13.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = {
+                            if (hasAudioPerm()) { audioOk = true; vm.reloadLocalSongs() }
+                            else reqPerm.launch(audioPerm)
+                        }) { Text(stringResource(R.string.allow)) }
                     }
                 }
             }
@@ -115,9 +169,9 @@ fun HomeScreen(
                     Text(stringResource(R.string.see_all), color = Color.White.copy(0.6f), fontSize = 12.sp)
                 }
             }
-            itemsIndexed(songs.take(12)) { i, s ->
+            itemsIndexed(visibleSongs.take(12)) { i, s ->
                 SongRow(s, i, playing = state.current?.id == s.id && state.isPlaying,
-                    onClick = { vm.playList(songs, i); onOpenPlayer() })
+                    onClick = { vm.playList(visibleSongs, i); onOpenPlayer() })
             }
         }
         // مینی‌پلیر شیشه‌ای پایین
@@ -171,7 +225,7 @@ private fun SongRow(s: Song, index: Int, playing: Boolean, onClick: () -> Unit) 
     Surface(
         Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
-        color = Color.White.copy(0.12f),
+        color = Color.White.copy(0.16f),
         border = androidx.compose.foundation.BorderStroke(1.dp, AlvandCardBorder)
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {

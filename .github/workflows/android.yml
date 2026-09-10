@@ -88,7 +88,7 @@ jobs:
           name: alvand-player-release-aab
           path: app/build/outputs/bundle/release/*.aab
 
-      # با پوش تگ v* (مثلا v1.0.0) فایل‌ها می‌روند توی GitHub Release
+      # ۱) پوش تگ v* (مثلا v1.0.0) → ریلیز نسخه‌دار
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -97,3 +97,15 @@ jobs:
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab
           generate_release_notes: true
+
+      # ۲) پوش عادی روی main/master → ریلیز شناور Latest خودکار به‌روز می‌شود (بدون هیچ کار دستی)
+      - name: Update rolling Latest release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          prerelease: true
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
