@@ -1,18 +1,22 @@
 package com.alvand.player.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val Scheme = darkColorScheme(
-    primary = AlvandPurple,
-    secondary = AlvandPink,
-    tertiary = AlvandPeach,
-    background = AlvandDeep,
-    surface = Color(0xFF241547),
-    onBackground = Color.White,
-    onSurface = Color.White
+private val Scheme = lightColorScheme(
+    primary = MonoInk,
+    onPrimary = Color.White,
+    secondary = MonoInk,
+    onSecondary = Color.White,
+    background = MonoBg,
+    onBackground = MonoInk,
+    surface = Color.White,
+    onSurface = MonoInk,
+    surfaceVariant = Color.White,
+    onSurfaceVariant = MonoSub,
+    outline = MonoLine
 )
 
 @Composable

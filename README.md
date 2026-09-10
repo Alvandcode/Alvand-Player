@@ -1,7 +1,7 @@
-# 🎵 Alvand Player — موزیک‌پلیر اندروید (گلس‌مورفیسم + سه‌بعدی)
+# 🎵 Alvand Player — موزیک‌پلیر مینیمال سیاه‌سفید اندروید
 
-موزیک‌پلیر مدرن اندروید در سبک **Glassmorphism** با انیمیشن‌ها و افکت‌های **3D**،
-با پشتیبانی از **۱۷ زبان** زنده دنیا.
+موزیک‌پلیر اندروید با رابط مینیمال مشکی‌سفید: صفحه لیست آهنگ با پنل آرت U-شکل،
+صفحه پخش با حلقه پیشرفت لمسی، شافل/تکرار، کاور واقعی آهنگ‌ها.
 
 | قابلیت | وضعیت |
 |---|---|
@@ -11,7 +11,7 @@
 | اکولایزر 5 باند + BassBoost + تقویت صدا (LoudnessEnhancer) | ✅ |
 | حذف نویز (Hiss/Hum مبتنی بر EQ) | ✅ |
 | ۱۷ زبان + انتخاب زبان داخل اپ | ✅ |
-| UI شیشه‌ای، وینیل چرخان 3D، اکولایزر بار متحرک | ✅ |
+| UI مینیمال سیاه‌سفید، حلقه پیشرفت لمسی، کاور واقعی آهنگ | ✅ |
 | صفحه درباره ما (گیت‌هاب/سایت/تلگرام/حمایت TON) | ✅ |
 | نصب روی اندروید ۶ تا ۱۷، فایل خروجی با نام+ورژن | ✅ |
 | بیلد خودکار در گیت‌هاب (APK/AAB) | ✅ |
@@ -32,11 +32,11 @@ Deutsch 🇩🇪 • 日本語 🇯🇵 • Italiano 🇮🇹 • Türkçe 🇹�
 alvand-player/
 ├── app/src/main/java/com/alvand/player/
 │   ├── MainActivity.kt
-│   ├── data/Song.kt + SongRepository.kt + AppLocale.kt
+│   ├── data/Song.kt + SongRepository.kt + AppLocale.kt + Artwork.kt
 │   ├── player/MusicPlayerManager.kt + PlaybackService.kt
 │   ├── audio/EqualizerManager.kt
 │   ├── lyrics/LyricsManager.kt
-│   ├── ui/theme/ + ui/components/ (+ LanguageDialog) + ui/screens/
+│   ├── ui/theme/ + ui/components/ (Glass + Sheets + LanguageDialog) + ui/screens/ (Welcome/Library/Player/About)
 ├── app/src/main/res/values-*/strings.xml   (۱۷ زبان)
 ├── app/src/main/res/xml/locales_config.xml
 ├── app/src/main/res/drawable/ic_alvand.xml (لوگو/آیکون)

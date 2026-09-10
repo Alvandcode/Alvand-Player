@@ -11,3 +11,12 @@ val AlvandCream = Color(0xFFFFF6E9)
 val AlvandCard = Color.White.copy(alpha = 0.22f)
 val AlvandCardBorder = Color.White.copy(alpha = 0.38f)
 val AlvandTextDim = Color.White.copy(alpha = 0.72f)
+
+/** پالت مینیمال سیاه‌وسفید */
+val MonoBg = Color(0xFFF4F4F6)
+val MonoInk = Color(0xFF111114)
+val MonoSub = Color(0xFF6E6E73)
+val MonoLine = Color(0xFFE2E2E6)
+val MonoTrack = Color(0xFFD8D8DC)
+val ArtDark1 = Color(0xFF0E1620)
+val ArtDark2 = Color(0xFF2A3A52)

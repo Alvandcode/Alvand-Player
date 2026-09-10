@@ -1,169 +1,184 @@
 package com.alvand.player.ui.components
 
+import android.graphics.Bitmap
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alvand.player.data.Artwork
+import com.alvand.player.data.Song
 import com.alvand.player.ui.theme.*
 import kotlin.math.*
 
-/** بک‌گراند گرادیانی متحرک + هلال شناور */
+fun fmtTime(ms: Long): String {
+    if (ms <= 0) return "0:00"
+    val s = ms / 1000
+    return "${s / 60}:${(s % 60).toString().padStart(2, '0')}"
+}
+
+/** کاور آهنگ: عکس امبدد، وگرنه جای‌خالی تیره */
 @Composable
-fun AlvandBackground(modifier: Modifier = Modifier, dark: Boolean = false) {
-    val t by rememberInfiniteTransition(label = "bg").animateFloat(
-        0f, 1f, infiniteRepeatable(tween(12000, easing = LinearEasing), RepeatMode.Reverse), label = "t"
-    )
+fun ArtImage(song: Song?, modifier: Modifier = Modifier, corners: Shape) {
+    val ctx = LocalContext.current
+    var bmp by remember(song?.id) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(song?.id) {
+        bmp = null
+        song?.let { bmp = Artwork.load(it, ctx) }
+    }
     Box(
-        modifier.background(
-            Brush.verticalGradient(
-                if (dark) listOf(Color(0xFF150A33), Color(0xFF241547), Color(0xFF3A2070))
-                else listOf(Color(0xFF3A2066), Color(0xFF241547), Color(0xFF120A2A))
-            )
-        )
+        modifier
+            .clip(corners)
+            .background(Brush.linearGradient(listOf(ArtDark1, ArtDark2)))
     ) {
-        // هلال کوچک و کم‌رنگ بالا تا زیر متن‌ها نیاید
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
-            val floatY = (sin(t * 2 * PI) * 12).toFloat()
-            val crescentCut = if (dark) Color(0xFF1A0E38) else Color(0xFF3A2066)
-            Canvas(Modifier.size(140.dp).offset(x = (-14).dp, y = (40 + floatY).dp)) {
-                drawCircle(Color(0xFFFFF3D6).copy(alpha = 0.85f), radius = size.minDimension / 2)
-                drawCircle(
-                    crescentCut, radius = size.minDimension / 2.2f,
-                    center = Offset(size.width * 0.68f, size.height * 0.32f)
+        if (bmp != null) {
+            Image(bmp!!.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        } else {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                androidx.compose.material3.Text(
+                    "♪", color = Color.White.copy(0.85f),
+                    fontSize = 64.sp, fontWeight = FontWeight.Bold
                 )
             }
         }
-        // ابرهای خیلی کم‌رنگ پایین
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            Canvas(Modifier.fillMaxWidth().height(150.dp)) {
-                val w = size.width; val h = size.height
-                drawOval(Color.White.copy(alpha = 0.10f), Offset(w * 0.1f, h * 0.3f), androidx.compose.ui.geometry.Size(w * 0.8f, h))
-                drawOval(Color.White.copy(alpha = 0.07f), Offset(w * -0.1f, h * 0.5f), androidx.compose.ui.geometry.Size(w * 0.7f, h))
-            }
-        }
-        // سایه تیره برای خوانایی متن‌ها
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.22f)))
     }
 }
 
-/** کارت شیشه‌ای */
+/** میله‌های کوچک مشکیِ در حال پخش */
 @Composable
-fun GlassCard(
-    modifier: Modifier = Modifier,
-    corner: androidx.compose.ui.unit.Dp = 24.dp,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(corner))
-            .border(1.dp, AlvandCardBorder, RoundedCornerShape(corner)),
-        color = AlvandCard,
-        tonalElevation = 0.dp,
-        shape = RoundedCornerShape(corner)
-    ) {
-        Column(Modifier.padding(16.dp), content = content)
-    }
-}
-
-/** کارت با تیلت سه‌بعدی (drag → rotateX/Y) */
-@Composable
-fun TiltGlassCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    var rx by remember { mutableFloatStateOf(0f) }
-    var ry by remember { mutableFloatStateOf(0f) }
-    val arx by animateFloatAsState(rx, tween(300), label = "rx")
-    val ary by animateFloatAsState(ry, tween(300), label = "ry")
-    Box(
-        modifier
-            .graphicsLayer {
-                rotationX = arx; rotationY = ary
-                cameraDistance = 16 * density
-            }
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color.White.copy(alpha = 0.14f))
-            .border(1.dp, AlvandCardBorder, RoundedCornerShape(28.dp))
-            .pointerInput(Unit) {
-                detectDragGestures(onDragEnd = { rx = 0f; ry = 0f }) { c, drag ->
-                    ry = (ry + drag.x * 0.05f).coerceIn(-14f, 14f)
-                    rx = (rx - drag.y * 0.05f).coerceIn(-14f, 14f)
-                    c.consume()
-                }
-            }
-            .padding(18.dp)
-    ) { content() }
-}
-
-/** وینیل/دیسک چرخان سه‌بعدی صفحه پلیر */
-@Composable
-fun Vinyl3D(isPlaying: Boolean, modifier: Modifier = Modifier) {
-    val rot = remember { Animatable(0f) }
-    LaunchedEffect(isPlaying) {
-        while (isPlaying) {
-            rot.animateTo(rot.value + 360f, tween(6000, easing = LinearEasing))
-            rot.snapTo(0f)
-        }
-    }
-    Box(modifier, contentAlignment = Alignment.Center) {
-        // هاله نئونی
-        Box(
-            Modifier.size(300.dp).clip(CircleShape)
-                .background(Brush.radialGradient(listOf(AlvandPink.copy(0.55f), Color.Transparent)))
-        )
-        // دیسک
-        Box(
-            Modifier.size(250.dp)
-                .rotate(rot.value)
-                .clip(CircleShape)
-                .background(Brush.sweepGradient(listOf(Color(0xFF2B1B52), Color(0xFF8E7BFF), Color(0xFFF3A8FF), Color(0xFF2B1B52))))
-                .border(1.dp, Color.White.copy(0.4f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(Modifier.size(84.dp).clip(CircleShape).background(AlvandDeep), contentAlignment = Alignment.Center) {
-                androidx.compose.material3.Text("☾", color = AlvandCream, fontSize = 34.sp)
-            }
-        }
-        // سوزن گرامافون (ثابت، با کمی چرخش سه‌بعدی)
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
-            Canvas(Modifier.size(120.dp)) {
-                drawLine(Color.White.copy(0.85f), Offset(size.width * 0.7f, 0f), Offset(size.width * 0.35f, size.height), strokeWidth = 8f)
-                drawCircle(Color.White, radius = 14f, center = Offset(size.width * 0.7f, 10f))
-            }
-        }
-    }
-}
-
-/** میله‌های اکولایزر متحرک */
-@Composable
-fun EqBars(isPlaying: Boolean, modifier: Modifier = Modifier, count: Int = 24) {
-    val inf = rememberInfiniteTransition(label = "eq")
-    Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        repeat(count) { i ->
+fun MiniBars(playing: Boolean, modifier: Modifier = Modifier) {
+    val inf = rememberInfiniteTransition(label = "mb")
+    Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(4) { i ->
             val h by inf.animateFloat(
-                4f, (14 + (i * 37 % 28)).toFloat(),
-                infiniteRepeatable(tween(400 + (i * 53 % 500), easing = FastOutSlowInEasing), RepeatMode.Reverse),
-                label = "b$i"
+                4f, (8 + (i * 7 % 10)).toFloat(),
+                infiniteRepeatable(tween(350 + (i * 90 % 300), easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                label = "m$i"
             )
             Box(
-                Modifier.width(4.dp).height(if (isPlaying) h.dp else 4.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Brush.verticalGradient(listOf(AlvandPink, AlvandPurple)))
+                Modifier.width(3.dp).height(if (playing) h.dp else 4.dp)
+                    .background(MonoInk)
             )
         }
     }
+}
+
+/** ردیف کنترل‌های پخش مثل تصویر: شافل | قبلی | پلی بزرگ | بعدی | تکرار */
+@Composable
+fun ControlsRow(
+    playing: Boolean,
+    shuffle: Boolean,
+    repeatOne: Boolean,
+    onShuffle: () -> Unit,
+    onPrev: () -> Unit,
+    onToggle: () -> Unit,
+    onNext: () -> Unit,
+    onRepeat: () -> Unit,
+    big: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val main = if (big) 76.dp else 58.dp
+    val sub = if (big) 30.dp else 26.dp
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onShuffle, modifier = Modifier.weight(1f)) {
+            Icon(Icons.Default.Shuffle, null, tint = if (shuffle) MonoInk else MonoSub.copy(0.5f), modifier = Modifier.size(sub))
+        }
+        IconButton(onClick = onPrev, modifier = Modifier.weight(1f)) {
+            Icon(Icons.Default.SkipPrevious, null, tint = MonoInk, modifier = Modifier.size(34.dp))
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            FilledIconButton(
+                onClick = onToggle,
+                modifier = Modifier.size(main),
+                shape = CircleShape,
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MonoInk, contentColor = Color.White)
+            ) {
+                Icon(
+                    if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    null, modifier = Modifier.size(main * 0.45f)
+                )
+            }
+        }
+        IconButton(onClick = onNext, modifier = Modifier.weight(1f)) {
+            Icon(Icons.Default.SkipNext, null, tint = MonoInk, modifier = Modifier.size(34.dp))
+        }
+        IconButton(onClick = onRepeat, modifier = Modifier.weight(1f)) {
+            Icon(Icons.Default.Repeat, null, tint = if (repeatOne) MonoInk else MonoSub.copy(0.5f), modifier = Modifier.size(sub))
+        }
+    }
+}
+
+/** حلقه پیشرفت دایره‌ای با قابلیت لمس/درگ برای جلو-عقب */
+@Composable
+fun RingProgress(
+    progress: Float,
+    onSeek: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 220.dp,
+    stroke: Dp = 5.dp
+) {
+    val p = progress.coerceIn(0f, 1f)
+    Canvas(
+        modifier
+            .size(size)
+            .pointerInput(Unit) {
+                detectTapGestures { off -> fracOf(off, size.toPx())?.let(onSeek) }
+            }
+            .pointerInput(Unit) {
+                detectDragGestures { change, _ ->
+                    fracOf(change.position, size.toPx())?.let(onSeek)
+                    change.consume()
+                }
+            }
+    ) {
+        val sw = stroke.toPx()
+        val r = (size.toPx() - sw) / 2f
+        val tl = center - Offset(r, r)
+        val arcSize = Size(r * 2f, r * 2f)
+        drawArc(MonoTrack, -90f, 360f, false, tl, arcSize, style = Stroke(sw, cap = StrokeCap.Round))
+        if (p > 0f) {
+            drawArc(MonoInk, -90f, 360f * p, false, tl, arcSize, style = Stroke(sw, cap = StrokeCap.Round))
+            val a = Math.toRadians((360.0 * p - 90.0))
+            val kc = center + Offset((r * cos(a)).toFloat(), (r * sin(a)).toFloat())
+            drawCircle(Color.White, radius = 11.dp.toPx(), center = kc)
+            drawCircle(MonoInk, radius = 11.dp.toPx(), center = kc, style = Stroke(3.dp.toPx()))
+            drawCircle(MonoInk, radius = 3.5.dp.toPx(), center = kc)
+        }
+    }
+}
+
+private fun fracOf(off: Offset, dimPx: Float): Float? {
+    val dx = off.x - dimPx / 2f
+    val dy = off.y - dimPx / 2f
+    if (dx * dx + dy * dy < 900f) return null // وسط دایره: نادیده بگیر
+    val ang = (Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())) + 90.0 + 360.0) % 360.0
+    return (ang / 360.0).toFloat()
 }
