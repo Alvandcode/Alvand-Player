@@ -38,4 +38,11 @@
     <string name="nav_library">Library</string>
     <string name="nav_premium">Premium</string>
     <string name="language">Language</string>
+    <string name="about">About</string>
+    <string name="about_desc">Alvand Player — glassmorphism music player for Android.</string>
+    <string name="link_website">Website</string>
+    <string name="donate_title">Support with TON (Gram)</string>
+    <string name="copy">Copy</string>
+    <string name="copied">Copied ✓</string>
+    <string name="version_fmt">Version %1$s</string>
 </resources>

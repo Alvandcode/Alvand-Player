@@ -55,9 +55,11 @@ class MainActivity : AppCompatActivity() {
                         HomeScreen(vm,
                             onOpenPlaylist = { nav.navigate("detail") },
                             onOpenPlayer = { nav.navigate("player") },
-                            onPickFile = { pickAudio.launch("audio/*") })
+                            onPickFile = { pickAudio.launch("audio/*") },
+                            onOpenAbout = { nav.navigate("about") })
                         BottomBar(nav, "home")
                     }
+                    composable("about") { AboutScreen(onBack = { nav.popBackStack() }) }
                     composable("detail") { DetailScreen(vm, onBack = { nav.popBackStack() }, onOpenPlayer = { nav.navigate("player") }) }
                     composable("player") { PlayerScreen(vm, onBack = { nav.popBackStack() }) }
                 }

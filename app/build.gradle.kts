@@ -4,16 +4,27 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
+val appVersionName = "1.0.0"
+val appVersionCode = 1
+
+base {
+    // خروجی‌ها: AlvandPlayer-v1.0.0-debug.apk و AlvandPlayer-v1.0.0-release.aab
+    archivesName.set("AlvandPlayer-v$appVersionName")
+}
+
 android {
     namespace = "com.alvand.player"
-    compileSdk = 34
+    // اندروید ۶ (API 23) تا اندروید ۱۷ (API 37): کف ۲۳ سقف Jetpack است،
+    // روی ۱۷ بدون تارگت مستقیم هم نصب و اجرا می‌شود (forward compatible)
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.alvand.player"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        minSdk = 23
+        targetSdk = 35
+        versionCode = appVersionCode
+        versionName = appVersionName
         vectorDrawables { useSupportLibrary = true }
         // زبان‌های پشتیبانی‌شده (۱۷ لوکیل)
         resConfigs(

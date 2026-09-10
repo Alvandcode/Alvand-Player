@@ -33,7 +33,8 @@ fun HomeScreen(
     vm: AppViewModel,
     onOpenPlaylist: () -> Unit,
     onOpenPlayer: () -> Unit,
-    onPickFile: () -> Unit
+    onPickFile: () -> Unit,
+    onOpenAbout: () -> Unit
 ) {
     val songs by vm.songs.collectAsState()
     val state by vm.playerState.collectAsState()
@@ -51,7 +52,9 @@ fun HomeScreen(
         ) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Menu, null, tint = Color.White)
+                    IconButton(onClick = onOpenAbout) {
+                        Icon(Icons.Default.Menu, null, tint = Color.White)
+                    }
                     Text("Alvand", color = Color.White, fontWeight = FontWeight.Black, fontSize = 22.sp)
                     Row {
                         IconButton(onClick = { showLang = true }) {

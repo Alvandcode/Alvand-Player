@@ -38,4 +38,11 @@
     <string name="nav_library">کتابخانه</string>
     <string name="nav_premium">ویژه</string>
     <string name="language">زبان</string>
+    <string name="about">درباره ما</string>
+    <string name="about_desc">الوند پلیر — موزیک‌پلیر شیشه‌ای اندروید.</string>
+    <string name="link_website">وب‌سایت</string>
+    <string name="donate_title">حمایت مالی با تون‌کوین (گرام)</string>
+    <string name="copy">کپی</string>
+    <string name="copied">کپی شد ✓</string>
+    <string name="version_fmt">نسخه %1$s</string>
 </resources>
