@@ -42,12 +42,25 @@ jobs:
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Decode release keystore
-        if: ${{ secrets.ALVAND_KEYSTORE_BASE64 != '' }}
-        run: echo "${{ secrets.ALVAND_KEYSTORE_BASE64 }}" | base64 --decode > "${{ runner.temp }}/alvand-release.keystore"
+        env:
+          KS_B64: ${{ secrets.ALVAND_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 --decode > "${{ runner.temp }}/alvand-release.keystore"
+          else
+            echo "No keystore secret - release will be debug-signed"
+          fi
 
       - name: Show keystore aliases (safe debug info)
-        if: ${{ secrets.ALVAND_KEYSTORE_BASE64 != '' }}
-        run: keytool -list -keystore "${{ runner.temp }}/alvand-release.keystore" -storepass "${{ secrets.ALVAND_KEYSTORE_PASSWORD }}"
+        env:
+          KS_B64: ${{ secrets.ALVAND_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ALVAND_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            keytool -list -keystore "${{ runner.temp }}/alvand-release.keystore" -storepass "$KS_PASS"
+          else
+            echo "Skipped (no keystore secret)"
+          fi
 
       - name: Build signed Release (APK + AAB)
         env:
