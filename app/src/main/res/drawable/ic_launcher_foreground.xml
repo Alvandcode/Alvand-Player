@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- فورگراند آیکون: لوگوی اصلی با حاشیه امن تا ماسک لانچر (دایره/گرد) چیزی را نبرد -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="72dp"
+        android:height="72dp"
+        android:gravity="center"
+        android:drawable="@drawable/alvand_mark" />
+</layer-list>

@@ -1,0 +1,69 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- حرف A با گرادیان زرد→سرخابی→بنفش→آبی (الهام از لوگوی Alvand) -->
+    <path
+        android:pathData="M30,80 L54,26 L78,80"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="28" android:startY="82"
+                android:endX="80" android:endY="24"
+                android:startColor="#FFFFC400"
+                android:centerColor="#FFFF2EA6"
+                android:endColor="#FF2E9BFF" />
+        </aapt:attr>
+    </path>
+    <!-- نوار مورب روی A -->
+    <path
+        android:pathData="M27,68 Q54,50 83,61"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="27" android:startY="68"
+                android:endX="83" android:endY="61"
+                android:startColor="#FFFFC400"
+                android:endColor="#FF7B2FF7" />
+        </aapt:attr>
+    </path>
+    <!-- دایره پخش -->
+    <path
+        android:pathData="M54,53 m-13,0 a13,13 0 1,1 26,0 a13,13 0 1,1 -26,0"
+        android:strokeWidth="6"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="41" android:startY="66"
+                android:endX="67" android:endY="66"
+                android:startColor="#FFFF2EA6"
+                android:endColor="#FF2E9BFF" />
+        </aapt:attr>
+    </path>
+    <!-- مثلث پخش -->
+    <path
+        android:pathData="M50,59.5 L61.5,66 L50,72.5 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="50" android:startY="66"
+                android:endX="61" android:endY="66"
+                android:startColor="#FFFFC400"
+                android:endColor="#FF2E9BFF" />
+        </aapt:attr>
+    </path>
+    <!-- موج‌های صوتی چپ -->
+    <path android:pathData="M31,62 L31,70" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeColor="#FFFF2EA6" />
+    <path android:pathData="M36,59 L36,73" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeColor="#FFB44DFF" />
+    <path android:pathData="M41,63 L41,69" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeColor="#FF7B2FF7" />
+    <!-- موج‌های صوتی راست -->
+    <path android:pathData="M67,63 L67,69" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeColor="#FF7B2FF7" />
+    <path android:pathData="M72,59 L72,73" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeColor="#FF3EC6FF" />
+    <path android:pathData="M77,62 L77,70" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeColor="#FF2E9BFF" />
+</vector>

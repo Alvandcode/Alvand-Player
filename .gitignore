@@ -1,0 +1,14 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+# Keystore – هرگز کلید release را کامیت نکنید
+*.jks
+*.keystore
+# APK خروجی لوکال
+*.apk
+*.aab
+!gradle/wrapper/gradle-wrapper.jar
