@@ -9,6 +9,9 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.alvand.player.data.Song
 import com.alvand.player.ui.screens.*
 import com.alvand.player.ui.theme.AlvandTheme
@@ -36,16 +39,16 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
         setContent {
             AlvandTheme {
-                val nav = androidx.navigation.compose.rememberNavController()
+                val nav = rememberNavController()
                 val target by navTarget
                 LaunchedEffect(target) {
                     target?.let { nav.navigate(it) { launchSingleTop = true }; navTarget.value = null }
                 }
-                androidx.navigation.compose.NavHost(nav, startDestination = "welcome") {
-                    androidx.navigation.compose.composable("welcome") {
+                NavHost(nav, startDestination = "welcome") {
+                    composable("welcome") {
                         WelcomeScreen { nav.navigate("library") }
                     }
-                    androidx.navigation.compose.composable("library") {
+                    composable("library") {
                         LibraryScreen(
                             vm,
                             onBack = { nav.popBackStack() },
@@ -54,7 +57,7 @@ class MainActivity : AppCompatActivity() {
                             onOpenAbout = { nav.navigate("about") }
                         )
                     }
-                    androidx.navigation.compose.composable("player") {
+                    composable("player") {
                         PlayerScreen(
                             vm,
                             onBack = { nav.popBackStack() },
@@ -62,7 +65,7 @@ class MainActivity : AppCompatActivity() {
                             onOpenAbout = { nav.navigate("about") }
                         )
                     }
-                    androidx.navigation.compose.composable("about") {
+                    composable("about") {
                         AboutScreen(onBack = { nav.popBackStack() })
                     }
                 }
