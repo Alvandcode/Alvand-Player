@@ -1,5 +1,6 @@
 <resources>
-    <style name="Theme.AlvandPlayer" parent="android:Theme.Material.NoActionBar">
+    <!-- AppCompatActivity حتماً تم AppCompat می‌خواهد؛ تم framework باعث کرش لحظه باز شدن بود -->
+    <style name="Theme.AlvandPlayer" parent="Theme.AppCompat.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentStatus">true</item>

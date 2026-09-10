@@ -32,8 +32,21 @@ android {
             "in", "de", "ja", "it", "tr", "ko", "vi", "fa"
         )
     }
+    signingConfigs {
+        create("release") {
+            // امضای پایدار: اگر کی‌استور نیست (بیلد لوکال بدون سکرت)، در buildTypes از debug استفاده می‌شود
+            storeFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: "alvand-release.keystore")
+            storeType = "PKCS12"
+            storePassword = System.getenv("ALVAND_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("ALVAND_KEY_ALIAS") ?: "alvand"
+            keyPassword = System.getenv("ALVAND_KEY_PASSWORD")
+        }
+    }
     buildTypes {
         release {
+            val ksFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: "alvand-release.keystore")
+            signingConfig = if (ksFile.exists()) signingConfigs.getByName("release")
+            else signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

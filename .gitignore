@@ -8,6 +8,7 @@ local.properties
 # Keystore – هرگز کلید release را کامیت نکنید
 *.jks
 *.keystore
+keystore-base64.txt
 # APK خروجی لوکال
 *.apk
 *.aab

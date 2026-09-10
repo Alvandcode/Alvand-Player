@@ -5,5 +5,5 @@
         android:width="72dp"
         android:height="72dp"
         android:gravity="center"
-        android:drawable="@drawable/alvand_mark" />
+        android:drawable="@drawable/alvand_icon" />
 </layer-list>

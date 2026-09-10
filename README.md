@@ -44,12 +44,24 @@ alvand-player/
 ```
 
 ## 🎨 لوگو و آیکون
-- فایل اصلی: `app/src/main/res/drawable-nodpi/alvand_mark.png` (لوگوی واقعی Alvand)
-- آیکون لانچر: `mipmap-anydpi-v26/ic_launcher.xml` با فورگراند
-  `drawable/ic_launcher_foreground.xml` که لوگو را با حاشیه امن وسط می‌گذارد تا
-  ماسک دایره‌ای/گرد لانچر، متن «Alvand player» را نبرد؛ پس‌زمینه مشکی.
-- لوگوی صفحه شروع: همان PNG در اندازه بزرگ.
+- فایل اصلی: `app/src/main/res/drawable-nodpi/alvand_mark.png` (لوگوی کامل، صفحه شروع)
+- آیکون لانچر: `drawable-nodpi/alvand_icon.png` (فقط علامت A، بدون متن — تا ماسک
+  گرد لانچر چیزی را نبرد) + `mipmap-*/ic_launcher.png` برای اندروید ۶ و ۷.
 - وکتور `drawable/ic_alvand.xml` فقط به‌عنوان نسخه تک‌رنگ (monochrome) آیکون نگه داشته شده.
+
+## 🔏 امضای دیجیتال (نصب نسخه‌ها روی هم)
+اپ با یک کی‌استور ثابت امضا می‌شود؛ پس نسخه جدید روی قبلی نصب می‌شود و هشدار
+امضا رفع می‌شود. فایل `alvand-release.keystore` و `keystore-base64.txt` هرگز
+کامیت نمی‌شوند (در `.gitignore` هستند) — از آن‌ها **بکاپ** بگیرید؛ اگر گم شوند
+دیگر هیچ‌وقت نمی‌توانید آپدیت روی نسخه‌های قبلی بدهید!
+
+۴ سکرت زیر را در ریپو بسازید (Settings → Secrets and variables → Actions → New repository secret):
+- `ALVAND_KEYSTORE_BASE64` ← کل محتوای فایل `keystore-base64.txt`
+- `ALVAND_KEYSTORE_PASSWORD` ← پسورد کی‌استور (موقع ساخت به شما داده شد)
+- `ALVAND_KEY_ALIAS` ← معمولاً `alvand` (لاگ قدم «Show keystore aliases» در Actions آن را تأیید می‌کند)
+- `ALVAND_KEY_PASSWORD` ← معمولاً همان پسورد کی‌استور
+
+بدون این سکرت‌ها هم بیلد می‌گیرد ولی با کلید debug امضا می‌شود.
 
 ## 🚀 انتشار روی گیت‌هاب (قدم‌به‌قدم)
 
