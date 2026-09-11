@@ -53,4 +53,13 @@
     <string name="menu">منو</string>
     <string name="shuffle">درهم</string>
     <string name="repeat">تکرار</string>
+    <!-- تایمر خواب -->
+    <string name="sleep_timer">تایمر خواب</string>
+    <string name="sleep_desc">صدا کم‌کم محو می‌شود و پخش متوقف می‌گردد. عالی برای وقت خواب.</string>
+    <string name="sleep_cancel">لغو تایمر</string>
+    <string name="sleep_remaining">توقف تا %1$s دیگر (با محو صدا در پایان)</string>
+    <string name="sleep_end_of_song">پایان آهنگ فعلی</string>
+    <!-- ویجت هوم‌اسکرین -->
+    <string name="widget_name">الوند پلیر</string>
+    <string name="widget_desc">پخش، توقف و آهنگ بعدی بدون باز کردن اپ</string>
 </resources>

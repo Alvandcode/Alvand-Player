@@ -30,6 +30,10 @@
 | حذف نویز (Hiss/Hum مبتنی بر EQ) | ✅ |
 | ۱۷ زبان + انتخاب زبان داخل اپ | ✅ |
 | UI مینیمال سیاه‌سفید، حلقه پیشرفت لمسی، کاور واقعی آهنگ | ✅ |
+| 🎨 پالت رنگی داینامیک از کاور (گرادیان + کنترل‌های هم‌رنگ) | ✅ v1.1.0 |
+| 🌙 تایمر خواب با محو تدریجی صدا (۵–۹۰ دقیقه + پایان آهنگ) | ✅ v1.1.0 |
+| 🏠 ویجت هوم‌اسکرین (پخش/توقف/بعدی بدون باز کردن اپ) | ✅ v1.1.0 |
+| 🧩 Hilt + ناوبری Compose تمیز (پایه قابلیت‌های بعدی) | ✅ v1.1.0 |
 | صفحه درباره ما (گیت‌هاب/سایت/تلگرام/حمایت TON) | ✅ |
 | نصب روی اندروید ۶ تا ۱۷، فایل خروجی با نام+ورژن | ✅ |
 | بیلد خودکار در گیت‌هاب (APK/AAB) | ✅ |
@@ -49,17 +53,33 @@ Deutsch 🇩🇪 • 日本語 🇯🇵 • Italiano 🇮🇹 • Türkçe 🇹�
 ```
 alvand-player/
 ├── app/src/main/java/com/alvand/player/
-│   ├── MainActivity.kt
+│   ├── MainActivity.kt              (@AndroidEntryPoint)
+│   ├── AlvandApp.kt                 (Hilt @HiltAndroidApp)
+│   ├── AppViewModel.kt              (@HiltViewModel)
 │   ├── data/Song.kt + SongRepository.kt + AppLocale.kt + Artwork.kt
-│   ├── player/MusicPlayerManager.kt + PlaybackService.kt
+│   ├── player/MusicPlayerManager.kt + PlaybackService.kt + SleepTimer.kt
+│   ├── player/widget/PlayerWidgetProvider.kt
 │   ├── audio/EqualizerManager.kt
 │   ├── lyrics/LyricsManager.kt
-│   ├── ui/theme/ + ui/components/ (Glass + Sheets + LanguageDialog) + ui/screens/ (Welcome/Player/About)
+│   ├── ui/theme/ (Theme + Color + DynamicTheme) + ui/components/ (Glass + Sheets + SleepTimerDialog + LanguageDialog) + ui/screens/ (Welcome/Player/About) + ui/navigation/ (Routes + AppNavHost)
+│   ├── res/layout/widget_player.xml + res/xml/player_widget_info.xml
+├── fastlane/metadata/android/{en-US,fa}/  (title/short/full/changelogs)
+├── docs/screenshots-README.md + tools/capture-screenshots.sh
+├── CHANGELOG.md
 ├── app/src/main/res/values-*/strings.xml   (۱۷ زبان)
 ├── app/src/main/res/xml/locales_config.xml
 ├── app/src/main/res/drawable/ic_alvand.xml (لوگو/آیکون)
 ├── .github/workflows/android.yml
 ```
+
+## 📸 اسکرین‌شات و انتشار در فروشگاه
+
+- شات‌لیست، تنظیمات استاندارد و اسکریپت ضبط: [`docs/screenshots-README.md`](docs/screenshots-README.md)
+  + `bash tools/capture-screenshots.sh`
+- متن‌های آماده گوگل‌پلی (انگلیسی + فارسی): `fastlane/metadata/android/{en-US,fa}/`
+  (`title.txt`، `short_description.txt`، `full_description.txt`، `changelogs/3.txt`).
+- یادداشت نسخه: [`CHANGELOG.md`](CHANGELOG.md) — با پوش تگ (`git tag v1.1.0 && git push origin v1.1.0`)
+  بخش همان نسخه به‌صورت خودکار به بدنه GitHub Release می‌رود.
 
 ## 🎨 لوگو و آیکون
 - فایل اصلی: `app/src/main/res/drawable-nodpi/alvand_mark.png` (لوگوی کامل، صفحه شروع)

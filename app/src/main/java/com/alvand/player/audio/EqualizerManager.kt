@@ -6,6 +6,7 @@ import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.PresetReverb
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import javax.inject.Inject
 
 /** تنظیمات صوتی قابل ذخیره‌سازی */
 data class AudioSettings(
@@ -26,7 +27,7 @@ data class AudioSettings(
  * حذف نویز واقعی پخش (playback) در اندروید API اختصاصی ندارد؛
  * ترکیب برش Hiss/Hum با EQ پیاده شده است.
  */
-class EqualizerManager {
+class EqualizerManager @Inject constructor() {
 
     private var eq: Equalizer? = null
     private var bass: BassBoost? = null

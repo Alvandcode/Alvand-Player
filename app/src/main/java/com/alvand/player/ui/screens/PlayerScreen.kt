@@ -1,7 +1,6 @@
 package com.alvand.player.ui.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,9 +41,13 @@ fun PlayerScreen(
     val scaffoldState = rememberBottomSheetScaffoldState()
     var showMenu by remember { mutableStateOf(false) }
     var showLyricsFull by remember { mutableStateOf(false) }
+    var showSleep by remember { mutableStateOf(false) }
     val current = state.current
     val dur = state.durationMs.coerceAtLeast(1L)
     val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
+    // پالت داینامیک از کاور آهنگ فعلی (فالبک: سیاه‌سفید)
+    val dynRaw by rememberDynamicAccent(current)
+    val dyn = dynRaw.animated()
 
     LaunchedEffect(state.error) {
         state.error?.let {
@@ -56,6 +59,7 @@ fun PlayerScreen(
     if (showMenu) MenuSheet(vm, onPickFile, onOpenAbout,
         onPlayLink = {}, onDismiss = { showMenu = false })
     if (showLyricsFull) LyricsSheet(vm, onDismiss = { showLyricsFull = false })
+    if (showSleep) SleepTimerDialog(vm, onDismiss = { showSleep = false })
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -109,7 +113,7 @@ fun PlayerScreen(
                             fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f)
                         )
                         if (active && state.isPlaying) {
-                            MiniBars(true)
+                            MiniBars(true, color = dyn.accent)
                             Spacer(Modifier.width(10.dp))
                         }
                         Text(fmtTime(d), color = MonoSub, fontSize = 13.sp)
@@ -127,6 +131,7 @@ fun PlayerScreen(
                         onNext = { vm.manager.next() },
                         onRepeat = { vm.manager.cycleRepeat() },
                         big = false,
+                        accent = dyn.accent,
                         modifier = Modifier.padding(top = 6.dp, bottom = 28.dp)
                     )
                 }
@@ -134,7 +139,7 @@ fun PlayerScreen(
         }
     ) {
         // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
-        BoxWithConstraints(Modifier.fillMaxSize().background(MonoBg)) {
+        BoxWithConstraints(Modifier.fillMaxSize().dynamicBackground(dyn)) {
             val wide = maxWidth > 600.dp
             val artH = (maxHeight * 0.44f).coerceIn(230.dp, 460.dp)
             Column(
@@ -145,23 +150,27 @@ fun PlayerScreen(
                 // نوار بالا (بدون بک — صفحه اصلی ریشه است)
                 Row(
                     Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // چیپ تایمر خواب (فقط وقتی فعال است دیده می‌شود)
+                    SleepChip(vm, onClick = { showSleep = true })
                     IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Menu, null, tint = MonoInk) }
                 }
                 // کادر آرت
                 ArtPanel(
                     song = current,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp).height(artH)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp).height(artH),
+                    glow = dyn.accent
                 )
                 Spacer(Modifier.height(4.dp))
-                // نوار پرشونده جدا زیر کادر (هم‌رنگ دکمه‌ها)
+                // نوار پرشونده جدا زیر کادر (هم‌رنگ کاور)
                 ProgressArc(
                     progress = if (dur > 0) shownPos.toFloat() / dur else 0f,
                     durationMs = dur,
                     onSeekMs = { vm.manager.seekTo(it) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 34.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 34.dp),
+                    progColor = dyn.accent
                 )
                 Row(
                     Modifier.align(Alignment.CenterHorizontally),
@@ -180,7 +189,8 @@ fun PlayerScreen(
                     onToggle = { vm.manager.togglePlayPause() },
                     onNext = { vm.manager.next() },
                     onRepeat = { vm.manager.cycleRepeat() },
-                    big = true
+                    big = true,
+                    accent = dyn.accent
                 )
                 // فضای نوار کشویی پایین
                 Spacer(Modifier.height(118.dp))

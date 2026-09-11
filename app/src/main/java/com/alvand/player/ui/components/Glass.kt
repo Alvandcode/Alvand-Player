@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
@@ -83,7 +84,11 @@ fun ArtImage(song: Song?, modifier: Modifier = Modifier, corners: Shape) {
 
 /** میله‌های کوچک مشکیِ در حال پخش */
 @Composable
-fun MiniBars(playing: Boolean, modifier: Modifier = Modifier) {
+fun MiniBars(
+    playing: Boolean,
+    modifier: Modifier = Modifier,
+    color: Color = MonoInk
+) {
     val inf = rememberInfiniteTransition(label = "mb")
     Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         repeat(4) { i ->
@@ -94,7 +99,7 @@ fun MiniBars(playing: Boolean, modifier: Modifier = Modifier) {
             )
             Box(
                 Modifier.width(3.dp).height(if (playing) h.dp else 4.dp)
-                    .background(MonoInk)
+                    .background(color)
             )
         }
     }
@@ -114,7 +119,8 @@ fun ControlsRow(
     onNext: () -> Unit,
     onRepeat: () -> Unit,
     big: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    accent: Color = MonoInk
 ) {
     val main = if (big) 76.dp else 58.dp
     val sub = if (big) 30.dp else 26.dp
@@ -130,7 +136,7 @@ fun ControlsRow(
                 onClick = onToggle,
                 modifier = Modifier.size(main),
                 shape = CircleShape,
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MonoInk, contentColor = Color.White)
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = accent, contentColor = Color.White)
             ) {
                 Icon(
                     if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -154,11 +160,24 @@ fun ControlsRow(
 /** پنل آرت کشیده با عنوان ماسک‌شده داخل کادر (با فاصله از لبه‌ها) */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ArtPanel(song: Song?, modifier: Modifier = Modifier) {
+fun ArtPanel(
+    song: Song?,
+    modifier: Modifier = Modifier,
+    glow: Color = MonoInk
+) {
     Box(modifier) {
         ArtImage(
             song, Modifier.fillMaxSize(),
             RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 190.dp, bottomEnd = 190.dp)
+        )
+        // هاله هم‌رنگ کاور دور آرت (پالت داینامیک)
+        Box(
+            Modifier.fillMaxSize()
+                .border(
+                    1.5.dp,
+                    glow.copy(alpha = 0.35f),
+                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 190.dp, bottomEnd = 190.dp)
+                )
         )
         // محدوده نامرئی متن: داخل کادر + فاصله از لبه‌ها + برش اضافه
         Column(
@@ -224,7 +243,8 @@ fun ProgressArc(
     progress: Float,
     durationMs: Long,
     onSeekMs: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    progColor: Color = MonoInk
 ) {
     val latestSeek by rememberUpdatedState(onSeekMs)
     val latestDur by rememberUpdatedState(durationMs)
@@ -280,13 +300,13 @@ fun ProgressArc(
             if (len > 0f) {
                 val seg = android.graphics.Path()
                 pm.getSegment(0f, len * p, seg, true)
-                drawPath(seg.asComposePath(), color = MonoInk, style = Stroke(sw, cap = StrokeCap.Round))
+                drawPath(seg.asComposePath(), color = progColor, style = Stroke(sw, cap = StrokeCap.Round))
                 val pos = FloatArray(2)
                 pm.getPosTan((len * p).coerceAtMost(len), pos, null)
                 val kc = Offset(pos[0], pos[1])
                 drawCircle(Color.White, radius = 11.dp.toPx(), center = kc)
-                drawCircle(MonoInk, radius = 11.dp.toPx(), center = kc, style = Stroke(3.dp.toPx()))
-                drawCircle(MonoInk, radius = 3.5.dp.toPx(), center = kc)
+                drawCircle(progColor, radius = 11.dp.toPx(), center = kc, style = Stroke(3.dp.toPx()))
+                drawCircle(progColor, radius = 3.5.dp.toPx(), center = kc)
             }
         }
     }

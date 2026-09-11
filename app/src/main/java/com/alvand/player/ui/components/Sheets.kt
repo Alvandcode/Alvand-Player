@@ -41,6 +41,8 @@ fun MenuSheet(
     var showLang by remember { mutableStateOf(false) }
     var showEq by remember { mutableStateOf(false) }
     var showLyrics by remember { mutableStateOf(false) }
+    var showSleep by remember { mutableStateOf(false) }
+    val sleep by vm.manager.sleepState.collectAsState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -51,6 +53,13 @@ fun MenuSheet(
             MenuItem(Icons.Default.FolderOpen, stringResource(R.string.audio_file)) { onPickFile(); onDismiss() }
             MenuItem(Icons.Default.Tune, stringResource(R.string.tab_eq)) { showEq = true }
             MenuItem(Icons.Default.Mic, stringResource(R.string.tab_lyrics)) { showLyrics = true }
+            MenuItem(
+                Icons.Default.Bedtime,
+                if (sleep.active) {
+                    "${stringResource(R.string.sleep_timer)} • " +
+                        com.alvand.player.player.SleepTimer.formatRemaining(sleep.remainingMs)
+                } else stringResource(R.string.sleep_timer)
+            ) { showSleep = true }
             MenuItem(Icons.Default.Language, stringResource(R.string.language)) { showLang = true }
             MenuItem(Icons.Default.Info, stringResource(R.string.about)) { onOpenAbout(); onDismiss() }
         }
@@ -60,6 +69,7 @@ fun MenuSheet(
     if (showLang) LanguageDialog(onDismiss = { showLang = false })
     if (showEq) EqSheet(vm, onDismiss = { showEq = false })
     if (showLyrics) LyricsSheet(vm, onDismiss = { showLyrics = false })
+    if (showSleep) SleepTimerDialog(vm, onDismiss = { showSleep = false })
 }
 
 @Composable

@@ -53,4 +53,13 @@
     <string name="menu">Menu</string>
     <string name="shuffle">Shuffle</string>
     <string name="repeat">Repeat</string>
+    <!-- Sleep timer -->
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_desc">Music fades out, then stops. Perfect for bedtime.</string>
+    <string name="sleep_cancel">Cancel timer</string>
+    <string name="sleep_remaining">Stops in %1$s (fades out at the end)</string>
+    <string name="sleep_end_of_song">End of current song</string>
+    <!-- Home-screen widget -->
+    <string name="widget_name">Alvand Player</string>
+    <string name="widget_desc">Play, pause and skip without opening the app</string>
 </resources>

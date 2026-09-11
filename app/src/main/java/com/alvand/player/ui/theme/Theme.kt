@@ -1,11 +1,10 @@
 package com.alvand.player.ui.theme
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val Scheme = lightColorScheme(
+/** اسکیم پایه مینیمال (فالبک وقتی کاور/رنگی در دسترس نیست) */
+val BaseScheme = lightColorScheme(
     primary = MonoInk,
     onPrimary = Color.White,
     secondary = MonoInk,
@@ -19,11 +18,5 @@ private val Scheme = lightColorScheme(
     outline = MonoLine
 )
 
-@Composable
-fun AlvandTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = Scheme,
-        typography = MaterialTheme.typography,
-        content = content
-    )
-}
+// NOTE: تابع AlvandTheme به DynamicTheme.kt منتقل شد تا accent داینامیک کاور را بگیرد.
+// امضای جدید: AlvandTheme(dynamic: DynamicAccent? = null, content: ...)

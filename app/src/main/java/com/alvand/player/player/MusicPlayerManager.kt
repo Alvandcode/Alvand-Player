@@ -12,6 +12,7 @@ import com.alvand.player.audio.AudioSettings
 import com.alvand.player.audio.EqualizerManager
 import com.alvand.player.data.Song
 import com.google.common.util.concurrent.ListenableFuture
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,6 +20,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** وضعیت پخش برای UI */
 data class PlayerUiState(
@@ -39,11 +42,13 @@ data class PlayerUiState(
  * لاک‌اسکرین و خروجی مدیا (quick settings) می‌آید و با بستن اپ قطع نمی‌شود.
  * همه فرمت‌های رایج + لینک مستقیم (progressive/HLS/DASH) پشتیبانی می‌شود.
  */
-class MusicPlayerManager(context: Context) {
+@Singleton
+class MusicPlayerManager @Inject constructor(
+    @ApplicationContext context: Context,
+    val eqManager: EqualizerManager
+) {
 
     private val app = context.applicationContext
-
-    val eqManager = EqualizerManager()
 
     private val controllerFuture: ListenableFuture<MediaController> =
         MediaController.Builder(
@@ -92,6 +97,30 @@ class MusicPlayerManager(context: Context) {
 
     private var progressJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main)
+
+    /** تایمر خواب با fade-out: ولوم کم می‌شود، بعد پخش متوقف می‌گردد */
+    val sleepTimer = SleepTimer(
+        scope = scope,
+        setVolume = { v -> runCatching { controller?.volume = v } },
+        onExpire = { controller?.pause() }
+    )
+    val sleepState: StateFlow<SleepTimerState> get() = sleepTimer.state
+
+    /** شروع تایمر خواب بر حسب دقیقه */
+    fun startSleepTimer(minutes: Int) {
+        sleepTimer.start(minutes.coerceAtLeast(1) * 60_000L)
+    }
+
+    /** خواب در پایان آهنگ فعلی (با fade در ثانیه‌های آخر) */
+    fun startSleepEndOfTrack() {
+        val c = controller
+        val dur = c?.duration?.takeIf { it > 0 } ?: _ui.value.durationMs
+        val pos = c?.currentPosition ?: _ui.value.positionMs
+        val remain = (dur - pos).coerceAtLeast(5_000L).coerceAtMost(Long.MAX_VALUE)
+        if (dur > 0) sleepTimer.start(remain, fadeMs = minOf(15_000L, remain / 2))
+    }
+
+    fun cancelSleepTimer() = sleepTimer.cancel()
 
     fun setQueue(songs: List<Song>, startIndex: Int = 0, autoplay: Boolean = true) {
         val c = controller
@@ -235,6 +264,7 @@ class MusicPlayerManager(context: Context) {
 
     fun release() {
         progressJob?.cancel()
+        runCatching { sleepTimer.cancel() }
         eqManager.release()
         runCatching { controller?.removeListener(listener) }
         controller = null

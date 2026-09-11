@@ -2,11 +2,13 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 // تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
-val appVersionName = "1.0.1"
-val appVersionCode = 2
+val appVersionName = "1.1.0"
+val appVersionCode = 3
 
 base {
     // خروجی‌ها: AlvandPlayer-v1.0.1-debug.apk و AlvandPlayer-v1.0.1-release.aab
@@ -75,6 +77,10 @@ dependencies {
     implementation(libs.coroutines)
     implementation(libs.datastore.prefs)
     implementation(libs.appcompat) // انتخاب زبان داخل اپ (per-app locales)
+    implementation(libs.palette.ktx) // پالت رنگی داینامیک از کاور
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
 
     val composeBom = libs.compose.bom
     implementation(platform(composeBom))

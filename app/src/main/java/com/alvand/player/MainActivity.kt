@@ -9,13 +9,13 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.alvand.player.data.Song
-import com.alvand.player.ui.screens.*
+import com.alvand.player.ui.navigation.AppNavHost
+import com.alvand.player.ui.navigation.Routes
 import com.alvand.player.ui.theme.AlvandTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private val vm: AppViewModel by viewModels()
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         if (uri != null) {
             val name = uri.lastPathSegment?.substringAfterLast('/') ?: "Local audio"
             vm.playUri(uri, name)
-            navTarget.value = "player"
+            navTarget.value = Routes.PLAYER
         }
     }
     private val permReq = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
@@ -39,31 +39,13 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
         setContent {
             AlvandTheme {
-                val nav = rememberNavController()
                 val target by navTarget
-                LaunchedEffect(target) {
-                    target?.let { nav.navigate(it) { launchSingleTop = true }; navTarget.value = null }
-                }
-                NavHost(nav, startDestination = "welcome") {
-                    composable("welcome") {
-                        // بعد از ورود، خوشامد از بک‌استک حذف می‌شود تا با بک برنگردیم
-                        WelcomeScreen {
-                            nav.navigate("player") {
-                                popUpTo("welcome") { inclusive = true }
-                            }
-                        }
-                    }
-                    composable("player") {
-                        PlayerScreen(
-                            vm,
-                            onPickFile = { pickAudio.launch("audio/*") },
-                            onOpenAbout = { nav.navigate("about") }
-                        )
-                    }
-                    composable("about") {
-                        AboutScreen(onBack = { nav.popBackStack() })
-                    }
-                }
+                AppNavHost(
+                    vm = vm,
+                    onPickFile = { pickAudio.launch("audio/*") },
+                    pendingTarget = target,
+                    onConsumeTarget = { navTarget.value = null }
+                )
             }
         }
     }
@@ -82,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             val url = uri.toString()
             if (Song.isSupportedPath(url)) {
                 vm.playDirectLink(url)
-                navTarget.value = "player"
+                navTarget.value = Routes.PLAYER
             }
         }
     }

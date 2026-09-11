@@ -1,8 +1,8 @@
 package com.alvand.player
 
-import android.app.Application
+import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alvand.player.audio.AudioSettings
 import com.alvand.player.data.Song
@@ -10,16 +10,23 @@ import com.alvand.player.data.SongRepository
 import com.alvand.player.lyrics.LyricsManager
 import com.alvand.player.lyrics.LyricsResult
 import com.alvand.player.player.MusicPlayerManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AppViewModel(app: Application) : AndroidViewModel(app) {
+/** ویومدل اصلی اپ — وابستگی‌ها با Hilt تزریق می‌شوند */
+@HiltViewModel
+class AppViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
+    val manager: MusicPlayerManager,
+    private val repo: SongRepository
+) : ViewModel() {
 
-    val manager = MusicPlayerManager(app)
     val playerState = manager.ui
     val eqSettings = manager.eqManager.settings
 
-    private val repo = SongRepository(app)
     private val _songs = MutableStateFlow<List<Song>>(repo.demoPlaylist())
     val songs: StateFlow<List<Song>> = _songs
 
@@ -53,7 +60,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             playerState.map { it.current }.distinctUntilChanged().collect { song ->
                 if (song == null) return@collect
                 _lyricsLoading.value = true
-                var res = LyricsManager.loadLocal(song, getApplication())
+                var res = LyricsManager.loadLocal(song, appContext)
                 if (res.lines.isEmpty()) {
                     res = LyricsManager.fetchOnline(song.artist, song.title)
                 }
@@ -92,7 +99,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun saveLyricsManual(raw: String) {
         val c = playerState.value.current ?: return
         viewModelScope.launch {
-            LyricsManager.saveManual(c, getApplication(), raw)
+            LyricsManager.saveManual(c, appContext, raw)
             val lines = LyricsManager.parseLrc(
                 if (raw.contains("[")) raw else raw.lineSequence().filter { it.isNotBlank() }
                     .mapIndexed { i, t -> "[00:${(i * 4).toString().padStart(2, '0')}.00]$t" }

@@ -5,11 +5,17 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** خواندن آهنگ‌های دستگاه از MediaStore — همه فرمت‌های صوتی */
-class SongRepository(private val context: Context) {
+@Singleton
+class SongRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     suspend fun loadLocalSongs(): List<Song> = withContext(Dispatchers.IO) {
         val songs = mutableListOf<Song>()

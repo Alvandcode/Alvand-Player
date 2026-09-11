@@ -1,0 +1,27 @@
+Alvand Player — your world, your music.
+
+A minimal, beautiful Android music player that adapts to your songs:
+
+🎨 DYNAMIC COLORS — the background, progress bar and controls take their
+color from the current song cover, with smooth animated transitions.
+
+🌙 SLEEP TIMER — fall asleep to music: 5–90 min presets or end of song,
+with gentle fade-out and a live countdown chip.
+
+🏠 HOME-SCREEN WIDGET — play, pause and skip without opening the app.
+
+🎧 EVERY FORMAT — mp3, aac, ogg, opus, flac, wav, m4a, amr, midi + HLS/DASH
+streams and direct links.
+
+🎚 PRO SOUND — 5-band equalizer with presets, BassBoost, volume boost up to
++10 dB and hiss/hum denoise for clearer vocals.
+
+📝 LYRICS — embedded tags, sidecar .lrc files, free online search (LRCLIB)
+and manual paste, synced line by line.
+
+🌍 17 LANGUAGES — switch inside the app, no restart needed.
+
+🔔 FULL INTEGRATION — notification, lock-screen and Bluetooth/media-output
+controls, background playback that survives closing the app.
+
+Free, fast and private — your music stays on your device.
