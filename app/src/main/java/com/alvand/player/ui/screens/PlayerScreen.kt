@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,16 +25,19 @@ import com.alvand.player.ui.components.*
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.launch
 
-/** صفحه اصلی: آرت + نوار پیشرفت زیر کادر + لیست کشویی */
+/** صفحه اصلی: بکگراند چندلایه + کادر آرت + نوار پیشرفت + لیست کشویی شیشه‌ای */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     vm: AppViewModel,
     onPickFile: () -> Unit,
+    onPickBackground: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
     val state by vm.playerState.collectAsState()
     val songs by vm.songs.collectAsState()
+    val bgUri by vm.backgroundUri.collectAsState()
+    val pal = LocalAP.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -45,8 +47,8 @@ fun PlayerScreen(
     val current = state.current
     val dur = state.durationMs.coerceAtLeast(1L)
     val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
-    // پالت داینامیک از کاور آهنگ فعلی (فالبک: سیاه‌سفید)
-    val dynRaw by rememberDynamicAccent(current)
+    // پالت داینامیک از کاور آهنگ فعلی (فالبک: سیاه‌سفید / یاسی در تیره)
+    val dynRaw by rememberDynamicAccent(current, pal.isDark)
     val dyn = dynRaw.animated()
 
     LaunchedEffect(state.error) {
@@ -56,7 +58,18 @@ fun PlayerScreen(
         }
     }
 
-    if (showMenu) MenuSheet(vm, onPickFile, onOpenAbout,
+    // نتیجه اسکن دستی کتابخانه
+    val scanAdded by vm.lastScanAdded.collectAsState()
+    LaunchedEffect(scanAdded) {
+        scanAdded?.let { added ->
+            val msg = if (added > 0) ctx.getString(R.string.scan_new, added)
+            else ctx.getString(R.string.scan_none, songs.size)
+            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+            vm.consumeScanMessage()
+        }
+    }
+
+    if (showMenu) MenuSheet(vm, onPickFile, onPickBackground, onOpenAbout,
         onPlayLink = {}, onDismiss = { showMenu = false })
     if (showLyricsFull) LyricsSheet(vm, onDismiss = { showLyricsFull = false })
     if (showSleep) SleepTimerDialog(vm, onDismiss = { showSleep = false })
@@ -65,8 +78,8 @@ fun PlayerScreen(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 104.dp,
         sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        sheetContainerColor = Color.White,
-        sheetDragHandle = { BottomSheetDefaults.DragHandle() },
+        sheetContainerColor = pal.sheet,
+        sheetDragHandle = { BottomSheetDefaults.DragHandle(color = pal.sub.copy(alpha = 0.5f)) },
         sheetContent = {
             LazyColumn(Modifier.fillMaxWidth()) {
                 // نوار کوچک: با تپ باز می‌شود، با درگ لیست می‌آید بالا
@@ -80,14 +93,14 @@ fun PlayerScreen(
                         ArtImage(current, Modifier.size(52.dp), RoundedCornerShape(14.dp))
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(current?.title ?: "Alvand Player", color = MonoInk,
+                            Text(current?.title ?: "Alvand Player", color = pal.ink,
                                 fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                            Text(current?.artist ?: "", color = MonoSub, fontSize = 12.sp, maxLines = 1)
+                            Text(current?.artist ?: "", color = pal.sub, fontSize = 12.sp, maxLines = 1)
                         }
                         IconButton(onClick = { vm.manager.togglePlayPause() }) {
                             Icon(
                                 if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                null, tint = MonoInk, modifier = Modifier.size(30.dp)
+                                null, tint = pal.ink, modifier = Modifier.size(30.dp)
                             )
                         }
                     }
@@ -95,7 +108,7 @@ fun PlayerScreen(
                 item {
                     Text(
                         "${stringResource(R.string.playlist)} (${songs.size})",
-                        color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                         modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp)
                     )
                 }
@@ -108,7 +121,7 @@ fun PlayerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            s.title, color = MonoInk,
+                            s.title, color = pal.ink,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f)
                         )
@@ -116,7 +129,7 @@ fun PlayerScreen(
                             MiniBars(true, color = dyn.accent)
                             Spacer(Modifier.width(10.dp))
                         }
-                        Text(fmtTime(d), color = MonoSub, fontSize = 13.sp)
+                        Text(fmtTime(d), color = pal.sub, fontSize = 13.sp)
                     }
                 }
                 item { LyricsPreviewCard(vm) { showLyricsFull = true } }
@@ -138,8 +151,12 @@ fun PlayerScreen(
             }
         }
     ) {
-        // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
-        BoxWithConstraints(Modifier.fillMaxSize().dynamicBackground(dyn)) {
+        // بکگراند چندلایه همیشه زیر همه‌چیز است؛ کادر روی آن می‌نشیند
+        // (فرم کادر با/بدون کاور یکی است)
+        Box(Modifier.fillMaxSize()) {
+            PlayerBackground(accent = dyn, backgroundUri = bgUri)
+            // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
+            BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth > 600.dp
             val artH = (maxHeight * 0.44f).coerceIn(230.dp, 460.dp)
             Column(
@@ -155,7 +172,7 @@ fun PlayerScreen(
                 ) {
                     // چیپ تایمر خواب (فقط وقتی فعال است دیده می‌شود)
                     SleepChip(vm, onClick = { showSleep = true })
-                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Menu, null, tint = MonoInk) }
+                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
                 }
                 // کادر آرت
                 ArtPanel(
@@ -176,8 +193,8 @@ fun PlayerScreen(
                     Modifier.align(Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(fmtTime(shownPos), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text(" / ${fmtTime(state.durationMs)}", color = MonoSub, fontSize = 12.sp)
+                    Text(fmtTime(shownPos), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(" / ${fmtTime(state.durationMs)}", color = pal.sub, fontSize = 12.sp)
                 }
                 Spacer(Modifier.height(8.dp))
                 ControlsRow(
@@ -194,6 +211,7 @@ fun PlayerScreen(
                 )
                 // فضای نوار کشویی پایین
                 Spacer(Modifier.height(118.dp))
+                }
             }
         }
     }

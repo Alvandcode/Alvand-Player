@@ -15,8 +15,7 @@ import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
 import com.alvand.player.R
 import com.alvand.player.player.SleepTimer
-import com.alvand.player.ui.theme.MonoInk
-import com.alvand.player.ui.theme.MonoSub
+import com.alvand.player.ui.theme.LocalAP
 
 /** پیش‌فرض‌های تایمر خواب (دقیقه) */
 private val SLEEP_PRESETS = listOf(5, 10, 15, 30, 45, 60, 90)
@@ -26,27 +25,28 @@ private val SLEEP_PRESETS = listOf(5, 10, 15, 30, 45, 60, 90)
 @Composable
 fun SleepTimerDialog(vm: AppViewModel, onDismiss: () -> Unit) {
     val sleep by vm.manager.sleepState.collectAsState()
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = androidx.compose.ui.graphics.Color.White) {
+    val pal = LocalAP.current
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = pal.sheet) {
         Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 36.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Bedtime, null, tint = MonoInk)
+                Icon(Icons.Default.Bedtime, null, tint = pal.ink)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     stringResource(R.string.sleep_timer),
-                    color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 18.sp
+                    color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 18.sp
                 )
             }
             Spacer(Modifier.height(6.dp))
             if (sleep.active) {
                 Text(
                     stringResource(R.string.sleep_remaining, SleepTimer.formatRemaining(sleep.remainingMs)),
-                    color = MonoSub, fontSize = 13.sp
+                    color = pal.sub, fontSize = 13.sp
                 )
                 Spacer(Modifier.height(4.dp))
                 LinearProgressIndicator(
                     progress = { 1f - sleep.progress },
                     modifier = Modifier.fillMaxWidth(),
-                    color = MonoInk
+                    color = pal.ink
                 )
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(
@@ -56,7 +56,7 @@ fun SleepTimerDialog(vm: AppViewModel, onDismiss: () -> Unit) {
                 ) { Text(stringResource(R.string.sleep_cancel)) }
                 Spacer(Modifier.height(6.dp))
             } else {
-                Text(stringResource(R.string.sleep_desc), color = MonoSub, fontSize = 13.sp)
+                Text(stringResource(R.string.sleep_desc), color = pal.sub, fontSize = 13.sp)
                 Spacer(Modifier.height(12.dp))
             }
             SLEEP_PRESETS.chunked(3).forEach { row ->
@@ -79,8 +79,8 @@ fun SleepTimerDialog(vm: AppViewModel, onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MonoInk,
-                    contentColor = androidx.compose.ui.graphics.Color.White
+                    containerColor = pal.ink,
+                    contentColor = pal.bg
                 )
             ) { Text(stringResource(R.string.sleep_end_of_song)) }
         }

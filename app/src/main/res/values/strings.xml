@@ -62,4 +62,20 @@
     <!-- Home-screen widget -->
     <string name="widget_name">Alvand Player</string>
     <string name="widget_desc">Play, pause and skip without opening the app</string>
+    <!-- Library scanner -->
+    <string name="scan_songs">Scan device songs</string>
+    <string name="scanning">Scanning…</string>
+    <string name="scan_new">%1$d new song(s) added</string>
+    <string name="scan_none">Up to date • %1$d songs</string>
+    <!-- Theme -->
+    <string name="theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <!-- Custom background -->
+    <string name="background">Background</string>
+    <string name="background_desc">A photo behind the player panel. The panel keeps its shape, with or without cover art.</string>
+    <string name="background_set">Custom photo is on. Change it or go back to default.</string>
+    <string name="background_pick">Choose photo…</string>
+    <string name="background_remove">Remove (default)</string>
 </resources>

@@ -38,9 +38,6 @@ jobs:
           fi
           chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
-
       - name: Decode release keystore
         env:
           KS_B64: ${{ secrets.ALVAND_KEYSTORE_BASE64 }}
@@ -48,8 +45,16 @@ jobs:
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 --decode > "${{ runner.temp }}/alvand-release.keystore"
           else
-            echo "No keystore secret - release will be debug-signed"
+            echo "No keystore secret - APKs will be debug-signed with an ephemeral key (updates won't install over each other!)"
           fi
+
+      - name: Build Debug APK (stable-signed, installs over previous builds)
+        env:
+          ALVAND_KEYSTORE_PATH: ${{ runner.temp }}/alvand-release.keystore
+          ALVAND_KEYSTORE_PASSWORD: ${{ secrets.ALVAND_KEYSTORE_PASSWORD }}
+          ALVAND_KEY_ALIAS: ${{ secrets.ALVAND_KEY_ALIAS }}
+          ALVAND_KEY_PASSWORD: ${{ secrets.ALVAND_KEY_PASSWORD }}
+        run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Show keystore aliases (safe debug info)
         env:
@@ -69,6 +74,13 @@ jobs:
           ALVAND_KEY_ALIAS: ${{ secrets.ALVAND_KEY_ALIAS }}
           ALVAND_KEY_PASSWORD: ${{ secrets.ALVAND_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace
+
+      # بررسی اینکه هر دو APK با یک گواهی امضا شده‌اند (شرط نصب روی هم)
+      - name: Verify APK signatures match
+        run: |
+          BT=$(echo "$ANDROID_HOME"/build-tools/* | tr ' ' '\n' | sort -V | tail -n1)
+          echo "debug:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/debug/*.apk | grep -E "Verified|SHA-256" | head -n 3
+          echo "release:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/*.apk | grep -E "Verified|SHA-256" | head -n 3
 
       - name: Upload Release APK (signed)
         uses: actions/upload-artifact@v4

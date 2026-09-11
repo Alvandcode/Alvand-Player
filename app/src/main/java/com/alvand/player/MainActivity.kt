@@ -8,8 +8,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import com.alvand.player.data.Song
+import com.alvand.player.data.ThemeMode
 import com.alvand.player.ui.navigation.AppNavHost
 import com.alvand.player.ui.navigation.Routes
 import com.alvand.player.ui.theme.AlvandTheme
@@ -27,7 +29,25 @@ class MainActivity : AppCompatActivity() {
             navTarget.value = Routes.PLAYER
         }
     }
-    private val permReq = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+    // بعد از جواب کاربر به دسترسی فایل صوتی، کتابخانه دوباره اسکن می‌شود
+    // (اسکن اولِ startup معمولاً قبل از grant اجرا شده و خالی برگشته است)
+    private val permReq = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        vm.reloadLocalSongs()
+    }
+
+    // انتخاب عکس بکگراند (OpenDocument تا دسترسی ماندگار بگیریم و بعد از ری‌استارت هم بماند)
+    private val pickBackground =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                runCatching {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+                vm.setBackground(uri.toString())
+            }
+        }
 
     companion object {
         var navTarget = mutableStateOf<String?>(null)
@@ -38,11 +58,18 @@ class MainActivity : AppCompatActivity() {
         requestPerms()
         handleIntent(intent)
         setContent {
-            AlvandTheme {
+            val mode by vm.themeMode.collectAsState()
+            val dark = when (mode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                else -> isSystemInDarkTheme()
+            }
+            AlvandTheme(darkTheme = dark) {
                 val target by navTarget
                 AppNavHost(
                     vm = vm,
                     onPickFile = { pickAudio.launch("audio/*") },
+                    onPickBackground = { pickBackground.launch(arrayOf("image/*")) },
                     pendingTarget = target,
                     onConsumeTarget = { navTarget.value = null }
                 )

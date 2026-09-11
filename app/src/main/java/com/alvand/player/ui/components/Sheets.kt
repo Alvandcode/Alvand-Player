@@ -16,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +32,7 @@ import com.alvand.player.ui.theme.*
 fun MenuSheet(
     vm: AppViewModel,
     onPickFile: () -> Unit,
+    onPickBackground: () -> Unit,
     onOpenAbout: () -> Unit,
     onPlayLink: () -> Unit,
     onDismiss: () -> Unit
@@ -42,17 +42,28 @@ fun MenuSheet(
     var showEq by remember { mutableStateOf(false) }
     var showLyrics by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
+    var showTheme by remember { mutableStateOf(false) }
+    var showBg by remember { mutableStateOf(false) }
     val sleep by vm.manager.sleepState.collectAsState()
+    val scanning by vm.isScanning.collectAsState()
+    val pal = LocalAP.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White
+        containerColor = pal.sheet
     ) {
         Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 36.dp)) {
             MenuItem(Icons.Default.Link, stringResource(R.string.direct_link)) { showLink = true }
             MenuItem(Icons.Default.FolderOpen, stringResource(R.string.audio_file)) { onPickFile(); onDismiss() }
-            MenuItem(Icons.Default.Tune, stringResource(R.string.tab_eq)) { showEq = true }
-            MenuItem(Icons.Default.Mic, stringResource(R.string.tab_lyrics)) { showLyrics = true }
+            // اسکنر کتابخانه: آهنگ‌های جدید گوشی را پیدا و به پلی‌لیست اضافه می‌کند
+            MenuItem(
+                Icons.Default.Refresh,
+                if (scanning) stringResource(R.string.scanning)
+                else stringResource(R.string.scan_songs)
+            ) {
+                vm.scanDeviceSongs()
+                onDismiss()
+            }
             MenuItem(
                 Icons.Default.Bedtime,
                 if (sleep.active) {
@@ -60,6 +71,10 @@ fun MenuSheet(
                         com.alvand.player.player.SleepTimer.formatRemaining(sleep.remainingMs)
                 } else stringResource(R.string.sleep_timer)
             ) { showSleep = true }
+            MenuItem(Icons.Default.Tune, stringResource(R.string.tab_eq)) { showEq = true }
+            MenuItem(Icons.Default.Mic, stringResource(R.string.tab_lyrics)) { showLyrics = true }
+            MenuItem(Icons.Default.DarkMode, stringResource(R.string.theme)) { showTheme = true }
+            MenuItem(Icons.Default.Image, stringResource(R.string.background)) { showBg = true }
             MenuItem(Icons.Default.Language, stringResource(R.string.language)) { showLang = true }
             MenuItem(Icons.Default.Info, stringResource(R.string.about)) { onOpenAbout(); onDismiss() }
         }
@@ -70,17 +85,20 @@ fun MenuSheet(
     if (showEq) EqSheet(vm, onDismiss = { showEq = false })
     if (showLyrics) LyricsSheet(vm, onDismiss = { showLyrics = false })
     if (showSleep) SleepTimerDialog(vm, onDismiss = { showSleep = false })
+    if (showTheme) ThemeDialog(vm, onDismiss = { showTheme = false })
+    if (showBg) BackgroundDialog(vm, onPickImage = onPickBackground, onDismiss = { showBg = false })
 }
 
 @Composable
 private fun MenuItem(icon: ImageVector, title: String, onClick: () -> Unit) {
+    val pal = LocalAP.current
     Row(
         Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = MonoInk)
+        Icon(icon, null, tint = pal.ink)
         Spacer(Modifier.width(14.dp))
-        Text(title, color = MonoInk, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text(title, color = pal.ink, fontSize = 16.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -116,10 +134,11 @@ fun DirectLinkDialog(vm: AppViewModel, onDone: () -> Unit, onDismiss: () -> Unit
 @Composable
 fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     val eq by vm.eqSettings.collectAsState()
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
+    val pal = LocalAP.current
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = pal.sheet) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 36.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.eq_title), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(stringResource(R.string.eq_title), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Switch(checked = eq.eqEnabled, onCheckedChange = { vm.updateAudio(eq.copy(eqEnabled = it)) })
             }
             // بازخورد اتصال: تا سشن صوتی نیاید، تغییر بی‌اثر است
@@ -128,7 +147,7 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Text(
                     if (eq.eqEnabled) stringResource(R.string.eq_need_play)
                     else stringResource(R.string.eq_off),
-                    color = MonoSub, fontSize = 12.sp
+                    color = pal.sub, fontSize = 12.sp
                 )
                 Spacer(Modifier.height(4.dp))
             }
@@ -139,7 +158,7 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                         onClick = { vm.updateAudio(eq.copy(preset = i)) },
                         label = { Text(p, fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MonoInk, selectedLabelColor = Color.White
+                            selectedContainerColor = pal.ink, selectedLabelColor = pal.bg
                         )
                     )
                 }
@@ -148,7 +167,7 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             val mgr = vm.manager.eqManager
             repeat(mgr.bandCount) { i ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${mgr.bandFreqHz(i) / 1000}k", color = MonoSub, fontSize = 11.sp, modifier = Modifier.width(38.dp))
+                    Text("${mgr.bandFreqHz(i) / 1000}k", color = pal.sub, fontSize = 11.sp, modifier = Modifier.width(38.dp))
                     Slider(
                         value = (eq.bandLevels.getOrNull(i) ?: 0).toFloat(),
                         onValueChange = {
@@ -157,29 +176,29 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                             vm.updateAudio(eq.copy(preset = -1, bandLevels = lv))
                         },
                         valueRange = mgr.bandRange.first.toFloat()..mgr.bandRange.last.toFloat(),
-                        colors = SliderDefaults.colors(thumbColor = MonoInk, activeTrackColor = MonoInk, inactiveTrackColor = MonoTrack),
+                        colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track),
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
-            Text(stringResource(R.string.bass_boost), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(stringResource(R.string.bass_boost), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Slider(eq.bassStrength.toFloat(), { vm.updateAudio(eq.copy(bassStrength = it.toInt())) },
                 valueRange = 0f..1000f,
-                colors = SliderDefaults.colors(thumbColor = MonoInk, activeTrackColor = MonoInk, inactiveTrackColor = MonoTrack))
-            Text(stringResource(R.string.volume_boost, eq.volumeBoostDb), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
+            Text(stringResource(R.string.volume_boost, eq.volumeBoostDb), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Slider(eq.volumeBoostDb.toFloat(), { vm.updateAudio(eq.copy(volumeBoostDb = it.toInt())) },
                 valueRange = 0f..10f, steps = 9,
-                colors = SliderDefaults.colors(thumbColor = MonoInk, activeTrackColor = MonoInk, inactiveTrackColor = MonoTrack))
+                colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.denoise), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.denoise), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Switch(checked = eq.noiseReduction, onCheckedChange = { vm.updateAudio(eq.copy(noiseReduction = it)) })
             }
             if (eq.noiseReduction) {
-                Text(stringResource(R.string.denoise_level, eq.noiseLevel), color = MonoSub, fontSize = 12.sp)
+                Text(stringResource(R.string.denoise_level, eq.noiseLevel), color = pal.sub, fontSize = 12.sp)
                 Slider(eq.noiseLevel.toFloat(), { vm.updateAudio(eq.copy(noiseLevel = it.toInt())) },
                     valueRange = 0f..100f,
-                    colors = SliderDefaults.colors(thumbColor = MonoInk, activeTrackColor = MonoInk, inactiveTrackColor = MonoTrack))
-                Text(stringResource(R.string.denoise_desc), color = MonoSub, fontSize = 11.sp)
+                    colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
+                Text(stringResource(R.string.denoise_desc), color = pal.sub, fontSize = 11.sp)
             }
         }
     }
@@ -196,23 +215,24 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     val activeIdx = remember(lyrics, pos) {
         lyrics.lines.indexOfLast { it.timeMs <= pos }.coerceAtLeast(0)
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
+    val pal = LocalAP.current
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = pal.sheet) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 36.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("${stringResource(R.string.tab_lyrics)} • ${lyrics.source}",
-                    color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 TextButton(onClick = { vm.refreshLyricsOnline() }) { Text(stringResource(R.string.get_lyrics)) }
             }
-            if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = MonoInk)
+            if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = pal.ink)
             if (lyrics.lines.isEmpty() && !loading) {
-                Text(stringResource(R.string.no_lyrics), color = MonoSub, fontSize = 13.sp)
+                Text(stringResource(R.string.no_lyrics), color = pal.sub, fontSize = 13.sp)
             } else {
                 LazyColumn(Modifier.heightIn(max = 340.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(lyrics.lines.withIndex().toList()) { (i, l) ->
                                     val active = i == activeIdx
                                     Text(
                                         l.text,
-                                        color = if (active) MonoInk else MonoSub.copy(0.6f),
+                                        color = if (active) pal.ink else pal.sub.copy(alpha = 0.6f),
                                         fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                                         fontSize = if (active) 16.sp else 14.sp,
                                         textAlign = TextAlign.Center,
@@ -235,7 +255,7 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             Button(
                 onClick = { vm.saveLyricsManual(manual); manual = "" },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MonoInk, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = pal.ink, contentColor = pal.bg)
             ) { Text(stringResource(R.string.save_lyrics)) }
         }
     }
@@ -264,41 +284,40 @@ fun MarqueeLine(
     )
 }
 
-/** کارت لیریک با فاصله از اطراف + خط فعال متحرک */
+/** کارت لیریک شیشه‌ای با فاصله از اطراف + خط فعال متحرک */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LyricsPreviewCard(vm: AppViewModel, onOpenFull: () -> Unit) {
     val lyrics by vm.lyrics.collectAsState()
     val pos = vm.playerState.collectAsState().value.positionMs
+    val pal = LocalAP.current
     val activeIdx = remember(lyrics, pos) {
         lyrics.lines.indexOfLast { it.timeMs <= pos }.coerceAtLeast(0)
     }
-    Surface(
-        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp)
-            .clickable { onOpenFull() },
+    GlassCard(
+        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp),
         shape = RoundedCornerShape(20.dp),
-        color = MonoBg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MonoLine)
+        onClick = onOpenFull
     ) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "${stringResource(R.string.tab_lyrics)} • ${lyrics.source}",
-                    color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                    color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp,
                     modifier = Modifier.weight(1f)
                 )
-                Icon(Icons.Default.OpenInNew, null, tint = MonoSub, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.OpenInNew, null, tint = pal.sub, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.height(6.dp))
             if (lyrics.lines.isEmpty()) {
-                Text(stringResource(R.string.no_lyrics), color = MonoSub, fontSize = 12.sp, maxLines = 2)
+                Text(stringResource(R.string.no_lyrics), color = pal.sub, fontSize = 12.sp, maxLines = 2)
             } else {
                 MarqueeLine(
                     lyrics.lines[activeIdx.coerceIn(lyrics.lines.indices)].text,
-                    MonoInk, 15.sp, true, Modifier.fillMaxWidth()
+                    pal.ink, 15.sp, true, Modifier.fillMaxWidth()
                 )
                 lyrics.lines.getOrNull(activeIdx + 1)?.let {
-                    Text(it.text, color = MonoSub, fontSize = 12.sp, maxLines = 1, modifier = Modifier.fillMaxWidth())
+                    Text(it.text, color = pal.sub, fontSize = 12.sp, maxLines = 1, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

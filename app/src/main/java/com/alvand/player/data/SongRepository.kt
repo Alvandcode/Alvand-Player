@@ -29,8 +29,8 @@ class SongRepository @Inject constructor(
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.DURATION,
-            MediaStore.Audio.Media.DATA
+            MediaStore.Audio.Media.DURATION
+            // NOTE: ستون DATA عمداً نیست — از اندروید ۱۰ به بعد deprecated است و روی بعضی گوشی‌ها کوئری را می‌شکند
         )
         // موسیقی‌های واقعی (نه نوتیفیکیشن/رینگتون خیلی کوتاه)
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"

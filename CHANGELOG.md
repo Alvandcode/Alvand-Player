@@ -2,6 +2,31 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added — جدید
+- 🔍 **Library scanner**: songs load automatically once audio permission is
+  granted, a «Scan device songs» menu button re-scans on demand (with a result
+  toast), and a MediaStore observer silently adds new tracks while the app is
+  open. Manual links/files are preserved.
+  🔍 **اسکنر کتابخانه**: لود خودکار بعد از دادن دسترسی، دکمه اسکن دستی در منو
+  و دیده‌بان خودکار آهنگ‌های جدید؛ لینک‌ها و فایل‌های دستی حفظ می‌شوند.
+- 🫧 **Liquid glass + dark/light theme + custom background**: frosted-glass
+  cards/sheets, system/light/dark theme picker (DataStore-persisted) and an
+  optional user photo behind the player panel (persisted URI permission);
+  the art panel keeps one shape with or without cover art.
+  🫧 **لیکویید گلس + تم روشن/تیره + بکگراند دلخواه**: کارت‌ها و شیت‌های
+  شیشه‌ای، انتخاب تم سیستم/روشن/تیره و عکس دلخواه زیر کادر پخش؛ فرم کادر
+  با کاور یا بدون کاور یکی می‌ماند.
+
+### Fixed — رفع‌شده
+- 🔏 **Install over previous version**: debug APKs from CI are now signed with
+  the same stable keystore as release (ephemeral runner debug keys used to
+  change every run, forcing an uninstall before every update).
+  قدم «Verify APK signatures match» در CI یکسان‌بودن گواهی‌ها را چک می‌کند.
+  🔏 **نصب آپدیت روی نسخه قبلی**: خروجی‌های debug هم با همان کلید ثابت امضا
+  می‌شوند؛ دیگر لازم نیست برای هر آپدیت اپ را حذف کنید (یک‌بار آخر حذف/نصب لازم است).
+
 ## [1.1.0] — 2026-09-11
 
 ### Added — جدید

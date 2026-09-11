@@ -25,6 +25,7 @@ import com.alvand.player.ui.screens.WelcomeScreen
 fun AppNavHost(
     vm: AppViewModel,
     onPickFile: () -> Unit,
+    onPickBackground: () -> Unit,
     pendingTarget: String?,
     onConsumeTarget: () -> Unit,
     navController: NavHostController = rememberNavController()
@@ -51,6 +52,7 @@ fun AppNavHost(
             PlayerScreen(
                 vm,
                 onPickFile = onPickFile,
+                onPickBackground = onPickBackground,
                 onOpenAbout = { navController.navigate(Routes.ABOUT) }
             )
         }

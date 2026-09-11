@@ -62,4 +62,20 @@
     <!-- ویجت هوم‌اسکرین -->
     <string name="widget_name">الوند پلیر</string>
     <string name="widget_desc">پخش، توقف و آهنگ بعدی بدون باز کردن اپ</string>
+    <!-- اسکنر کتابخانه -->
+    <string name="scan_songs">اسکن آهنگ‌های گوشی</string>
+    <string name="scanning">در حال اسکن…</string>
+    <string name="scan_new">%1$d آهنگ جدید اضافه شد</string>
+    <string name="scan_none">به‌روز است • %1$d آهنگ</string>
+    <!-- تم -->
+    <string name="theme">تم ظاهری</string>
+    <string name="theme_system">پیش‌فرض سیستم</string>
+    <string name="theme_light">روشن</string>
+    <string name="theme_dark">تیره</string>
+    <!-- بکگراند دلخواه -->
+    <string name="background">بکگراند</string>
+    <string name="background_desc">یک عکس زیر کادر پخش. فرم کادر با کاور یا بدون کاور یکی می‌ماند.</string>
+    <string name="background_set">عکس دلخواه فعال است. عوضش کن یا به پیش‌فرض برگرد.</string>
+    <string name="background_pick">انتخاب عکس…</string>
+    <string name="background_remove">حذف (پیش‌فرض)</string>
 </resources>

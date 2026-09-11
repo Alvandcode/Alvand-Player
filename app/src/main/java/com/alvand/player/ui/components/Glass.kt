@@ -37,8 +37,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.data.Artwork
@@ -107,6 +109,9 @@ fun MiniBars(
 
 /**
  * ردیف کنترل‌ها: شافل | قبلی | پلی بزرگ | بعدی | تکرار (۳ حالت: خاموش/همه/تک‌آهنگ)
+ *
+ * جهت ردیف عمداً همیشه چپ‌به‌راست است تا با عوض شدن زبان (راست‌به‌چپ)
+ * جای دکمه‌ها عوض نشود و حافظه عضلانی کاربر به‌هم نریزد.
  */
 @Composable
 fun ControlsRow(
@@ -122,21 +127,23 @@ fun ControlsRow(
     modifier: Modifier = Modifier,
     accent: Color = MonoInk
 ) {
+    val pal = LocalAP.current
     val main = if (big) 76.dp else 58.dp
     val sub = if (big) 30.dp else 26.dp
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onShuffle, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.Shuffle, null, tint = if (shuffle) MonoInk else MonoSub.copy(0.5f), modifier = Modifier.size(sub))
+            Icon(Icons.Default.Shuffle, null, tint = if (shuffle) pal.ink else pal.sub.copy(alpha = 0.5f), modifier = Modifier.size(sub))
         }
         IconButton(onClick = onPrev, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.SkipPrevious, null, tint = MonoInk, modifier = Modifier.size(34.dp))
+            Icon(Icons.Default.SkipPrevious, null, tint = pal.ink, modifier = Modifier.size(34.dp))
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             FilledIconButton(
                 onClick = onToggle,
                 modifier = Modifier.size(main),
                 shape = CircleShape,
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = accent, contentColor = Color.White)
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = accent, contentColor = pal.bg)
             ) {
                 Icon(
                     if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -145,15 +152,16 @@ fun ControlsRow(
             }
         }
         IconButton(onClick = onNext, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.SkipNext, null, tint = MonoInk, modifier = Modifier.size(34.dp))
+            Icon(Icons.Default.SkipNext, null, tint = pal.ink, modifier = Modifier.size(34.dp))
         }
         IconButton(onClick = onRepeat, modifier = Modifier.weight(1f)) {
             Icon(
                 if (repeatMode == 2) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                null, tint = if (repeatMode == 0) MonoSub.copy(0.5f) else MonoInk,
+                null, tint = if (repeatMode == 0) pal.sub.copy(alpha = 0.5f) else pal.ink,
                 modifier = Modifier.size(sub)
             )
         }
+    }
     }
 }
 
@@ -290,9 +298,10 @@ fun ProgressArc(
                 }
             }
     ) {
+        val pal = LocalAP.current
         val path = smilePath(size.width, size.height)
         val sw = 5.dp.toPx()
-        drawPath(path.asComposePath(), color = MonoTrack, style = Stroke(sw, cap = StrokeCap.Round))
+        drawPath(path.asComposePath(), color = pal.track, style = Stroke(sw, cap = StrokeCap.Round))
         val p = progress.coerceIn(0f, 1f)
         if (p > 0.001f) {
             val pm = PathMeasure(path, false)
@@ -304,7 +313,7 @@ fun ProgressArc(
                 val pos = FloatArray(2)
                 pm.getPosTan((len * p).coerceAtMost(len), pos, null)
                 val kc = Offset(pos[0], pos[1])
-                drawCircle(Color.White, radius = 11.dp.toPx(), center = kc)
+                drawCircle(pal.bg, radius = 11.dp.toPx(), center = kc)
                 drawCircle(progColor, radius = 11.dp.toPx(), center = kc, style = Stroke(3.dp.toPx()))
                 drawCircle(progColor, radius = 3.5.dp.toPx(), center = kc)
             }

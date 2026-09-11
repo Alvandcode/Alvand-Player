@@ -35,8 +35,9 @@ android {
         )
     }
     signingConfigs {
-        create("release") {
-            // امضای پایدار: اگر کی‌استور نیست (بیلد لوکال بدون سکرت)، در buildTypes از debug استفاده می‌شود
+        // کانفیگ «alvand»: کی‌استور ثابت پروژه. اگر فایل/پسورد نباشد، استفاده نمی‌شود
+        // و هر buildType به امضای پیش‌فرض خودش برمی‌گردد.
+        create("alvand") {
             storeFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: "alvand-release.keystore")
             storeType = "PKCS12"
             storePassword = System.getenv("ALVAND_KEYSTORE_PASSWORD")
@@ -44,10 +45,14 @@ android {
             keyPassword = System.getenv("ALVAND_KEY_PASSWORD")
         }
     }
+    // true یعنی کی‌استور ثابت در دسترس است (فایل هست + پسورد ست شده)
+    // در CI سکرت‌ها ست‌اند؛ لوکال فقط وقتی فایل و env هر دو باشند.
+    val stableKsFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: "alvand-release.keystore")
+    val hasStableKs = stableKsFile.exists() && !System.getenv("ALVAND_KEYSTORE_PASSWORD").isNullOrEmpty()
     buildTypes {
         release {
-            val ksFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: "alvand-release.keystore")
-            signingConfig = if (ksFile.exists()) signingConfigs.getByName("release")
+            // امضای پایدار: نسخه جدید همیشه روی قبلی نصب می‌شود
+            signingConfig = if (hasStableKs) signingConfigs.getByName("alvand")
             else signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
@@ -58,6 +63,9 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            // مهم: بیلد debug هم با همان کلید ثابت امضا می‌شود تا خروجی‌های
+            // هر ران CI روی هم نصب شوند (کلید debug رانرها موقتی است و هر بار عوض می‌شود)
+            if (hasStableKs) signingConfig = signingConfigs.getByName("alvand")
         }
     }
     compileOptions {

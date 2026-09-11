@@ -3,8 +3,10 @@ package com.alvand.player.ui.theme
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -40,23 +42,22 @@ data class DynamicAccent(
 }
 
 /** گرادیان پس‌زمینه صفحه پلیر بر اساس accent */
-fun dynamicBackgroundBrush(accent: DynamicAccent): Brush = Brush.verticalGradient(
-    listOf(
-        accent.accentDark.copy(alpha = 0.28f),
-        accent.accent.copy(alpha = 0.10f),
-        MonoBg
+fun dynamicBackgroundBrush(accent: DynamicAccent, base: Color = MonoBg): Brush =
+    Brush.verticalGradient(
+        listOf(
+            accent.accentDark.copy(alpha = 0.28f),
+            accent.accent.copy(alpha = 0.10f),
+            base
+        )
     )
-)
 
-/** رنگ کاور → accent قابل‌استفاده در UI روشن */
-fun sanitizeAccent(raw: Color): Color {
+/** رنگ کاور → accent قابل‌استفاده در UI (روشن/تیره) */
+fun sanitizeAccent(raw: Color, dark: Boolean = false): Color {
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(raw.toArgb(), hsl)
     // اشباع و روشنایی را در بازه خوشگل نگه دار
-    val s = hsl[1].coerceIn(0.45f, 0.95f)
-    val l = hsl[2].coerceIn(0.28f, 0.55f)
-    hsl[1] = s
-    hsl[2] = l
+    hsl[1] = hsl[1].coerceIn(0.45f, 0.95f)
+    hsl[2] = if (dark) hsl[2].coerceIn(0.55f, 0.80f) else hsl[2].coerceIn(0.28f, 0.55f)
     return Color(ColorUtils.HSLToColor(hsl))
 }
 
@@ -65,19 +66,23 @@ fun sanitizeAccent(raw: Color): Color {
  * تغییر آهنگ → تغییر نرم رنگ‌ها در UI (با animateColorAsState در محل مصرف).
  */
 @Composable
-fun rememberDynamicAccent(song: Song?): State<DynamicAccent> {
+fun rememberDynamicAccent(song: Song?, dark: Boolean = false): State<DynamicAccent> {
     val ctx = LocalContext.current
-    var accent by remember { mutableStateOf(DynamicAccent.Fallback) }
-    LaunchedEffect(song?.id) {
+    val fallback = remember(dark) {
+        if (dark) DynamicAccent(AlvandLavender, ArtDark2, fromArtwork = false)
+        else DynamicAccent.Fallback
+    }
+    var accent by remember { mutableStateOf(fallback) }
+    LaunchedEffect(song?.id, dark) {
         if (song == null) {
-            accent = DynamicAccent.Fallback
+            accent = fallback
         } else {
             val c = Artwork.colors(song, ctx)
             accent = if (c == null || c.dominant == android.graphics.Color.BLACK) {
-                DynamicAccent.Fallback
+                fallback
             } else {
                 val raw = Color(c.dominant)
-                val vib = sanitizeAccent(raw)
+                val vib = sanitizeAccent(raw, dark)
                 val darkRaw = Color(c.dark)
                 val darkHsl = FloatArray(3).also {
                     ColorUtils.colorToHSL(darkRaw.toArgb(), it)
@@ -103,36 +108,52 @@ fun DynamicAccent.animated(): DynamicAccent {
 }
 
 /**
- * تم الوند با accent داینامیک.
- * اسکیم روشن می‌ماند (هویت مینیمال) ولی primary/کنترل‌ها هم‌رنگ کاور می‌شوند.
+ * تم الوند با accent داینامیک + حالت روشن/تیره.
+ * اسکیم روشن هویت مینیمال را نگه می‌دارد؛ تیره نسخه OLED-دوست همان است.
  */
 @Composable
 fun AlvandTheme(
     dynamic: DynamicAccent? = null,
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val accent = dynamic?.accent ?: MonoInk
-    val scheme = lightColorScheme(
+    val pal = if (darkTheme) DarkPalette else LightPalette
+    val accent = dynamic?.accent ?: if (darkTheme) AlvandLavender else MonoInk
+    val scheme = if (darkTheme) darkColorScheme(
+        primary = accent,
+        onPrimary = Color(0xFF0C0C10),
+        secondary = accent,
+        onSecondary = Color(0xFF0C0C10),
+        background = pal.bg,
+        onBackground = pal.ink,
+        surface = pal.card,
+        onSurface = pal.ink,
+        surfaceVariant = pal.card,
+        onSurfaceVariant = pal.sub,
+        outline = pal.line
+    ) else lightColorScheme(
         primary = accent,
         onPrimary = Color.White,
         secondary = accent,
         onSecondary = Color.White,
-        background = MonoBg,
-        onBackground = MonoInk,
-        surface = Color.White,
-        onSurface = MonoInk,
-        surfaceVariant = Color.White,
-        onSurfaceVariant = MonoSub,
-        outline = MonoLine
+        background = pal.bg,
+        onBackground = pal.ink,
+        surface = pal.card,
+        onSurface = pal.ink,
+        surfaceVariant = pal.card,
+        onSurfaceVariant = pal.sub,
+        outline = pal.line
     )
-    MaterialTheme(
-        colorScheme = scheme,
-        typography = MaterialTheme.typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalAP provides pal) {
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = MaterialTheme.typography,
+            content = content
+        )
+    }
 }
 
 /** مودیفایر پس‌زمینه گرادیانی داینامیک */
 @Composable
-fun Modifier.dynamicBackground(accent: DynamicAccent): Modifier =
-    background(dynamicBackgroundBrush(accent))
+fun Modifier.dynamicBackground(accent: DynamicAccent, base: Color = LocalAP.current.bg): Modifier =
+    background(dynamicBackgroundBrush(accent, base))
