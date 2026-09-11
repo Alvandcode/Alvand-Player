@@ -11,9 +11,15 @@ import com.alvand.player.MainActivity
 class PlaybackService : MediaSessionService() {
     private var session: MediaSession? = null
 
+    companion object {
+        /** آی‌دی سشن صوتی پلیر — اکولایزر/تقویت صدا به آن وصل می‌شود */
+        @Volatile var audioSessionId: Int = 0
+    }
+
     override fun onCreate() {
         super.onCreate()
         val player = ExoPlayer.Builder(this).build()
+        audioSessionId = player.audioSessionId
         // تپ روی نوتیفیکیشن → باز شدن اپ
         val sessionActivity = PendingIntent.getActivity(
             this, 0,

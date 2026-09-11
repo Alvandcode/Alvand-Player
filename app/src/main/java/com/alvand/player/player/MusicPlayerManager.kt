@@ -75,7 +75,7 @@ class MusicPlayerManager(context: Context) {
             {
                 controller = runCatching { controllerFuture.get() }.getOrNull()
                 controller?.addListener(listener)
-                controller?.let { eqManager.attach(it.audioSessionId) }
+                attachEq()
                 pendingQueue?.let { q ->
                     applyQueue(q, pendingIndex, pendingAutoplay)
                     pendingQueue = null
@@ -126,7 +126,7 @@ class MusicPlayerManager(context: Context) {
         // اکولایزر را به سشن جدید وصل کن
         scope.launch {
             delay(400)
-            controller?.let { eqManager.attach(it.audioSessionId) }
+            attachEq()
         }
     }
 
@@ -188,6 +188,17 @@ class MusicPlayerManager(context: Context) {
 
     fun clearError() { _ui.value = _ui.value.copy(error = null) }
 
+    private var lastEqSession = 0
+
+    /** اتصال اکولایزر به سشن صوتی سرویس (فقط وقتی عوض شده باشد) */
+    private fun attachEq() {
+        val id = PlaybackService.audioSessionId
+        if (id > 0 && id != lastEqSession) {
+            lastEqSession = id
+            eqManager.attach(id)
+        }
+    }
+
     private fun startProgress() {
         progressJob?.cancel()
         progressJob = scope.launch {
@@ -199,6 +210,7 @@ class MusicPlayerManager(context: Context) {
     }
 
     private fun push() {
+        attachEq()
         val c = controller
         val q = _ui.value.queue
         val idx = c?.currentMediaItemIndex ?: -1
