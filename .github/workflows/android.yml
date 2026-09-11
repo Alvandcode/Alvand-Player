@@ -105,7 +105,6 @@ jobs:
         with:
           tag_name: latest
           name: Latest build
-          prerelease: true
           files: |
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab
