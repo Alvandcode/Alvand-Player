@@ -256,6 +256,8 @@ fun ProgressArc(
 ) {
     val latestSeek by rememberUpdatedState(onSeekMs)
     val latestDur by rememberUpdatedState(durationMs)
+    // بیرون از DrawScope خوانده می‌شود (داخل Canvas کامپوزبل نیست)
+    val pal = LocalAP.current
     Canvas(
         modifier
             .height(86.dp)
@@ -298,7 +300,6 @@ fun ProgressArc(
                 }
             }
     ) {
-        val pal = LocalAP.current
         val path = smilePath(size.width, size.height)
         val sw = 5.dp.toPx()
         drawPath(path.asComposePath(), color = pal.track, style = Stroke(sw, cap = StrokeCap.Round))
