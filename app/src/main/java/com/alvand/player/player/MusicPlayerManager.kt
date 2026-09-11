@@ -28,7 +28,8 @@ data class PlayerUiState(
     val durationMs: Long = 0L,
     val queue: List<Song> = emptyList(),
     val shuffle: Boolean = false,
-    val repeatOne: Boolean = false,
+    /** 0=خاموش، 1=تکرار همه، 2=تکرار تک‌آهنگ */
+    val repeatMode: Int = 0,
     val error: String? = null
 )
 
@@ -178,10 +179,16 @@ class MusicPlayerManager(context: Context) {
         c.shuffleModeEnabled = _ui.value.shuffle
     }
 
-    fun toggleRepeatOne() {
+    /** چرخه تکرار: خاموش → همه → تک‌آهنگ → خاموش */
+    fun cycleRepeat() {
         val c = controller ?: return
-        _ui.value = _ui.value.copy(repeatOne = !_ui.value.repeatOne)
-        c.repeatMode = if (_ui.value.repeatOne) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_ALL
+        val n = (_ui.value.repeatMode + 1) % 3
+        _ui.value = _ui.value.copy(repeatMode = n)
+        c.repeatMode = when (n) {
+            1 -> Player.REPEAT_MODE_ALL
+            2 -> Player.REPEAT_MODE_ONE
+            else -> Player.REPEAT_MODE_OFF
+        }
     }
 
     fun applyAudio(s: AudioSettings) = eqManager.applyAll(s)
@@ -194,8 +201,11 @@ class MusicPlayerManager(context: Context) {
     private fun attachEq() {
         val id = PlaybackService.audioSessionId
         if (id > 0 && id != lastEqSession) {
-            lastEqSession = id
-            eqManager.attach(id)
+            // اگر اتصال شکست خورد، دفعه بعد دوباره تلاش می‌شود
+            runCatching {
+                eqManager.attach(id)
+                lastEqSession = id
+            }.onFailure { lastEqSession = 0 }
         }
     }
 

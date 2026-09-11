@@ -56,24 +56,33 @@ class EqualizerManager {
         release()
         sessionId = audioSessionId
         _settings.value = s
+        // هسته اکولایزر: اگر ساخته نشود خطا بالا می‌رود تا بعداً دوباره تلاش شود
+        eq = Equalizer(0, audioSessionId).apply { enabled = s.eqEnabled }
+        // بقیه افکت‌ها جدا جدا تا خرابی یکی، بقیه را از کار نیندازد
         runCatching {
-            eq = Equalizer(0, audioSessionId).apply { enabled = s.eqEnabled }
             bass = BassBoost(0, audioSessionId).apply {
                 enabled = s.bassStrength > 0
                 setStrength(s.bassStrength.toShort().coerceIn(0, 1000))
             }
+        }
+        runCatching {
             loud = LoudnessEnhancer(audioSessionId).apply {
                 enabled = s.volumeBoostDb > 0
                 // هر 100 واحد ≈ 1dB
                 setTargetGain(s.volumeBoostDb * 100)
             }
+        }
+        runCatching {
             reverb = PresetReverb(0, audioSessionId).apply {
                 enabled = s.reverbPreset > 0
                 if (s.reverbPreset > 0) preset = s.reverbPreset.toShort()
             }
-            applyAll(s)
         }
+        applyAll(s)
     }
+
+    /** آیا اکولایزر به سشن صوتی وصل است؟ */
+    fun isAttached(): Boolean = eq != null
 
     fun applyAll(s: AudioSettings) {
         _settings.value = s
@@ -81,7 +90,10 @@ class EqualizerManager {
         runCatching {
             e.enabled = s.eqEnabled
             if (s.preset >= 0 && s.preset < e.numberOfPresets && !s.noiseReduction) {
-                e.usePreset(s.preset.toShort())
+                // بعضی دستگاه‌ها usePreset را سایلنت رد می‌کنند؛ آن‌وقت منحنی دستی اعمال می‌شود
+                val name = runCatching { e.getPresetName(s.preset.toShort()) }.getOrNull() ?: ""
+                val ok = runCatching { e.usePreset(s.preset.toShort()) }.isSuccess
+                if (!ok) applyNamedCurve(e, name)
             } else {
                 s.bandLevels.forEachIndexed { i, lvl ->
                     if (i < e.numberOfBands) e.setBandLevel(i.toShort(), lvl.toShort())
@@ -99,14 +111,60 @@ class EqualizerManager {
         }
     }
 
+    /** منحنی‌های جایگزین پریست (dB در فرکانس‌های 60/230/910/3600/14000Hz) */
+    private val presetCurves = mapOf(
+        "rock" to floatArrayOf(4f, 3f, -1f, 2f, 4f),
+        "pop" to floatArrayOf(-2f, -1f, 1f, 2f, 1f),
+        "jazz" to floatArrayOf(3f, 2f, 0f, 2f, 3f),
+        "classical" to floatArrayOf(3f, 2f, -1f, 1f, 2f),
+        "dance" to floatArrayOf(5f, 3f, 0f, 1f, 2f),
+        "bass" to floatArrayOf(5f, 4f, 1f, 0f, 0f),
+        "vocal" to floatArrayOf(0f, 1f, 3f, 3f, 1f),
+        "treble" to floatArrayOf(-2f, -1f, 1f, 3f, 5f),
+        "latin" to floatArrayOf(3f, 2f, 0f, 2f, 3f),
+        "party" to floatArrayOf(3f, 2f, 0f, 2f, 3f),
+        "piano" to floatArrayOf(2f, 1f, 0f, 2f, 1f)
+    )
+    private val curveAnchors = floatArrayOf(60f, 230f, 910f, 3600f, 14000f)
+
+    /** اعمال دستی پریست با درون‌یابی لگاریتمی روی باندهای واقعی دستگاه */
+    private fun applyNamedCurve(e: Equalizer, name: String) {
+        val curve = presetCurves.entries.firstOrNull {
+            name.lowercase().contains(it.key)
+        }?.value ?: return
+        val lo = bandRange.first
+        val hi = bandRange.last
+        for (i in 0 until e.numberOfBands) {
+            val f = runCatching { e.getCenterFreq(i.toShort()) / 1000f }.getOrNull() ?: 0f
+            val db = interpCurve(f, curve)
+            e.setBandLevel(i.toShort(), (db * 100).toInt().coerceIn(lo, hi).toShort())
+        }
+    }
+
+    private fun interpCurve(freqHz: Float, curve: FloatArray): Float {
+        val x = kotlin.math.log10(freqHz.coerceAtLeast(20f))
+        val xs = floatArrayOf(
+            kotlin.math.log10(curveAnchors[0]), kotlin.math.log10(curveAnchors[1]),
+            kotlin.math.log10(curveAnchors[2]), kotlin.math.log10(curveAnchors[3]),
+            kotlin.math.log10(curveAnchors[4])
+        )
+        if (x <= xs[0]) return curve[0]
+        for (k in 0 until xs.size - 1) {
+            if (x <= xs[k + 1]) {
+                val t = (x - xs[k]) / (xs[k + 1] - xs[k])
+                return curve[k] + t * (curve[k + 1] - curve[k])
+            }
+        }
+        return curve.last()
+    }
+
     /**
      * حذف نویز مبتنی بر EQ:
      * - برش Hiss (باندهای بالای 8kHz کم می‌شوند)
      * - ناچ Hum برق 50/60Hz (باند پایین کم می‌شود)
      * - کمی بوست وضوح وکال (1-4kHz)
      */
-    private fun applyNoiseReductionLocked(level: Int) {
-        val e = eq ?: return
+    private fun applyNoiseReductionLocked(level: Int) {        val e = eq ?: return
         val n = e.numberOfBands
         if (n <= 0) return
         val k = level / 100f // 0..1

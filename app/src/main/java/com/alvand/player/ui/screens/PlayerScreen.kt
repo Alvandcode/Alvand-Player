@@ -6,7 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -25,7 +27,7 @@ import com.alvand.player.ui.components.*
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.launch
 
-/** صفحه اصلی: آرت + حلقه پیشرفت (قاب راست) و لیست کشویی (قاب چپ) */
+/** صفحه اصلی: آرت + نوار پیشرفت زیر کادر + لیست کشویی */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
@@ -42,6 +44,7 @@ fun PlayerScreen(
     var showLyricsFull by remember { mutableStateOf(false) }
     val current = state.current
     val dur = state.durationMs.coerceAtLeast(1L)
+    val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
 
     LaunchedEffect(state.error) {
         state.error?.let {
@@ -117,12 +120,12 @@ fun PlayerScreen(
                     ControlsRow(
                         playing = state.isPlaying,
                         shuffle = state.shuffle,
-                        repeatOne = state.repeatOne,
+                        repeatMode = state.repeatMode,
                         onShuffle = { vm.manager.toggleShuffle() },
                         onPrev = { vm.manager.prev() },
                         onToggle = { vm.manager.togglePlayPause() },
                         onNext = { vm.manager.next() },
-                        onRepeat = { vm.manager.toggleRepeatOne() },
+                        onRepeat = { vm.manager.cycleRepeat() },
                         big = false,
                         modifier = Modifier.padding(top = 6.dp, bottom = 28.dp)
                     )
@@ -130,45 +133,58 @@ fun PlayerScreen(
             }
         }
     ) {
-        Column(Modifier.fillMaxSize().background(MonoBg)) {
-            // نوار بالا (بدون بک — صفحه اصلی ریشه است)
-            Row(
-                Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+        // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
+        BoxWithConstraints(Modifier.fillMaxSize().background(MonoBg)) {
+            val wide = maxWidth > 600.dp
+            val artH = (maxHeight * 0.44f).coerceIn(230.dp, 460.dp)
+            Column(
+                Modifier
+                    .then(if (wide) Modifier.width(560.dp).align(Alignment.TopCenter) else Modifier.fillMaxSize())
+                    .verticalScroll(rememberScrollState())
             ) {
-                IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Menu, null, tint = MonoInk) }
+                // نوار بالا (بدون بک — صفحه اصلی ریشه است)
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Menu, null, tint = MonoInk) }
+                }
+                // کادر آرت
+                ArtPanel(
+                    song = current,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp).height(artH)
+                )
+                Spacer(Modifier.height(4.dp))
+                // نوار پرشونده جدا زیر کادر (هم‌رنگ دکمه‌ها)
+                ProgressArc(
+                    progress = if (dur > 0) shownPos.toFloat() / dur else 0f,
+                    durationMs = dur,
+                    onSeekMs = { vm.manager.seekTo(it) },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 34.dp)
+                )
+                Row(
+                    Modifier.align(Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(fmtTime(shownPos), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(" / ${fmtTime(state.durationMs)}", color = MonoSub, fontSize = 12.sp)
+                }
+                Spacer(Modifier.height(8.dp))
+                ControlsRow(
+                    playing = state.isPlaying,
+                    shuffle = state.shuffle,
+                    repeatMode = state.repeatMode,
+                    onShuffle = { vm.manager.toggleShuffle() },
+                    onPrev = { vm.manager.prev() },
+                    onToggle = { vm.manager.togglePlayPause() },
+                    onNext = { vm.manager.next() },
+                    onRepeat = { vm.manager.cycleRepeat() },
+                    big = true
+                )
+                // فضای نوار کشویی پایین
+                Spacer(Modifier.height(118.dp))
             }
-            // آرت کشیده با حلقه پیشرفت دور نیم‌دایره
-            ArtPanel(
-                song = current,
-                progress = if (dur > 0) state.positionMs.toFloat() / dur else 0f,
-                onSeek = { f -> vm.manager.seekTo((f * dur).toLong()) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp).weight(1f)
-            )
-            Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier.align(Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // گاهی استریم مدت اشتباه می‌دهد؛ elapsed هرگز از total بیشتر نشان داده نمی‌شود
-                val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
-                Text(fmtTime(shownPos), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text(" / ${fmtTime(state.durationMs)}", color = MonoSub, fontSize = 12.sp)
-            }
-            Spacer(Modifier.height(8.dp))
-            ControlsRow(
-                playing = state.isPlaying,
-                shuffle = state.shuffle,
-                repeatOne = state.repeatOne,
-                onShuffle = { vm.manager.toggleShuffle() },
-                onPrev = { vm.manager.prev() },
-                onToggle = { vm.manager.togglePlayPause() },
-                onNext = { vm.manager.next() },
-                onRepeat = { vm.manager.toggleRepeatOne() },
-                big = true
-            )
-            Spacer(Modifier.height(118.dp))
         }
     }
 }

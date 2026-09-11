@@ -48,6 +48,8 @@
     <string name="play_error">Cannot play this file (format or access problem).</string>
     <string name="allow_access">To see your on-device songs, allow access to music files.</string>
     <string name="allow">Allow</string>
+    <string name="eq_need_play">Play a song first to hear the effect.</string>
+    <string name="eq_off">Equalizer is off.</string>
     <string name="menu">Menu</string>
     <string name="shuffle">Shuffle</string>
     <string name="repeat">Repeat</string>

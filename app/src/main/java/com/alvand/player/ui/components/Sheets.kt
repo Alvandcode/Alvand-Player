@@ -112,6 +112,16 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Text(stringResource(R.string.eq_title), color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Switch(checked = eq.eqEnabled, onCheckedChange = { vm.updateAudio(eq.copy(eqEnabled = it)) })
             }
+            // بازخورد اتصال: تا سشن صوتی نیاید، تغییر بی‌اثر است
+            vm.playerState.collectAsState().value
+            if (!vm.manager.eqManager.isAttached()) {
+                Text(
+                    if (eq.eqEnabled) stringResource(R.string.eq_need_play)
+                    else stringResource(R.string.eq_off),
+                    color = MonoSub, fontSize = 12.sp
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(vm.manager.eqManager.presets.take(8).withIndex().toList()) { (i, p) ->
                     FilterChip(

@@ -48,6 +48,8 @@
     <string name="play_error">پخش این فایل ممکن نیست (مشکل فرمت یا دسترسی).</string>
     <string name="allow_access">برای دیدن آهنگ‌های گوشی، دسترسی به فایل‌های صوتی را بدهید.</string>
     <string name="allow">اجازه بده</string>
+    <string name="eq_need_play">برای شنیدن اثر، اول یک آهنگ پخش کنید.</string>
+    <string name="eq_off">اکولایزر خاموش است.</string>
     <string name="menu">منو</string>
     <string name="shuffle">درهم</string>
     <string name="repeat">تکرار</string>
