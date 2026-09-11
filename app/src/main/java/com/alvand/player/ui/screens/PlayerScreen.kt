@@ -167,7 +167,7 @@ fun PlayerScreen(
                 // نوار بالا (بدون بک — صفحه اصلی ریشه است)
                 Row(
                     Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // چیپ تایمر خواب (فقط وقتی فعال است دیده می‌شود)

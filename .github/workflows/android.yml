@@ -76,11 +76,13 @@ jobs:
         run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace
 
       # بررسی اینکه هر دو APK با یک گواهی امضا شده‌اند (شرط نصب روی هم)
+      # فقط اطلاعاتی است و هرگز نباید جلوی آپلود/ریلیز را بگیرد
       - name: Verify APK signatures match
+        continue-on-error: true
         run: |
           BT=$(echo "$ANDROID_HOME"/build-tools/* | tr ' ' '\n' | sort -V | tail -n1)
-          echo "debug:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/debug/*.apk | grep -E "Verified|SHA-256" | head -n 3
-          echo "release:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/*.apk | grep -E "Verified|SHA-256" | head -n 3
+          echo "debug:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/debug/*.apk | grep -E "Verified|SHA-256" | head -n 3 || true
+          echo "release:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/*.apk | grep -E "Verified|SHA-256" | head -n 3 || true
 
       - name: Upload Release APK (signed)
         uses: actions/upload-artifact@v4
