@@ -9,6 +9,7 @@ import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
@@ -24,11 +25,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposePath
@@ -37,6 +43,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -165,7 +172,8 @@ fun ControlsRow(
     }
 }
 
-/** پنل آرت کشیده با عنوان ماسک‌شده داخل کادر (با فاصله از لبه‌ها) */
+/** پنل آرت کشیده با عنوان ماسک‌شده داخل کادر (با فاصله از لبه‌ها)
+ *  فرم U: بالا کاملاً چسبیده (گوشه صفر)، پایین خیلی گرد — مثل ماکت */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtPanel(
@@ -173,10 +181,11 @@ fun ArtPanel(
     modifier: Modifier = Modifier,
     glow: Color = MonoInk
 ) {
+    val artShape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 190.dp, bottomEnd = 190.dp)
     Box(modifier) {
         ArtImage(
             song, Modifier.fillMaxSize(),
-            RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 190.dp, bottomEnd = 190.dp)
+            artShape
         )
         // هاله هم‌رنگ کاور دور آرت (پالت داینامیک)
         Box(
@@ -184,7 +193,7 @@ fun ArtPanel(
                 .border(
                     1.5.dp,
                     glow.copy(alpha = 0.35f),
-                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 190.dp, bottomEnd = 190.dp)
+                    artShape
                 )
         )
         // محدوده نامرئی متن: داخل کادر + فاصله از لبه‌ها + برش اضافه
@@ -319,5 +328,97 @@ fun ProgressArc(
                 drawCircle(progColor, radius = 3.5.dp.toPx(), center = kc)
             }
         }
+    }
+}
+
+/**
+ * نور ملایم متحرک زیر کادر و کنار دکمه‌ها — یک هاله که آرام چپ‌به‌راست می‌لغزد
+ * تا صفحه از خشکی دربیاید. خیلی کم‌رنگ است و روی تم روشن/تیره جواب می‌دهد.
+ */
+@Composable
+fun MovingGlow(
+    accent: Color,
+    modifier: Modifier = Modifier,
+    alpha: Float = 0.35f
+) {
+    BoxWithConstraints(modifier) {
+        val density = LocalDensity.current
+        val wPx = with(density) { maxWidth.toPx() }.coerceAtLeast(1f)
+        val hPx = with(density) { maxHeight.toPx() }.coerceAtLeast(1f)
+        val inf = rememberInfiniteTransition(label = "glow")
+        val off by inf.animateFloat(
+            0f, 1f,
+            infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
+            label = "glowOff"
+        )
+        val cx = wPx * off
+        Canvas(Modifier.fillMaxSize().blur(14.dp)) {
+            drawRect(
+                Brush.radialGradient(
+                    colors = listOf(
+                        accent.copy(alpha = alpha),
+                        accent.copy(alpha = alpha * 0.35f),
+                        Color.Transparent
+                    ),
+                    center = Offset(cx, hPx / 2f),
+                    radius = wPx * 0.38f
+                )
+            )
+        }
+    }
+}
+
+/** شکل نوار پایینی با قوس وسط (^^) — تپ روی آن لیست را بالا می‌آورد */
+class BottomArcHandleShape : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline {
+        val bumpW = with(density) { 150.dp.toPx() }
+        val bumpH = with(density) { 30.dp.toPx() }
+        val smooth = with(density) { 26.dp.toPx() }
+        val cx = size.width / 2f
+        val path = Path().apply {
+            moveTo(0f, bumpH)
+            lineTo(cx - bumpW / 2f - smooth, bumpH)
+            cubicTo(
+                cx - bumpW / 4f, bumpH, cx - bumpW / 4f, 0f, cx, 0f
+            )
+            cubicTo(
+                cx + bumpW / 4f, 0f, cx + bumpW / 4f, bumpH, cx + bumpW / 2f + smooth, bumpH
+            )
+            lineTo(size.width, bumpH)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+/** نوار سفید پایینی با برآمدگی وسط و آیکون دو فلش — مثل ماکت */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BottomArcHandle(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    container: Color = Color.White,
+    contentColor: Color = MonoInk
+) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .clip(BottomArcHandleShape())
+            .background(container)
+            .clickable { onClick() },
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Icon(
+            Icons.Default.KeyboardDoubleArrowUp, null,
+            tint = contentColor,
+            modifier = Modifier.padding(top = 4.dp).size(28.dp)
+        )
     }
 }

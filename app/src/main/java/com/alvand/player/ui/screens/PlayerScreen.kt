@@ -1,11 +1,13 @@
 package com.alvand.player.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,7 +27,7 @@ import com.alvand.player.ui.components.*
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.launch
 
-/** صفحه اصلی: بکگراند چندلایه + کادر آرت + نوار پیشرفت + لیست کشویی شیشه‌ای */
+/** صفحه اصلی: کادر U چسبیده به بالا + قوس لبخندی + قوس پایینی لیست + نور متحرک */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
@@ -76,42 +78,36 @@ fun PlayerScreen(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        sheetPeekHeight = 104.dp,
+        // قوس پایینی اختصاصی خودمان را داریم؛ پیک پیش‌فرض صفر تا فقط با تپ باز شود
+        sheetPeekHeight = 0.dp,
         sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         sheetContainerColor = pal.sheet,
-        sheetDragHandle = { BottomSheetDefaults.DragHandle(color = pal.sub.copy(alpha = 0.5f)) },
+        sheetDragHandle = null,
         sheetContent = {
-            LazyColumn(Modifier.fillMaxWidth()) {
-                // نوار کوچک: با تپ باز می‌شود، با درگ لیست می‌آید بالا
-                item {
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .clickable { scope.launch { scaffoldState.bottomSheetState.expand() } }
-                            .padding(horizontal = 18.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ArtImage(current, Modifier.size(52.dp), RoundedCornerShape(14.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(current?.title ?: "Alvand Player", color = pal.ink,
-                                fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                            Text(current?.artist ?: "", color = pal.sub, fontSize = 12.sp, maxLines = 1)
-                        }
-                        IconButton(onClick = { vm.manager.togglePlayPause() }) {
-                            Icon(
-                                if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                null, tint = pal.ink, modifier = Modifier.size(30.dp)
-                            )
-                        }
-                    }
-                }
-                item {
-                    Text(
-                        "${stringResource(R.string.playlist)} (${songs.size})",
-                        color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
-                        modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp)
-                    )
-                }
+            // دستگیره جمع‌کردن داخل شیت بازشده
+            Row(
+                Modifier.fillMaxWidth()
+                    .clickable { scope.launch { scaffoldState.bottomSheetState.partialExpand() } }
+                    .padding(top = 8.dp, bottom = 2.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.KeyboardDoubleArrowDown, null,
+                    tint = dyn.accent, modifier = Modifier.size(28.dp)
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "${stringResource(R.string.playlist)} (${songs.size})",
+                    color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
                 itemsIndexed(songs) { i, s ->
                     val active = state.current?.id == s.id
                     val d = if (active) state.durationMs else s.durationMs
@@ -152,65 +148,104 @@ fun PlayerScreen(
         }
     ) {
         // بکگراند چندلایه همیشه زیر همه‌چیز است؛ کادر روی آن می‌نشیند
-        // (فرم کادر با/بدون کاور یکی است)
         Box(Modifier.fillMaxSize()) {
             PlayerBackground(accent = dyn, backgroundUri = bgUri)
             // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
             BoxWithConstraints(Modifier.fillMaxSize()) {
-            val wide = maxWidth > 600.dp
-            val artH = (maxHeight * 0.44f).coerceIn(230.dp, 460.dp)
-            Column(
-                Modifier
-                    .then(if (wide) Modifier.width(560.dp).align(Alignment.TopCenter) else Modifier.fillMaxSize())
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // نوار بالا (بدون بک — صفحه اصلی ریشه است)
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                val wide = maxWidth > 600.dp
+                // کادر بلندتر مثل ماکت (حدود ۵۶٪ ارتفاع)
+                val artH = (maxHeight * 0.56f).coerceIn(280.dp, 540.dp)
+                Column(
+                    Modifier
+                        .then(if (wide) Modifier.width(560.dp).align(Alignment.TopCenter) else Modifier.fillMaxSize())
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    // چیپ تایمر خواب (فقط وقتی فعال است دیده می‌شود)
-                    SleepChip(vm, onClick = { showSleep = true })
-                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
+                    // کادر آرت: کامل چسبیده به بالا + کمی باریک‌تر (حاشیه ۳۸)
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = if (wide) 60.dp else 38.dp)
+                    ) {
+                        ArtPanel(
+                            song = current,
+                            modifier = Modifier.fillMaxWidth().height(artH),
+                            glow = dyn.accent
+                        )
+                        // نوار سه‌خط + تایمر خواب روی کاور (بالا)
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = 44.dp, start = 6.dp, end = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { showMenu = true },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(pal.glass.copy(alpha = 0.65f), CircleShape)
+                            ) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
+                            Spacer(Modifier.weight(1f))
+                            SleepChip(vm, onClick = { showSleep = true })
+                        }
+                    }
+                    // نور ملایم متحرک زیر کادر
+                    MovingGlow(
+                        accent = dyn.accent,
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(horizontal = 48.dp)
+                            .height(22.dp),
+                        alpha = 0.32f
+                    )
+                    // نوار پرشونده جدا زیر کادر (هم‌رنگ کاور)
+                    ProgressArc(
+                        progress = if (dur > 0) shownPos.toFloat() / dur else 0f,
+                        durationMs = dur,
+                        onSeekMs = { vm.manager.seekTo(it) },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 34.dp),
+                        progColor = dyn.accent
+                    )
+                    Row(
+                        Modifier.align(Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(fmtTime(shownPos), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(" / ${fmtTime(state.durationMs)}", color = pal.sub, fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    // دکمه‌ها + نور ملایم کنارشان
+                    Box(
+                        Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MovingGlow(
+                            accent = dyn.accent,
+                            modifier = Modifier.fillMaxWidth().height(64.dp),
+                            alpha = 0.20f
+                        )
+                        ControlsRow(
+                            playing = state.isPlaying,
+                            shuffle = state.shuffle,
+                            repeatMode = state.repeatMode,
+                            onShuffle = { vm.manager.toggleShuffle() },
+                            onPrev = { vm.manager.prev() },
+                            onToggle = { vm.manager.togglePlayPause() },
+                            onNext = { vm.manager.next() },
+                            onRepeat = { vm.manager.cycleRepeat() },
+                            big = true,
+                            accent = dyn.accent
+                        )
+                    }
+                    // فضای قوس پایینی
+                    Spacer(Modifier.height(76.dp))
                 }
-                // کادر آرت
-                ArtPanel(
-                    song = current,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp).height(artH),
-                    glow = dyn.accent
-                )
-                Spacer(Modifier.height(4.dp))
-                // نوار پرشونده جدا زیر کادر (هم‌رنگ کاور)
-                ProgressArc(
-                    progress = if (dur > 0) shownPos.toFloat() / dur else 0f,
-                    durationMs = dur,
-                    onSeekMs = { vm.manager.seekTo(it) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 34.dp),
-                    progColor = dyn.accent
-                )
-                Row(
-                    Modifier.align(Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
+                // قوس پایینی (^^) — تپ لیست را بالا می‌آورد
+                Box(
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
-                    Text(fmtTime(shownPos), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text(" / ${fmtTime(state.durationMs)}", color = pal.sub, fontSize = 12.sp)
-                }
-                Spacer(Modifier.height(8.dp))
-                ControlsRow(
-                    playing = state.isPlaying,
-                    shuffle = state.shuffle,
-                    repeatMode = state.repeatMode,
-                    onShuffle = { vm.manager.toggleShuffle() },
-                    onPrev = { vm.manager.prev() },
-                    onToggle = { vm.manager.togglePlayPause() },
-                    onNext = { vm.manager.next() },
-                    onRepeat = { vm.manager.cycleRepeat() },
-                    big = true,
-                    accent = dyn.accent
-                )
-                // فضای نوار کشویی پایین
-                Spacer(Modifier.height(118.dp))
+                    BottomArcHandle(
+                        onClick = { scope.launch { scaffoldState.bottomSheetState.expand() } },
+                        container = pal.sheet,
+                        contentColor = dyn.accent
+                    )
                 }
             }
         }
