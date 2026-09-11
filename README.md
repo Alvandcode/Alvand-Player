@@ -1,3 +1,19 @@
+# Alvand Player
+
+[![Stars](https://img.shields.io/github/stars/Alvandcode/Alvand-Player?style=flat-square)](https://github.com/Alvandcode/Alvand-Player/stargazers) [![License](https://img.shields.io/github/license/Alvandcode/Alvand-Player?style=flat-square)](./LICENSE) [![Last commit](https://img.shields.io/github/last-commit/Alvandcode/Alvand-Player?style=flat-square)](https://github.com/Alvandcode/Alvand-Player/commits)
+
+> Minimal black-and-white Android music player (Kotlin + Media3) — background playback, lyrics, 5-band equalizer, 17 languages.
+
+<div dir="rtl">
+
+## موزیک‌پلیر الوند
+
+موزیک‌پلیر مینیمال سیاه‌وسفید اندروید با کاتلین و Media3؛ پخش در پس‌زمینه، نمایش متن ترانه، اکولایزر پنج بانده و پشتیبانی از ۱۷ زبان.
+
+</div>
+
+---
+
 # 🎵 Alvand Player — موزیک‌پلیر مینیمال سیاه‌سفید اندروید
 
 موزیک‌پلیر اندروید با رابط مینیمال مشکی‌سفید: تک‌صفحه پخش با پنل آرت کشیده و
@@ -116,3 +132,19 @@ ExoPlayer به‌صورت native از mp3, aac, ogg/vorbis, opus, flac, wav, m4a
 - BassBoost و Reverb
 - تقویت صدا تا ‎+10dB‎ با LoudnessEnhancer
 - حذف نویز: برش Hiss فرکانس‌بالا + حذف Hum ‏50/60Hz‏ + بوست وضوح وکال
+
+---
+
+## Contributing / مشارکت
+
+- EN: Issues and Pull Requests are welcome. Please see `CONTRIBUTING.md`.
+- FA: برای گزارش مشکل یا پیشنهاد قابلیت جدید، لطفا ایشو یا پول‌ریکوئست ثبت کنید.
+
+## License / لایسنس
+
+MIT — see [LICENSE](./LICENSE).
+
+## Contact / ارتباط
+
+- Telegram: https://t.me/a_c_official
+- Website: https://alvandcode.github.io
