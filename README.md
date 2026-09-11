@@ -1,11 +1,13 @@
 # 🎵 Alvand Player — موزیک‌پلیر مینیمال سیاه‌سفید اندروید
 
-موزیک‌پلیر اندروید با رابط مینیمال مشکی‌سفید: صفحه لیست آهنگ با پنل آرت U-شکل،
-صفحه پخش با حلقه پیشرفت لمسی، شافل/تکرار، کاور واقعی آهنگ‌ها.
+موزیک‌پلیر اندروید با رابط مینیمال مشکی‌سفید: تک‌صفحه پخش با پنل آرت کشیده و
+حلقه پیشرفت لمسی دور نیم‌دایره، لیست آهنگ‌ها با کشیدن نوار پایین به بالا،
+کارت لیریک با متن متحرک برای خط‌های بلند.
 
 | قابلیت | وضعیت |
 |---|---|
 | پخش تمام فرمت‌ها (mp3/aac/ogg/opus/flac/wav/m4a/amr/midi + HLS/DASH) | ✅ ExoPlayer / Media3 |
+| کنترل از نوار اعلان، لاک‌اسکرین و خروجی مدیا + پخش پس‌زمینه | ✅ MediaSession |
 | لینک مستقیم (Paste URL + باز کردن از اپ‌های دیگر) | ✅ |
 | لیریک: امبدد تگ + فایل ‎.lrc‎ + جستجوی آنلاین (LRCLIB) + ست دستی | ✅ |
 | اکولایزر 5 باند + BassBoost + تقویت صدا (LoudnessEnhancer) | ✅ |
@@ -36,7 +38,7 @@ alvand-player/
 │   ├── player/MusicPlayerManager.kt + PlaybackService.kt
 │   ├── audio/EqualizerManager.kt
 │   ├── lyrics/LyricsManager.kt
-│   ├── ui/theme/ + ui/components/ (Glass + Sheets + LanguageDialog) + ui/screens/ (Welcome/Library/Player/About)
+│   ├── ui/theme/ + ui/components/ (Glass + Sheets + LanguageDialog) + ui/screens/ (Welcome/Player/About)
 ├── app/src/main/res/values-*/strings.xml   (۱۷ زبان)
 ├── app/src/main/res/xml/locales_config.xml
 ├── app/src/main/res/drawable/ic_alvand.xml (لوگو/آیکون)

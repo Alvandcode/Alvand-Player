@@ -1,16 +1,17 @@
 package com.alvand.player.player
 
+import android.content.ComponentName
 import android.content.Context
+import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.okhttp.OkHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import com.alvand.player.audio.AudioSettings
 import com.alvand.player.audio.EqualizerManager
 import com.alvand.player.data.Song
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,7 +19,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 
 /** وضعیت پخش برای UI */
 data class PlayerUiState(
@@ -33,38 +33,57 @@ data class PlayerUiState(
 )
 
 /**
- * موتور پخش بر پایه Media3 ExoPlayer.
- * همه فرمت‌های رایج + لینک مستقیم (progressive/HLS/DASH) را پوشش می‌دهد.
+ * موتور پخش بر پایه MediaController + PlaybackService.
+ * پخش داخل سرویس انجام می‌شود، پس کنترل پخش/قبلی/بعدی در نوار اعلان،
+ * لاک‌اسکرین و خروجی مدیا (quick settings) می‌آید و با بستن اپ قطع نمی‌شود.
+ * همه فرمت‌های رایج + لینک مستقیم (progressive/HLS/DASH) پشتیبانی می‌شود.
  */
 class MusicPlayerManager(context: Context) {
 
     private val app = context.applicationContext
-    private val okhttp = OkHttpClient.Builder().build()
 
     val eqManager = EqualizerManager()
 
-    val player: ExoPlayer by lazy {
-        // ترکیب هوشمند: فایل لوکال (content/file) با سورس سیستمی، لینک http(s) با OkHttp
-        val httpFactory = OkHttpDataSource.Factory(okhttp)
-            .setUserAgent("AlvandPlayer/1.0")
-        val dataSourceFactory = DefaultDataSource.Factory(app, httpFactory)
-        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
-        ExoPlayer.Builder(app)
-            .setMediaSourceFactory(mediaSourceFactory)
-            .build().also { exo ->
-                exo.addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(state: Int) { push() }
-                    override fun onIsPlayingChanged(v: Boolean) { push() }
-                    override fun onMediaItemTransition(item: MediaItem?, r: Int) { push() }
-                    override fun onAudioSessionIdChanged(id: Int) {
-                        eqManager.attach(id)
-                    }
-                    override fun onPlayerError(error: PlaybackException) {
-                        _ui.value = _ui.value.copy(error = "play_error")
-                        push()
-                    }
-                })
-            }
+    private val controllerFuture: ListenableFuture<MediaController> =
+        MediaController.Builder(
+            app,
+            SessionToken(app, ComponentName(app, PlaybackService::class.java))
+        ).buildAsync()
+
+    private var controller: MediaController? = null
+
+    /** دسترسی فقط‌خواندنی به پلیر (ممکن است هنوز وصل نشده باشد) */
+    val player: Player? get() = controller
+
+    private var pendingQueue: List<Song>? = null
+    private var pendingIndex = 0
+    private var pendingAutoplay = true
+
+    private val listener = object : Player.Listener {
+        override fun onPlaybackStateChanged(state: Int) { push() }
+        override fun onIsPlayingChanged(v: Boolean) { push() }
+        override fun onMediaItemTransition(item: MediaItem?, r: Int) { push() }
+        override fun onAudioSessionIdChanged(id: Int) { eqManager.attach(id) }
+        override fun onPlayerError(error: PlaybackException) {
+            _ui.value = _ui.value.copy(error = "play_error")
+            push()
+        }
+    }
+
+    init {
+        controllerFuture.addListener(
+            {
+                controller = runCatching { controllerFuture.get() }.getOrNull()
+                controller?.addListener(listener)
+                controller?.let { eqManager.attach(it.audioSessionId) }
+                pendingQueue?.let { q ->
+                    applyQueue(q, pendingIndex, pendingAutoplay)
+                    pendingQueue = null
+                }
+                push()
+            },
+            ContextCompat.getMainExecutor(app)
+        )
     }
 
     private val _ui = MutableStateFlow(PlayerUiState())
@@ -74,6 +93,20 @@ class MusicPlayerManager(context: Context) {
     private val scope = CoroutineScope(Dispatchers.Main)
 
     fun setQueue(songs: List<Song>, startIndex: Int = 0, autoplay: Boolean = true) {
+        val c = controller
+        if (c == null) {
+            // هنوز به سرویس وصل نشده — در صف انتظار نگه دار
+            pendingQueue = songs
+            pendingIndex = startIndex
+            pendingAutoplay = autoplay
+            _ui.value = _ui.value.copy(queue = songs)
+            return
+        }
+        applyQueue(songs, startIndex, autoplay)
+    }
+
+    private fun applyQueue(songs: List<Song>, startIndex: Int, autoplay: Boolean) {
+        val c = controller ?: return
         val items = songs.map { s ->
             MediaItem.Builder()
                 .setUri(s.uri)
@@ -85,15 +118,15 @@ class MusicPlayerManager(context: Context) {
                 ).build()
         }
         if (items.isEmpty()) return
-        player.setMediaItems(items, startIndex.coerceIn(items.indices), 0)
-        player.prepare()
+        c.setMediaItems(items, startIndex.coerceIn(items.indices), 0)
+        c.prepare()
         _ui.value = _ui.value.copy(queue = songs)
-        if (autoplay) player.play()
+        if (autoplay) c.play()
         startProgress()
         // اکولایزر را به سشن جدید وصل کن
         scope.launch {
             delay(400)
-            runCatching { eqManager.attach(player.audioSessionId) }
+            controller?.let { eqManager.attach(it.audioSessionId) }
         }
     }
 
@@ -105,41 +138,55 @@ class MusicPlayerManager(context: Context) {
     }
 
     fun togglePlayPause() {
-        if (player.isPlaying) player.pause()
+        val c = controller ?: return
+        if (c.isPlaying) c.pause()
         else {
             // بعد از خطا، پلیر به prepare مجدد نیاز دارد
-            if (player.playbackState == Player.STATE_IDLE) player.prepare()
-            player.play()
+            if (c.playbackState == Player.STATE_IDLE) c.prepare()
+            c.play()
         }
         push()
     }
+
     fun next() {
-        if (player.hasNextMediaItem()) {
-            player.seekToNextMediaItem()
-            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+        val c = controller ?: return
+        if (c.hasNextMediaItem()) {
+            c.seekToNextMediaItem()
+            if (c.playbackState == Player.STATE_IDLE) c.prepare()
             push()
         }
     }
+
     fun prev() {
-        if (player.currentPosition > 3000) player.seekTo(0)
-        else if (player.hasPreviousMediaItem()) {
-            player.seekToPreviousMediaItem()
-            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+        val c = controller ?: return
+        if (c.currentPosition > 3000) c.seekTo(0)
+        else if (c.hasPreviousMediaItem()) {
+            c.seekToPreviousMediaItem()
+            if (c.playbackState == Player.STATE_IDLE) c.prepare()
         }
         push()
     }
-    fun clearError() { _ui.value = _ui.value.copy(error = null) }
-    fun seekTo(ms: Long) { player.seekTo(ms); push() }
-    fun toggleShuffle() {
-        _ui.value = _ui.value.copy(shuffle = !_ui.value.shuffle)
-        player.shuffleModeEnabled = _ui.value.shuffle
+
+    fun seekTo(ms: Long) {
+        controller?.seekTo(ms)
+        push()
     }
+
+    fun toggleShuffle() {
+        val c = controller ?: return
+        _ui.value = _ui.value.copy(shuffle = !_ui.value.shuffle)
+        c.shuffleModeEnabled = _ui.value.shuffle
+    }
+
     fun toggleRepeatOne() {
+        val c = controller ?: return
         _ui.value = _ui.value.copy(repeatOne = !_ui.value.repeatOne)
-        player.repeatMode = if (_ui.value.repeatOne) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_ALL
+        c.repeatMode = if (_ui.value.repeatOne) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_ALL
     }
 
     fun applyAudio(s: AudioSettings) = eqManager.applyAll(s)
+
+    fun clearError() { _ui.value = _ui.value.copy(error = null) }
 
     private fun startProgress() {
         progressJob?.cancel()
@@ -152,19 +199,23 @@ class MusicPlayerManager(context: Context) {
     }
 
     private fun push() {
+        val c = controller
         val q = _ui.value.queue
-        val idx = player.currentMediaItemIndex
+        val idx = c?.currentMediaItemIndex ?: -1
         _ui.value = _ui.value.copy(
             current = q.getOrNull(idx),
-            isPlaying = player.isPlaying,
-            positionMs = player.currentPosition.coerceAtLeast(0),
-            durationMs = player.duration.takeIf { it > 0 } ?: (_ui.value.current?.durationMs ?: 0L)
+            isPlaying = c?.isPlaying == true,
+            positionMs = (c?.currentPosition ?: 0L).coerceAtLeast(0),
+            durationMs = c?.duration?.takeIf { it > 0 }
+                ?: (_ui.value.current?.durationMs ?: 0L)
         )
     }
 
     fun release() {
         progressJob?.cancel()
         eqManager.release()
-        runCatching { player.release() }
+        runCatching { controller?.removeListener(listener) }
+        controller = null
+        runCatching { MediaController.releaseFuture(controllerFuture) }
     }
 }

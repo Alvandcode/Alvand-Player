@@ -24,7 +24,14 @@ data class Song(
         fun fromDirectLink(url: String, titleFallback: String = "Stream"): Song? {
             val trimmed = url.trim()
             if (!(trimmed.startsWith("http://") || trimmed.startsWith("https://"))) return null
-            val title = trimmed.substringAfterLast('/').substringBefore('?')
+            var title = trimmed.substringAfterLast('/').substringBefore('?')
+                .ifBlank { titleFallback }
+            // دیکد %20 و حذف پسوند برای عنوان تمیز
+            title = runCatching { java.net.URLDecoder.decode(title, "UTF-8") }.getOrNull() ?: title
+            if (title.substringAfterLast('.', "").lowercase() in SUPPORTED_EXTENSIONS) {
+                title = title.substringBeforeLast('.')
+            }
+            title = title.replace('_', ' ').replace(Regex("\\s+"), " ").trim()
                 .ifBlank { titleFallback }
             return Song(
                 id = trimmed.hashCode().toLong(),

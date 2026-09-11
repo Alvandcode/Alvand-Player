@@ -43,8 +43,6 @@ fun WelcomeScreen(onStart: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = MonoInk, contentColor = Color.White),
             modifier = Modifier.fillMaxWidth(0.7f).height(56.dp)
         ) { Text(stringResource(R.string.lets_play), fontWeight = FontWeight.Bold, fontSize = 16.sp) }
-        Spacer(Modifier.height(12.dp))
-        Text(stringResource(R.string.sign_in), color = MonoSub, fontSize = 13.sp)
         Spacer(Modifier.height(24.dp))
     }
 }

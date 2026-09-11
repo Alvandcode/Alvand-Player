@@ -1,5 +1,8 @@
 package com.alvand.player.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeSpacing
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -163,7 +166,7 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
 }
 
 /** شیت لیریک (سیاه‌سفید) */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     val lyrics by vm.lyrics.collectAsState()
@@ -185,19 +188,24 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Text(stringResource(R.string.no_lyrics), color = MonoSub, fontSize = 13.sp)
             } else {
                 LazyColumn(Modifier.heightIn(max = 340.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(lyrics.lines.withIndex().toList()) { (i, l) ->
-                        val active = i == activeIdx
-                        Text(
-                            l.text,
-                            color = if (active) MonoInk else MonoSub.copy(0.6f),
-                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = if (active) 16.sp else 14.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .padding(4.dp)
-                        )
-                    }
+                                items(lyrics.lines.withIndex().toList()) { (i, l) ->
+                                    val active = i == activeIdx
+                                    Text(
+                                        l.text,
+                                        color = if (active) MonoInk else MonoSub.copy(0.6f),
+                                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = if (active) 16.sp else 14.sp,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        modifier = Modifier.fillMaxWidth()
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .padding(4.dp)
+                                            .then(if (active) Modifier.basicMarquee(
+                                                iterations = Int.MAX_VALUE,
+                                                spacing = MarqueeSpacing(16.dp)
+                                            ) else Modifier)
+                                    )
+                                }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -209,6 +217,70 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MonoInk, contentColor = Color.White)
             ) { Text(stringResource(R.string.save_lyrics)) }
+        }
+    }
+}
+
+/** متن متحرک (فقط وقتی از کادر بزند بیرون حرکت می‌کند) */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun MarqueeLine(
+    text: String,
+    color: androidx.compose.ui.graphics.Color,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    bold: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text,
+        color = color,
+        fontSize = fontSize,
+        fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+        maxLines = 1,
+        modifier = modifier.basicMarquee(
+            iterations = Int.MAX_VALUE,
+            spacing = MarqueeSpacing(16.dp)
+        )
+    )
+}
+
+/** کارت لیریک با فاصله از اطراف + خط فعال متحرک */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LyricsPreviewCard(vm: AppViewModel, onOpenFull: () -> Unit) {
+    val lyrics by vm.lyrics.collectAsState()
+    val pos = vm.playerState.collectAsState().value.positionMs
+    val activeIdx = remember(lyrics, pos) {
+        lyrics.lines.indexOfLast { it.timeMs <= pos }.coerceAtLeast(0)
+    }
+    Surface(
+        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp)
+            .clickable { onOpenFull() },
+        shape = RoundedCornerShape(20.dp),
+        color = MonoBg,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MonoLine)
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "${stringResource(R.string.tab_lyrics)} • ${lyrics.source}",
+                    color = MonoInk, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(Icons.Default.OpenInNew, null, tint = MonoSub, modifier = Modifier.size(16.dp))
+            }
+            Spacer(Modifier.height(6.dp))
+            if (lyrics.lines.isEmpty()) {
+                Text(stringResource(R.string.no_lyrics), color = MonoSub, fontSize = 12.sp, maxLines = 2)
+            } else {
+                MarqueeLine(
+                    lyrics.lines[activeIdx.coerceIn(lyrics.lines.indices)].text,
+                    MonoInk, 15.sp, true, Modifier.fillMaxWidth()
+                )
+                lyrics.lines.getOrNull(activeIdx + 1)?.let {
+                    Text(it.text, color = MonoSub, fontSize = 12.sp, maxLines = 1, modifier = Modifier.fillMaxWidth())
+                }
+            }
         }
     }
 }

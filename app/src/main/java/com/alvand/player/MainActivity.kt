@@ -46,21 +46,16 @@ class MainActivity : AppCompatActivity() {
                 }
                 NavHost(nav, startDestination = "welcome") {
                     composable("welcome") {
-                        WelcomeScreen { nav.navigate("library") }
-                    }
-                    composable("library") {
-                        LibraryScreen(
-                            vm,
-                            onBack = { nav.popBackStack() },
-                            onOpenPlayer = { nav.navigate("player") },
-                            onPickFile = { pickAudio.launch("audio/*") },
-                            onOpenAbout = { nav.navigate("about") }
-                        )
+                        // بعد از ورود، خوشامد از بک‌استک حذف می‌شود تا با بک برنگردیم
+                        WelcomeScreen {
+                            nav.navigate("player") {
+                                popUpTo("welcome") { inclusive = true }
+                            }
+                        }
                     }
                     composable("player") {
                         PlayerScreen(
                             vm,
-                            onBack = { nav.popBackStack() },
                             onPickFile = { pickAudio.launch("audio/*") },
                             onOpenAbout = { nav.navigate("about") }
                         )
