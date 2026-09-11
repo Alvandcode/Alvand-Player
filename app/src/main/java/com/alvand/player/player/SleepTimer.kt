@@ -5,6 +5,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 /** وضعیت تایمر خواب */
 data class SleepTimerState(
@@ -58,7 +59,7 @@ class SleepTimer(
     }
 
     private fun CoroutineScope.launchTimer(totalMs: Long, fadeMs: Long): Job =
-        kotlinx.coroutines.launch {
+        launch {
             var remaining = totalMs
             while (remaining > 0) {
                 delay(1000)
