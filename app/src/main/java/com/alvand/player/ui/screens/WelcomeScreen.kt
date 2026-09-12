@@ -21,26 +21,38 @@ import com.alvand.player.ui.theme.LocalAP
 fun WelcomeScreen(onStart: () -> Unit) {
     val pal = LocalAP.current
     Column(
-        Modifier.fillMaxSize().background(pal.bg).padding(28.dp),
+        Modifier.fillMaxSize().background(pal.bg).padding(horizontal = 28.dp).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.weight(1.1f))
         Image(
             painterResource(R.drawable.alvand_mark),
-            contentDescription = null,
-            modifier = Modifier.size(190.dp).clip(RoundedCornerShape(44.dp))
+            contentDescription = "Alvand Player logo",
+            modifier = Modifier.size(148.dp).clip(RoundedCornerShape(34.dp))
         )
-        Spacer(Modifier.height(20.dp))
-        Text("Alvand Player", color = pal.ink, fontSize = 28.sp, fontWeight = FontWeight.Black)
-        Text(stringResource(R.string.tagline), color = pal.sub, fontSize = 14.sp)
+        Spacer(Modifier.height(22.dp))
+        Text(
+            "Alvand Player", color = pal.ink, fontSize = 30.sp,
+            fontWeight = FontWeight.Black, letterSpacing = (-0.3).sp
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            stringResource(R.string.tagline), color = pal.sub, fontSize = 14.sp,
+            letterSpacing = 0.2.sp
+        )
         Spacer(Modifier.weight(1f))
         Button(
             onClick = onStart,
             shape = RoundedCornerShape(28.dp),
             colors = ButtonDefaults.buttonColors(containerColor = pal.ink, contentColor = pal.bg),
-            modifier = Modifier.fillMaxWidth(0.7f).height(56.dp)
+            modifier = Modifier.fillMaxWidth(0.78f).height(58.dp)
         ) { Text(stringResource(R.string.lets_play), fontWeight = FontWeight.Bold, fontSize = 16.sp) }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "Mono + Aura • Minimal",
+            color = pal.sub.copy(alpha = 0.7f), fontSize = 11.sp, letterSpacing = 1.2.sp
+        )
+        Spacer(Modifier.navigationBarsPadding().height(28.dp))
     }
 }

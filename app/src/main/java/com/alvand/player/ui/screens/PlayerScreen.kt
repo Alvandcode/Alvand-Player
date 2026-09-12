@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,7 +28,7 @@ import com.alvand.player.ui.components.*
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.launch
 
-/** صفحه اصلی: کادر U چسبیده به بالا + قوس لبخندی + قوس پایینی لیست + نور متحرک */
+/** صفحه اصلی Mono+Aura: کاور سینمایی + بک‌گراند بلر + کنترل‌های تمیز */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
@@ -107,25 +108,60 @@ fun PlayerScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
-            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
-                itemsIndexed(songs) { i, s ->
+            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
+                if (songs.isEmpty()) {
+                    item {
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("♪", color = pal.sub, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "${stringResource(R.string.playlist)} (0)",
+                                color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 15.sp
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                stringResource(R.string.scan_songs),
+                                color = pal.sub, fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+                itemsIndexed(songs, key = { _, s -> s.id }) { i, s ->
                     val active = state.current?.id == s.id
                     val d = if (active) state.durationMs else s.durationMs
                     Row(
-                        Modifier.fillMaxWidth().clickable { vm.playList(songs, i) }
-                            .padding(horizontal = 22.dp, vertical = 11.dp),
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 3.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (active) pal.glass else androidx.compose.ui.graphics.Color.Transparent)
+                            .clickable { vm.playList(songs, i) }
+                            .padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            s.title, color = pal.ink,
-                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f)
+                        ArtImage(
+                            s, Modifier.size(44.dp),
+                            RoundedCornerShape(12.dp)
                         )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                s.title, color = pal.ink,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                                fontSize = 14.5.sp, maxLines = 1
+                            )
+                            Text(
+                                s.artist.takeIf { it.isNotBlank() } ?: "—",
+                                color = pal.sub, fontSize = 12.sp, maxLines = 1
+                            )
+                        }
                         if (active && state.isPlaying) {
                             MiniBars(true, color = dyn.accent)
                             Spacer(Modifier.width(10.dp))
                         }
-                        Text(fmtTime(d), color = pal.sub, fontSize = 13.sp)
+                        Text(fmtTime(d), color = pal.sub, fontSize = 12.5.sp)
                     }
                 }
                 item { LyricsPreviewCard(vm) { showLyricsFull = true } }
@@ -147,79 +183,83 @@ fun PlayerScreen(
             }
         }
     ) {
-        // بکگراند چندلایه همیشه زیر همه‌چیز است؛ کادر روی آن می‌نشیند
+        // بکگراند سینمایی همیشه زیر همه‌چیز است؛ کاور بلرشده + تک‌هاله
         Box(Modifier.fillMaxSize()) {
-            PlayerBackground(accent = dyn, backgroundUri = bgUri)
+            PlayerBackground(accent = dyn, backgroundUri = bgUri, song = current)
             // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val wide = maxWidth > 600.dp
-                // کادر بلندتر مثل ماکت (حدود ۵۶٪ ارتفاع)
-                val artH = (maxHeight * 0.56f).coerceIn(280.dp, 540.dp)
+                // کاور سینمایی با ارتفاع متعادل (قبلا ۵۶٪ و خیلی بلند بود)
+                val artH = (maxHeight * 0.46f).coerceIn(260.dp, 480.dp)
                 Column(
                     Modifier
                         .then(if (wide) Modifier.width(560.dp).align(Alignment.TopCenter) else Modifier.fillMaxSize())
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // کادر آرت: کامل چسبیده به بالا + کمی باریک‌تر (حاشیه ۳۸)
+                    Spacer(Modifier.statusBarsPadding().height(8.dp))
+                    // کاور مدرن با حاشیه استاندارد و سایه نرم
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = if (wide) 60.dp else 38.dp)
+                            .padding(horizontal = if (wide) 60.dp else 20.dp)
                     ) {
                         ArtPanel(
                             song = current,
-                            modifier = Modifier.fillMaxWidth().height(artH),
+                            modifier = Modifier.fillMaxWidth().height(artH)
+                                .shadow(24.dp, RoundedCornerShape(28.dp)),
                             glow = dyn.accent
                         )
-                        // نوار سه‌خط + تایمر خواب روی کاور (بالا)
+                        // نوار سه‌خط + تایمر خواب روی کاور (بالا) — خوانا روی هر کاوری
                         Row(
-                            Modifier.fillMaxWidth().padding(top = 44.dp, start = 6.dp, end = 6.dp),
+                            Modifier.fillMaxWidth().padding(top = 12.dp, start = 10.dp, end = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(
                                 onClick = { showMenu = true },
                                 modifier = Modifier
-                                    .size(40.dp)
-                                    .background(pal.glass.copy(alpha = 0.65f), CircleShape)
+                                    .size(44.dp)
+                                    .background(pal.card.copy(alpha = 0.92f), CircleShape)
                             ) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
                             Spacer(Modifier.weight(1f))
                             SleepChip(vm, onClick = { showSleep = true })
                         }
                     }
-                    // نور ملایم متحرک زیر کادر
+                    // هاله ظریف زیر کاور (تک‌لایه، کم‌رنگ برای پرفورمنس)
                     MovingGlow(
                         accent = dyn.accent,
                         modifier = Modifier.fillMaxWidth()
-                            .padding(horizontal = 48.dp)
-                            .height(22.dp),
-                        alpha = 0.32f
+                            .padding(horizontal = 60.dp)
+                            .height(14.dp),
+                        alpha = 0.16f
                     )
-                    // نوار پرشونده جدا زیر کادر (هم‌رنگ کاور)
+                    // نوار پیشرفت لبخندی جدا زیر کادر (هم‌رنگ کاور)
                     ProgressArc(
                         progress = if (dur > 0) shownPos.toFloat() / dur else 0f,
                         durationMs = dur,
                         onSeekMs = { vm.manager.seekTo(it) },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 34.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
                         progColor = dyn.accent
                     )
                     Row(
-                        Modifier.align(Alignment.CenterHorizontally),
+                        Modifier.align(Alignment.CenterHorizontally).padding(top = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(fmtTime(shownPos), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text(" / ${fmtTime(state.durationMs)}", color = pal.sub, fontSize = 12.sp)
+                        Text(
+                            fmtTime(shownPos), color = pal.ink,
+                            fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+                            letterSpacing = 0.3.sp
+                        )
+                        Text(
+                            " / ${fmtTime(state.durationMs)}", color = pal.sub,
+                            fontSize = 12.5.sp, letterSpacing = 0.2.sp
+                        )
                     }
-                    Spacer(Modifier.height(4.dp))
-                    // دکمه‌ها + نور ملایم کنارشان
+                    Spacer(Modifier.height(6.dp))
+                    // دکمه‌ها + هاله بسیار ملایم پشتشان
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        MovingGlow(
-                            accent = dyn.accent,
-                            modifier = Modifier.fillMaxWidth().height(64.dp),
-                            alpha = 0.20f
-                        )
                         ControlsRow(
                             playing = state.isPlaying,
                             shuffle = state.shuffle,
@@ -233,10 +273,10 @@ fun PlayerScreen(
                             accent = dyn.accent
                         )
                     }
-                    // فضای قوس پایینی
-                    Spacer(Modifier.height(76.dp))
+                    // فضای دسته پایینی
+                    Spacer(Modifier.height(84.dp))
                 }
-                // قوس پایینی (^^) — تپ لیست را بالا می‌آورد
+                // دسته پایینی با لیبل قابل‌کشف — تپ لیست را بالا می‌آورد
                 Box(
                     Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                     contentAlignment = Alignment.BottomCenter
@@ -244,7 +284,8 @@ fun PlayerScreen(
                     BottomArcHandle(
                         onClick = { scope.launch { scaffoldState.bottomSheetState.expand() } },
                         container = pal.sheet,
-                        contentColor = dyn.accent
+                        contentColor = dyn.accent,
+                        label = "${stringResource(R.string.playlist)} • ${songs.size}"
                     )
                 }
             }

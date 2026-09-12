@@ -91,7 +91,7 @@ fun ArtImage(song: Song?, modifier: Modifier = Modifier, corners: Shape) {
     }
 }
 
-/** میله‌های کوچک مشکیِ در حال پخش */
+/** میله‌های کوچک در حال پخش — گرد و تمیز */
 @Composable
 fun MiniBars(
     playing: Boolean,
@@ -99,7 +99,7 @@ fun MiniBars(
     color: Color = MonoInk
 ) {
     val inf = rememberInfiniteTransition(label = "mb")
-    Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+    Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.5.dp)) {
         repeat(4) { i ->
             val h by inf.animateFloat(
                 4f, (8 + (i * 7 % 10)).toFloat(),
@@ -107,7 +107,8 @@ fun MiniBars(
                 label = "m$i"
             )
             Box(
-                Modifier.width(3.dp).height(if (playing) h.dp else 4.dp)
+                Modifier.width(3.5.dp).height(if (playing) h.dp else 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
                     .background(color)
             )
         }
@@ -137,10 +138,12 @@ fun ControlsRow(
     val pal = LocalAP.current
     val main = if (big) 76.dp else 58.dp
     val sub = if (big) 30.dp else 26.dp
+    // حالت خاموش: طوسی خوانا (نه نیمه‌محو نامرئی) — کنتراست WCAG
+    val offTint = pal.sub
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onShuffle, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.Shuffle, null, tint = if (shuffle) pal.ink else pal.sub.copy(alpha = 0.5f), modifier = Modifier.size(sub))
+            Icon(Icons.Default.Shuffle, null, tint = if (shuffle) pal.ink else offTint, modifier = Modifier.size(sub))
         }
         IconButton(onClick = onPrev, modifier = Modifier.weight(1f)) {
             Icon(Icons.Default.SkipPrevious, null, tint = pal.ink, modifier = Modifier.size(34.dp))
@@ -150,7 +153,7 @@ fun ControlsRow(
                 onClick = onToggle,
                 modifier = Modifier.size(main),
                 shape = CircleShape,
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = accent, contentColor = pal.bg)
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = accent, contentColor = Color.White)
             ) {
                 Icon(
                     if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -164,7 +167,7 @@ fun ControlsRow(
         IconButton(onClick = onRepeat, modifier = Modifier.weight(1f)) {
             Icon(
                 if (repeatMode == 2) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                null, tint = if (repeatMode == 0) pal.sub.copy(alpha = 0.5f) else pal.ink,
+                null, tint = if (repeatMode == 0) offTint else pal.ink,
                 modifier = Modifier.size(sub)
             )
         }
@@ -172,8 +175,9 @@ fun ControlsRow(
     }
 }
 
-/** پنل آرت کشیده با عنوان ماسک‌شده داخل کادر (با فاصله از لبه‌ها)
- *  فرم U: بالا کاملاً چسبیده (گوشه صفر)، پایین خیلی گرد — مثل ماکت */
+/** پنل آرت سینمایی Mono+Aura:
+ *  مربع مدرن 28dp + سایه نرم + اسکریم گرادیانی پایین برای خوانایی متن
+ *  (جایگزین فرم U قبلی که روی صفحه‌های مختلف می‌شکست) */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtPanel(
@@ -181,38 +185,59 @@ fun ArtPanel(
     modifier: Modifier = Modifier,
     glow: Color = MonoInk
 ) {
-    val artShape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 190.dp, bottomEnd = 190.dp)
-    Box(modifier) {
+    val artShape = RoundedCornerShape(28.dp)
+    Box(
+        modifier
+            .clip(artShape)
+            .background(Brush.linearGradient(listOf(ArtDark1, ArtDark2)))
+    ) {
         ArtImage(
             song, Modifier.fillMaxSize(),
-            artShape
+            RoundedCornerShape(0.dp)
         )
-        // هاله هم‌رنگ کاور دور آرت (پالت داینامیک)
+        // اسکریم پایین برای خوانایی تایتل روی هر کاوری (روشن/تیره)
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Black.copy(alpha = 0.18f),
+                        Color.Black.copy(alpha = 0.68f)
+                    )
+                )
+            )
+        )
+        // بوردر شیشه‌ای ظریف (نه هاله رنگی تند)
         Box(
             Modifier.fillMaxSize()
                 .border(
-                    1.5.dp,
-                    glow.copy(alpha = 0.35f),
+                    1.dp,
+                    Color.White.copy(alpha = 0.22f),
                     artShape
                 )
         )
-        // محدوده نامرئی متن: داخل کادر + فاصله از لبه‌ها + برش اضافه
+        // متن داخل کادر با فاصله امن از لبه‌ها
         Column(
-            Modifier.fillMaxSize().padding(bottom = 40.dp, start = 30.dp, end = 30.dp),
+            Modifier.fillMaxSize().padding(bottom = 20.dp, start = 22.dp, end = 22.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 song?.title ?: "Alvand Player", color = Color.White,
-                fontWeight = FontWeight.Bold, fontSize = 19.sp,
+                fontWeight = FontWeight.ExtraBold, fontSize = 22.sp,
+                letterSpacing = 0.2.sp,
                 maxLines = 1, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
                     .clipToBounds()
-                    .basicMarquee(iterations = Int.MAX_VALUE, spacing = MarqueeSpacing(16.dp))
+                    .basicMarquee(iterations = Int.MAX_VALUE, spacing = MarqueeSpacing(24.dp))
             )
+            Spacer(Modifier.height(3.dp))
             Text(
-                song?.artist ?: "", color = Color.White.copy(0.75f),
-                fontSize = 13.sp, maxLines = 1, textAlign = TextAlign.Center,
+                song?.artist?.takeIf { it.isNotBlank() } ?: "—",
+                color = Color.White.copy(0.78f),
+                fontSize = 13.sp, letterSpacing = 0.4.sp,
+                maxLines = 1, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -310,7 +335,7 @@ fun ProgressArc(
             }
     ) {
         val path = smilePath(size.width, size.height)
-        val sw = 5.dp.toPx()
+        val sw = 6.dp.toPx()
         drawPath(path.asComposePath(), color = pal.track, style = Stroke(sw, cap = StrokeCap.Round))
         val p = progress.coerceIn(0f, 1f)
         if (p > 0.001f) {
@@ -323,7 +348,18 @@ fun ProgressArc(
                 val pos = FloatArray(2)
                 pm.getPosTan((len * p).coerceAtMost(len), pos, null)
                 val kc = Offset(pos[0], pos[1])
-                drawCircle(pal.bg, radius = 11.dp.toPx(), center = kc)
+                drawCircle(Color.White, radius = 13.dp.toPx(), center = kc)
+                drawCircle(progColor, radius = 13.dp.toPx(), center = kc, style = Stroke(3.5.dp.toPx()))
+                drawCircle(progColor, radius = 4.dp.toPx(), center = kc)
+            }
+        } else {
+            // دستگیره شروع حتی در ۰٪ دیده شود تا قابل‌کشف باشد
+            val pm = PathMeasure(path, false)
+            val pos = FloatArray(2)
+            if (pm.length > 0f) {
+                pm.getPosTan(0f, pos, null)
+                val kc = Offset(pos[0], pos[1])
+                drawCircle(Color.White, radius = 11.dp.toPx(), center = kc)
                 drawCircle(progColor, radius = 11.dp.toPx(), center = kc, style = Stroke(3.dp.toPx()))
                 drawCircle(progColor, radius = 3.5.dp.toPx(), center = kc)
             }
@@ -397,28 +433,39 @@ class BottomArcHandleShape : Shape {
     }
 }
 
-/** نوار سفید پایینی با برآمدگی وسط و آیکون دو فلش — مثل ماکت */
+/** نوار پایینی با برآمدگی وسط — تپ لیست را بالا می‌آورد (با لیبل قابل‌کشف) */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BottomArcHandle(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     container: Color = Color.White,
-    contentColor: Color = MonoInk
+    contentColor: Color = MonoInk,
+    label: String? = null
 ) {
     Box(
         modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .height(64.dp)
             .clip(BottomArcHandleShape())
             .background(container)
             .clickable { onClick() },
         contentAlignment = Alignment.TopCenter
     ) {
-        Icon(
-            Icons.Default.KeyboardDoubleArrowUp, null,
-            tint = contentColor,
-            modifier = Modifier.padding(top = 4.dp).size(28.dp)
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Default.KeyboardDoubleArrowUp, null,
+                tint = contentColor,
+                modifier = Modifier.padding(top = 4.dp).size(26.dp)
+            )
+            if (label != null) {
+                Text(
+                    label, color = contentColor,
+                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.3.sp,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+            }
+        }
     }
 }

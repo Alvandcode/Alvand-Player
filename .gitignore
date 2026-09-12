@@ -6,9 +6,14 @@ local.properties
 .idea/
 .DS_Store
 # Keystore – هرگز کلید release را کامیت نکنید
+# کی‌استور باید خارج از ریپو نگه داشته شود (مثلاً %USERPROFILE%\.keystores)
 *.jks
 *.keystore
 keystore-base64.txt
+keystore.properties
+*.pem
+*.p12
+google-services.json
 # APK خروجی لوکال
 *.apk
 *.aab

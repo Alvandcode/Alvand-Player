@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- حداقل دسترسی: فقط ساب‌فولدرهای لازم شیر می‌شوند، نه کل کش -->
 <paths>
-    <cache-path name="cache" path="." />
-    <external-cache-path name="ext_cache" path="." />
+    <cache-path name="lyrics_cache" path="lyrics/" />
+    <cache-path name="artwork_cache" path="artwork/" />
+    <external-cache-path name="ext_lyrics_cache" path="lyrics/" />
+    <files-path name="lyrics_files" path="lyrics/" />
 </paths>

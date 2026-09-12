@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- API 31+ : همان منطق backup_rules ولی با سینتکس جدید -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="alvand_settings.preferences_pb" />
+        <exclude domain="file" path="lyrics/" />
+        <exclude domain="cache" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="alvand_settings.preferences_pb" />
+        <exclude domain="file" path="lyrics/" />
+        <exclude domain="cache" path="." />
+    </device-transfer>
+</data-extraction-rules>

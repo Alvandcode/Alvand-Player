@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- بکاپ فقط تنظیمات ظاهری؛ کش لیریک/آرت و URI ماندگار بکاپ نمی‌شود تا روی دیوایس جدید نشکند -->
+<full-backup-content>
+    <include domain="sharedpref" path="alvand_settings.preferences_pb" />
+    <exclude domain="file" path="lyrics/" />
+    <exclude domain="cache" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

@@ -24,8 +24,8 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/widget_name"
-            android:textColor="#FF111114"
-            android:textSize="14sp"
+            android:textColor="#FFF2F2F5"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -35,31 +35,34 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/widget_desc"
-            android:textColor="#FF6E6E73"
-            android:textSize="12sp" />
+            android:textColor="#FFB4B4BE"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <ImageButton
         android:id="@+id/widget_prev"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_desc"
-        android:src="@android:drawable/ic_media_previous" />
+        android:src="@android:drawable/ic_media_previous"
+        android:tint="#FFF2F2F5" />
 
     <ImageButton
         android:id="@+id/widget_toggle"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_name"
-        android:src="@android:drawable/ic_media_play" />
+        android:src="@android:drawable/ic_media_play"
+        android:tint="#FFF2F2F5" />
 
     <ImageButton
         android:id="@+id/widget_next"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_desc"
-        android:src="@android:drawable/ic_media_next" />
+        android:src="@android:drawable/ic_media_next"
+        android:tint="#FFF2F2F5" />
 </LinearLayout>
