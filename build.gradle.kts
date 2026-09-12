@@ -1,8 +1,10 @@
 // Top-level build file
+// نسخه‌ها تک‌منبع از gradle/libs.versions.toml می‌آیند (قبلاً اینجا هاردکد و ناهماهنگ بود:
+// AGP 8.5.2 در برابر 8.7.3 کاتالوگ، Hilt 2.52 در برابر 2.55 — همان خطای چندثانیه‌ای تسک‌های کامپایل)
 plugins {
-    id("com.android.application") version "8.5.2" apply false
-    id("org.jetbrains.kotlin.android") version "2.0.20" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.20" apply false
-    id("com.google.devtools.ksp") version "2.0.20-1.0.25" apply false
-    id("com.google.dagger.hilt.android") version "2.52" apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt.android) apply false
 }
