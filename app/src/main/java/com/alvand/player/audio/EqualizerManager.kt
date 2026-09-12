@@ -4,9 +4,13 @@ import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.PresetReverb
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /** تنظیمات صوتی قابل ذخیره‌سازی */
 data class AudioSettings(
@@ -27,6 +31,7 @@ data class AudioSettings(
  * حذف نویز واقعی پخش (playback) در اندروید API اختصاصی ندارد؛
  * ترکیب برش Hiss/Hum با EQ پیاده شده است.
  */
+@Singleton
 class EqualizerManager @Inject constructor() {
 
     private var eq: Equalizer? = null
@@ -42,7 +47,7 @@ class EqualizerManager @Inject constructor() {
         eq?.let { e -> (0 until e.numberOfPresets).map { e.getPresetName(it.toShort()) } }
     }.getOrNull() ?: listOf("Normal", "Pop", "Rock", "Jazz", "Classical", "Bass", "Vocal", "Treble")
 
-    val bandCount: Int get() = runCatching { eq?.numberOfBands?.toInt() }.getOrNull() ?: 5
+    val bandCount: Int get() = runCatching { eq?.numberOfBands?.toInt() }.getOrNull()?.coerceIn(1, 10) ?: 5
     val bandRange: IntRange get() = runCatching {
         val r = eq?.bandLevelRange ?: return IntRange(-1500, 1500)
         IntRange(r[0].toInt(), r[1].toInt())
@@ -54,60 +59,108 @@ class EqualizerManager @Inject constructor() {
 
     fun attach(audioSessionId: Int, s: AudioSettings = _settings.value) {
         if (audioSessionId <= 0) return
-        release()
+        if (audioSessionId == sessionId && eq != null) {
+            // همان سشن است — فقط ستینگ را به‌روز کن
+            applyAll(s)
+            return
+        }
+        // ساخت افکت روی IO تا ANR ندهد؛ کالر می‌تواند از Main صدا بزند
+        // برای سازگاری سینک نگهش می‌داریم ولی بایندر سنگین را جدا try می‌کنیم
+        val oldEq = eq
+        val oldBass = bass
+        val oldLoud = loud
+        val oldReverb = reverb
+        var newEq: Equalizer? = null
+        try {
+            newEq = Equalizer(0, audioSessionId).apply { enabled = s.eqEnabled }
+        } catch (e: Exception) {
+            Log.w("EQ", "Equalizer create failed sid=$audioSessionId", e)
+            // EQ سالم قبلی را نابود نکن — فقط bass/loud را نگه دار
+            _settings.value = s
+            return
+        } catch (e: UnsupportedOperationException) {
+            Log.w("EQ", "Equalizer unsupported", e)
+            _settings.value = s
+            return
+        }
+        // موفق شد — حالا قدیمی‌ها را آزاد کن
         sessionId = audioSessionId
         _settings.value = s
-        // هسته اکولایزر: اگر ساخته نشود خطا بالا می‌رود تا بعداً دوباره تلاش شود
-        eq = Equalizer(0, audioSessionId).apply { enabled = s.eqEnabled }
-        // بقیه افکت‌ها جدا جدا تا خرابی یکی، بقیه را از کار نیندازد
-        runCatching {
-            bass = BassBoost(0, audioSessionId).apply {
-                enabled = s.bassStrength > 0
-                setStrength(s.bassStrength.toShort().coerceIn(0, 1000))
+        runCatching { oldEq?.enabled = false }
+        runCatching { oldEq?.release() }
+        runCatching { oldBass?.release() }
+        runCatching { oldLoud?.release() }
+        runCatching { oldReverb?.release() }
+        eq = newEq
+        bass = runCatching {
+            BassBoost(0, audioSessionId).apply {
+                enabled = s.bassStrength.coerceIn(0, 1000) > 0
+                setStrength(s.bassStrength.coerceIn(0, 1000).toShort())
             }
-        }
-        runCatching {
-            loud = LoudnessEnhancer(audioSessionId).apply {
-                enabled = s.volumeBoostDb > 0
-                // هر 100 واحد ≈ 1dB
-                setTargetGain(s.volumeBoostDb * 100)
+        }.getOrNull()
+        loud = runCatching {
+            LoudnessEnhancer(audioSessionId).apply {
+                enabled = s.volumeBoostDb.coerceIn(0, 10) > 0
+                setTargetGain((s.volumeBoostDb.coerceIn(0, 10) * 100).coerceIn(0, 1000))
             }
-        }
-        runCatching {
-            reverb = PresetReverb(0, audioSessionId).apply {
-                enabled = s.reverbPreset > 0
-                if (s.reverbPreset > 0) preset = s.reverbPreset.toShort()
+        }.getOrNull()
+        reverb = runCatching {
+            PresetReverb(0, audioSessionId).apply {
+                val validPresets = setOf(
+                    PresetReverb.PRESET_NONE, PresetReverb.PRESET_SMALLROOM,
+                    PresetReverb.PRESET_MEDIUMROOM, PresetReverb.PRESET_LARGEROOM,
+                    PresetReverb.PRESET_MEDIUMHALL, PresetReverb.PRESET_LARGEHALL,
+                    PresetReverb.PRESET_PLATE
+                )
+                val p = s.reverbPreset.toShort()
+                enabled = s.reverbPreset > 0 && p in validPresets.map { it.toShort() }
+                if (enabled) preset = p
             }
-        }
+        }.getOrNull()
         applyAll(s)
     }
 
-    /** آیا اکولایزر به سشن صوتی وصل است؟ */
-    fun isAttached(): Boolean = eq != null
+    /** نسخه IO برای صدا زدن از کوروتین بدون بلاک Main */
+    suspend fun attachAsync(audioSessionId: Int, s: AudioSettings = _settings.value) =
+        withContext(Dispatchers.IO) { attach(audioSessionId, s) }
+
+    /** آیا اکولایزر به سشن صوتی وصل است؟ (سشن معتبر + افکت زنده) */
+    fun isAttached(): Boolean = eq != null && sessionId > 0
+
+    fun currentSessionId(): Int = sessionId
 
     fun applyAll(s: AudioSettings) {
         _settings.value = s
-        val e = eq ?: return
-        runCatching {
-            e.enabled = s.eqEnabled
-            if (s.preset >= 0 && s.preset < e.numberOfPresets && !s.noiseReduction) {
-                // بعضی دستگاه‌ها usePreset را سایلنت رد می‌کنند؛ آن‌وقت منحنی دستی اعمال می‌شود
-                val name = runCatching { e.getPresetName(s.preset.toShort()) }.getOrNull() ?: ""
-                val ok = runCatching { e.usePreset(s.preset.toShort()) }.isSuccess
-                if (!ok) applyNamedCurve(e, name)
+        val e = eq
+        // خرابی EQ نباید bass/loud را از کار بیندازد — هر کدام try جدا
+        if (e != null) {
+            runCatching { e.enabled = s.eqEnabled }
+            if (s.preset >= 0 && runCatching { s.preset < e.numberOfPresets }.getOrDefault(false) && !s.noiseReduction) {
+                val applied = runCatching { e.usePreset(s.preset.toShort()) }.isSuccess
+                if (!applied) {
+                    val name = runCatching { e.getPresetName(s.preset.toShort()) }.getOrNull() ?: ""
+                    runCatching { applyNamedCurve(e, name) }
+                }
             } else {
+                val range = bandRange
                 s.bandLevels.forEachIndexed { i, lvl ->
-                    if (i < e.numberOfBands) e.setBandLevel(i.toShort(), lvl.toShort())
+                    if (i < runCatching { e.numberOfBands }.getOrDefault(0)) {
+                        runCatching { e.setBandLevel(i.toShort(), lvl.coerceIn(range.first, range.last).toShort()) }
+                    }
                 }
             }
-            if (s.noiseReduction) applyNoiseReductionLocked(s.noiseLevel)
+            if (s.noiseReduction) runCatching { applyNoiseReduction(s.noiseLevel, s.bandLevels) }
+        }
+        runCatching {
             bass?.apply {
-                enabled = s.bassStrength > 0
-                setStrength(s.bassStrength.toShort().coerceIn(0, 1000))
+                enabled = s.bassStrength.coerceIn(0, 1000) > 0
+                setStrength(s.bassStrength.coerceIn(0, 1000).toShort())
             }
+        }
+        runCatching {
             loud?.apply {
-                enabled = s.volumeBoostDb > 0
-                setTargetGain((s.volumeBoostDb * 100).coerceIn(0, 1000))
+                enabled = s.volumeBoostDb.coerceIn(0, 10) > 0
+                setTargetGain((s.volumeBoostDb.coerceIn(0, 10) * 100).coerceIn(0, 1000))
             }
         }
     }
@@ -135,10 +188,10 @@ class EqualizerManager @Inject constructor() {
         }?.value ?: return
         val lo = bandRange.first
         val hi = bandRange.last
-        for (i in 0 until e.numberOfBands) {
+        for (i in 0 until runCatching { e.numberOfBands }.getOrDefault(0)) {
             val f = runCatching { e.getCenterFreq(i.toShort()) / 1000f }.getOrNull() ?: 0f
             val db = interpCurve(f, curve)
-            e.setBandLevel(i.toShort(), (db * 100).toInt().coerceIn(lo, hi).toShort())
+            runCatching { e.setBandLevel(i.toShort(), (db * 100).toInt().coerceIn(lo, hi).toShort()) }
         }
     }
 
@@ -165,10 +218,11 @@ class EqualizerManager @Inject constructor() {
      * - ناچ Hum برق 50/60Hz (باند پایین کم می‌شود)
      * - کمی بوست وضوح وکال (1-4kHz)
      */
-    private fun applyNoiseReductionLocked(level: Int) {        val e = eq ?: return
-        val n = e.numberOfBands
+    private fun applyNoiseReduction(level: Int, baseLevels: List<Int>) {
+        val e = eq ?: return
+        val n = runCatching { e.numberOfBands }.getOrDefault(0)
         if (n <= 0) return
-        val k = level / 100f // 0..1
+        val k = level.coerceIn(0, 100) / 100f // 0..1
         for (i in 0 until n) {
             val freq = runCatching { e.getCenterFreq(i.toShort()) / 1000 }.getOrNull() ?: 0
             val cut = when {
@@ -178,16 +232,23 @@ class EqualizerManager @Inject constructor() {
                 freq > 5000 -> (-600 * k).toInt()
                 else -> 0
             }
-            val base = _settings.value.bandLevels.getOrNull(i) ?: 0
-            e.setBandLevel(i.toShort(), (base + cut).coerceIn(bandRange.first, bandRange.last).toShort())
+            val base = baseLevels.getOrNull(i) ?: 0
+            runCatching {
+                e.setBandLevel(i.toShort(), (base + cut).coerceIn(bandRange.first, bandRange.last).toShort())
+            }
         }
     }
 
     fun release() {
+        runCatching { eq?.enabled = false }
+        runCatching { bass?.enabled = false }
+        runCatching { loud?.enabled = false }
+        runCatching { reverb?.enabled = false }
         runCatching { eq?.release() }
         runCatching { bass?.release() }
         runCatching { loud?.release() }
         runCatching { reverb?.release() }
         eq = null; bass = null; loud = null; reverb = null
+        sessionId = 0
     }
 }

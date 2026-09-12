@@ -45,7 +45,7 @@
         android:layout_height="44dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_desc"
-        android:src="@android:drawable/ic_media_previous"
+        android:src="@drawable/ic_widget_prev"
         android:tint="#FFF2F2F5" />
 
     <ImageButton
@@ -54,7 +54,7 @@
         android:layout_height="56dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_name"
-        android:src="@android:drawable/ic_media_play"
+        android:src="@drawable/ic_widget_play"
         android:tint="#FFF2F2F5" />
 
     <ImageButton
@@ -63,6 +63,6 @@
         android:layout_height="44dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_desc"
-        android:src="@android:drawable/ic_media_next"
+        android:src="@drawable/ic_widget_next"
         android:tint="#FFF2F2F5" />
 </LinearLayout>

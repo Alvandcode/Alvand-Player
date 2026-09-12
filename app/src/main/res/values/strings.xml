@@ -78,4 +78,9 @@
     <string name="background_set">Custom photo is on. Change it or go back to default.</string>
     <string name="background_pick">Choose photo…</string>
     <string name="background_remove">Remove (default)</string>
+    <!-- Fallbacks (avoid hardcoded strings for i18n) -->
+    <string name="cover_fallback">♪</string>
+    <string name="unknown_artist">Unknown Artist</string>
+    <string name="unknown_title">Unknown</string>
+    <string name="sleep_chip_fmt">☾ %1$s</string>
 </resources>

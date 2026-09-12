@@ -18,8 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
@@ -115,7 +117,7 @@ fun PlayerScreen(
                             Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 28.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("♪", color = pal.sub, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.cover_fallback), color = pal.sub, fontSize = 40.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 "${stringResource(R.string.playlist)} (0)",
@@ -153,7 +155,8 @@ fun PlayerScreen(
                                 fontSize = 14.5.sp, maxLines = 1
                             )
                             Text(
-                                s.artist.takeIf { it.isNotBlank() } ?: "—",
+                                s.artist.takeIf { it.isNotBlank() && it != "Unknown Artist" && it != "Unknown" }
+                                    ?: stringResource(R.string.unknown_artist),
                                 color = pal.sub, fontSize = 12.sp, maxLines = 1
                             )
                         }
@@ -240,19 +243,23 @@ fun PlayerScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
                         progColor = dyn.accent
                     )
-                    Row(
-                        Modifier.align(Alignment.CenterHorizontally).padding(top = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        LocalLayoutDirection provides LayoutDirection.Ltr
                     ) {
-                        Text(
-                            fmtTime(shownPos), color = pal.ink,
-                            fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-                            letterSpacing = 0.3.sp
-                        )
-                        Text(
-                            " / ${fmtTime(state.durationMs)}", color = pal.sub,
-                            fontSize = 12.5.sp, letterSpacing = 0.2.sp
-                        )
+                        Row(
+                            Modifier.align(Alignment.CenterHorizontally).padding(top = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                fmtTime(shownPos), color = pal.ink,
+                                fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+                                letterSpacing = 0.3.sp, maxLines = 1
+                            )
+                            Text(
+                                " / ${fmtTime(state.durationMs)}", color = pal.sub,
+                                fontSize = 12.5.sp, letterSpacing = 0.2.sp, maxLines = 1
+                            )
+                        }
                     }
                     Spacer(Modifier.height(6.dp))
                     // دکمه‌ها + هاله بسیار ملایم پشتشان

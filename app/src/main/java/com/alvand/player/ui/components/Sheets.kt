@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
 import com.alvand.player.R
 import com.alvand.player.ui.theme.*
+import kotlinx.coroutines.flow.map
 
 /** منوی اصلی (≡): همه امکانات اضافی اینجاست */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,8 +142,10 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Text(stringResource(R.string.eq_title), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Switch(checked = eq.eqEnabled, onCheckedChange = { vm.updateAudio(eq.copy(eqEnabled = it)) })
             }
-            // بازخورد اتصال: تا سشن صوتی نیاید، تغییر بی‌اثر است
-            vm.playerState.collectAsState().value
+            // بازخورد اتصال: فقط isPlaying را کالکت کن تا position هر ۵۰۰ms کل شیت را نسوزاند
+            val isPlaying by vm.playerState.map { it.isPlaying }.collectAsState(initial = false)
+            @Suppress("UNUSED_EXPRESSION")
+            isPlaying
             if (!vm.manager.eqManager.isAttached()) {
                 Text(
                     if (eq.eqEnabled) stringResource(R.string.eq_need_play)
@@ -210,10 +213,24 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
 fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     val lyrics by vm.lyrics.collectAsState()
     val loading by vm.lyricsLoading.collectAsState()
-    val pos = vm.playerState.collectAsState().value.positionMs
+    // فقط position را کالکت کن (نه کل PlayerUiState) + جستجوی دودویی به‌جای اسکن خطی O(n)
+    val pos by vm.playerState.map { it.positionMs }.collectAsState(initial = 0L)
     var manual by remember { mutableStateOf("") }
-    val activeIdx = remember(lyrics, pos) {
-        lyrics.lines.indexOfLast { it.timeMs <= pos }.coerceAtLeast(0)
+    val activeIdx by remember(lyrics, pos) {
+        derivedStateOf {
+            val lines = lyrics.lines
+            if (lines.isEmpty()) 0
+            else {
+                var lo = 0
+                var hi = lines.size - 1
+                var ans = 0
+                while (lo <= hi) {
+                    val mid = (lo + hi) ushr 1
+                    if (lines[mid].timeMs <= pos) { ans = mid; lo = mid + 1 } else hi = mid - 1
+                }
+                ans
+            }
+        }
     }
     val pal = LocalAP.current
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = pal.sheet) {
@@ -289,10 +306,23 @@ fun MarqueeLine(
 @Composable
 fun LyricsPreviewCard(vm: AppViewModel, onOpenFull: () -> Unit) {
     val lyrics by vm.lyrics.collectAsState()
-    val pos = vm.playerState.collectAsState().value.positionMs
+    val pos by vm.playerState.map { it.positionMs }.collectAsState(initial = 0L)
     val pal = LocalAP.current
-    val activeIdx = remember(lyrics, pos) {
-        lyrics.lines.indexOfLast { it.timeMs <= pos }.coerceAtLeast(0)
+    val activeIdx by remember(lyrics, pos) {
+        derivedStateOf {
+            val lines = lyrics.lines
+            if (lines.isEmpty()) 0
+            else {
+                var lo = 0
+                var hi = lines.size - 1
+                var ans = 0
+                while (lo <= hi) {
+                    val mid = (lo + hi) ushr 1
+                    if (lines[mid].timeMs <= pos) { ans = mid; lo = mid + 1 } else hi = mid - 1
+                }
+                ans
+            }
+        }
     }
     GlassCard(
         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp),

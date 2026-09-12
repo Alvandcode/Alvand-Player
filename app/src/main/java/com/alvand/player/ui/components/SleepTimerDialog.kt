@@ -92,15 +92,19 @@ fun SleepTimerDialog(vm: AppViewModel, onDismiss: () -> Unit) {
 fun SleepChip(vm: AppViewModel, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val sleep by vm.manager.sleepState.collectAsState()
     if (!sleep.active) return
-    AssistChip(
-        onClick = onClick,
-        label = {
-            Text(
-                "☾ ${SleepTimer.formatRemaining(sleep.remainingMs)}",
-                fontSize = 12.sp, fontWeight = FontWeight.Bold
-            )
-        },
-        leadingIcon = { Icon(Icons.Default.Bedtime, null, modifier = Modifier.size(16.dp)) },
-        modifier = modifier
-    )
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr
+    ) {
+        AssistChip(
+            onClick = onClick,
+            label = {
+                Text(
+                    stringResource(R.string.sleep_chip_fmt, SleepTimer.formatRemaining(sleep.remainingMs)),
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1
+                )
+            },
+            leadingIcon = { Icon(Icons.Default.Bedtime, null, modifier = Modifier.size(16.dp)) },
+            modifier = modifier
+        )
+    }
 }

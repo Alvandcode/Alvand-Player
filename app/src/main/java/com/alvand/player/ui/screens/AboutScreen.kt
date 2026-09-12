@@ -43,8 +43,9 @@ fun AboutScreen(onBack: () -> Unit) {
 
     Column(
         Modifier.fillMaxSize().background(pal.bg)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
             .verticalScroll(rememberScrollState())
-            .padding(top = 40.dp, start = 18.dp, end = 18.dp, bottom = 24.dp)
+            .padding(top = 12.dp, start = 18.dp, end = 18.dp, bottom = 24.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = pal.ink) }
@@ -94,7 +95,18 @@ fun AboutScreen(onBack: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Text("TON", color = pal.sub, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(TON_ADDRESS, color = pal.ink, fontSize = 12.sp)
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr
+                ) {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(
+                            android.net.Uri.decode(TON_ADDRESS).let {
+                                "\u2066$it\u2069"
+                            },
+                            color = pal.ink, fontSize = 12.sp, maxLines = 2
+                        )
+                    }
+                }
                 Spacer(Modifier.height(10.dp))
                 Button(
                     onClick = {
@@ -128,7 +140,11 @@ private fun AboutLink(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = pal.sub, fontSize = 11.sp)
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr
+                ) {
+                    Text("\u2066$subtitle\u2069", color = pal.sub, fontSize = 11.sp, maxLines = 1)
+                }
             }
             Icon(Icons.Default.OpenInNew, null, tint = pal.sub)
         }

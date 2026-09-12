@@ -1,11 +1,15 @@
 package com.alvand.player
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alvand.player.audio.AudioSettings
@@ -22,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.util.concurrent.atomic.AtomicLong
 
 /** ویومدل اصلی اپ — وابستگی‌ها با Hilt تزریق می‌شوند */
 @HiltViewModel
@@ -40,22 +45,36 @@ class AppViewModel @Inject constructor(
         settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     val backgroundUri: StateFlow<String?> =
         settings.backgroundUri.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val onboardingSeen: StateFlow<Boolean> =
+        settings.onboardingSeen.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun setThemeMode(mode: Int) {
         viewModelScope.launch { settings.setThemeMode(mode) }
+    }
+
+    fun setOnboardingSeen() {
+        viewModelScope.launch { settings.setOnboardingSeen(true) }
     }
 
     fun setBackground(uriString: String?) {
         viewModelScope.launch { settings.setBackground(uriString) }
     }
 
-    private val _songs = MutableStateFlow<List<Song>>(repo.demoPlaylist())
+    // ایونت ناوبری lifecycle-aware (جایگزین navTarget استاتیک MainActivity که لیک می‌داد)
+    private val _navEvents = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val navEvents: SharedFlow<String> = _navEvents.asSharedFlow()
+    fun navigateTo(route: String) { _navEvents.tryEmit(route) }
+
+    // دمو فقط وقتی نشان داده می‌شود که واقعاً هیچ آهنگی نیست (نه قاطی لوکال)
+    private val _songs = MutableStateFlow<List<Song>>(emptyList())
     val songs: StateFlow<List<Song>> = _songs
+    private var hasScannedOnce = false
 
     private val _lyrics = MutableStateFlow(LyricsResult(emptyList(), "", "none"))
     val lyrics: StateFlow<LyricsResult> = _lyrics
     private val _lyricsLoading = MutableStateFlow(false)
     val lyricsLoading: StateFlow<Boolean> = _lyricsLoading
+    private val lyricsGen = AtomicLong(0)
 
     private val _liked = MutableStateFlow<Set<Long>>(emptySet())
     val liked: StateFlow<Set<Long>> = _liked
@@ -75,6 +94,19 @@ class AppViewModel @Inject constructor(
     val lastScanAdded: StateFlow<Int?> = _lastScanAdded
     fun consumeScanMessage() { _lastScanAdded.value = null }
 
+    private val _permissionError = MutableStateFlow(false)
+    val permissionError: StateFlow<Boolean> = _permissionError
+
+    fun hasAudioPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= 33) {
+            ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.READ_MEDIA_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                PackageManager.PERMISSION_GRANTED
+        }
+    }
+
     /**
      * اسکن آهنگ‌های گوشی از MediaStore و ادغام با پلی‌لیست.
      * آهنگ‌های قبلی (لینک/فایل دستی) حفظ می‌شوند؛ فقط لوکال‌ها به‌روز می‌شوند.
@@ -84,14 +116,28 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch {
             _isScanning.value = true
             try {
-                runCatching {
-                    val local = repo.loadLocalSongs()
-                    val remote = _songs.value.filter { it.isRemote }
-                    val knownLocalIds = _songs.value.filter { !it.isRemote }.map { it.id }.toSet()
-                    val added = local.count { it.id !in knownLocalIds }
-                    _songs.value = local + remote.ifEmpty { repo.demoPlaylist() }
-                    if (announce) _lastScanAdded.value = added
+                val local = try {
+                    repo.loadLocalSongs()
+                } catch (e: SecurityException) {
+                    _permissionError.value = true
+                    Log.w("VM", "scan: permission denied", e)
+                    return@launch
                 }
+                _permissionError.value = false
+                val prev = _songs.value
+                val remote = prev.filter { it.isRemote }
+                val manualLocal = prev.filter { !it.isRemote && it.id < 0 }
+                val knownLocalIds = prev.filter { !it.isRemote && it.id >= 0 }.map { it.id }.toSet()
+                val added = local.count { it.id !in knownLocalIds }
+                val merged = local + manualLocal + remote
+                _songs.value = merged.ifEmpty {
+                    // فقط وقتی واقعاً خالی است دمو بده (نه قاطی لوکال)
+                    if (!hasScannedOnce) repo.demoPlaylist() else emptyList()
+                }
+                hasScannedOnce = true
+                if (announce) _lastScanAdded.value = added
+            } catch (e: Exception) {
+                Log.w("VM", "scan failed", e)
             } finally {
                 _isScanning.value = false
             }
@@ -114,27 +160,41 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    // URI درست برای observer: همان کالکشنی که کوئری می‌زنیم (VOLUME_EXTERNAL در A29+)
+    private fun observedUri(): Uri {
+        return if (Build.VERSION.SDK_INT >= 29) {
+            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
+    }
+
     init {
         scanDeviceSongs(announce = false)
         // دیده‌بان فایل‌های صوتی گوشی تا وقتی اپ زنده است
         runCatching {
             appContext.contentResolver.registerContentObserver(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                observedUri(),
                 true,
                 mediaObserver
             )
         }
-        // لود لیریک هر آهنگ جدید: اول لوکال/امبدد، بعد آنلاین
+        // لود لیریک هر آهنگ جدید: اول لوکال/امبدد، بعد آنلاین — با نسل تا پاسخ قدیمی روی آهنگ جدید ننشیند
         viewModelScope.launch {
             playerState.map { it.current }.distinctUntilChanged().collect { song ->
                 if (song == null) return@collect
+                val gen = lyricsGen.incrementAndGet()
                 _lyricsLoading.value = true
                 var res = LyricsManager.loadLocal(song, appContext)
                 if (res.lines.isEmpty()) {
-                    res = LyricsManager.fetchOnline(song.artist, song.title)
+                    val durSec = (song.durationMs / 1000).takeIf { it > 0 } ?: 0L
+                    res = LyricsManager.fetchOnline(song.artist, song.title, durSec)
                 }
-                _lyrics.value = res
-                _lyricsLoading.value = false
+                // فقط اگر هنوز همین آهنگ است اعمال کن (ضد race اسکیپ سریع)
+                if (lyricsGen.get() == gen) {
+                    _lyrics.value = res
+                    _lyricsLoading.value = false
+                }
             }
         }
     }
@@ -144,24 +204,34 @@ class AppViewModel @Inject constructor(
     fun playDirectLink(url: String): Boolean {
         val ok = manager.playDirectLink(url)
         if (ok != null) {
-            _songs.value = listOf(ok) + _songs.value
+            // تکراری اضافه نکن
+            if (_songs.value.none { it.id == ok.id }) {
+                _songs.value = listOf(ok) + _songs.value
+            }
             return true
         }
         return false
     }
 
     fun playUri(uri: Uri, name: String) {
-        val s = Song(uri.toString().hashCode().toLong(), name, "Local file", uri = uri)
-        _songs.value = listOf(s) + _songs.value
+        val s = Song(Song.localFileId(uri), name, "Local file", uri = uri)
+        if (_songs.value.none { it.id == s.id }) {
+            _songs.value = listOf(s) + _songs.value
+        }
         manager.setQueue(listOf(s))
     }
 
     fun refreshLyricsOnline() {
         val c = playerState.value.current ?: return
         viewModelScope.launch {
+            val gen = lyricsGen.incrementAndGet()
             _lyricsLoading.value = true
-            _lyrics.value = LyricsManager.fetchOnline(c.artist, c.title)
-            _lyricsLoading.value = false
+            val durSec = (c.durationMs / 1000).takeIf { it > 0 } ?: 0L
+            val res = LyricsManager.fetchOnline(c.artist, c.title, durSec)
+            if (lyricsGen.get() == gen) {
+                _lyrics.value = res
+                _lyricsLoading.value = false
+            }
         }
     }
 
@@ -171,7 +241,10 @@ class AppViewModel @Inject constructor(
             LyricsManager.saveManual(c, appContext, raw)
             val lines = LyricsManager.parseLrc(
                 if (raw.contains("[")) raw else raw.lineSequence().filter { it.isNotBlank() }
-                    .mapIndexed { i, t -> "[00:${(i * 4).toString().padStart(2, '0')}.00]$t" }
+                    .mapIndexed { i, t ->
+                        val totalSec = i * 4L
+                        "[%02d:%02d.00]$t".format(totalSec / 60, totalSec % 60)
+                    }
                     .joinToString("\n")
             )
             _lyrics.value = LyricsResult(lines, raw, "manual")
@@ -180,10 +253,13 @@ class AppViewModel @Inject constructor(
 
     fun updateAudio(s: AudioSettings) = manager.applyAudio(s)
 
+    fun clearPermissionError() { _permissionError.value = false }
+
     override fun onCleared() {
         runCatching { appContext.contentResolver.unregisterContentObserver(mediaObserver) }
         autoScanJob?.cancel()
-        manager.release()
+        // NOTE: manager.release() اینجا صدا زده نمی‌شود چون @Singleton تا آخر عمر اپ زنده است؛
+        // بستن آن در onCleared ویومدل (که با چرخش هم می‌میرد) صف/سرویس را می‌پراند.
         super.onCleared()
     }
 }

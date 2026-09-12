@@ -33,6 +33,7 @@ class SettingsRepo @Inject constructor(
 
     val themeMode: Flow<Int> = store.data.map { it[Keys.THEME] ?: ThemeMode.SYSTEM }
     val backgroundUri: Flow<String?> = store.data.map { it[Keys.BG] }
+    val onboardingSeen: Flow<Boolean> = store.data.map { it[Keys.ONBOARDING] ?: false }
 
     suspend fun setThemeMode(mode: Int) {
         store.edit { it[Keys.THEME] = mode.coerceIn(0, 2) }
@@ -45,8 +46,13 @@ class SettingsRepo @Inject constructor(
         }
     }
 
+    suspend fun setOnboardingSeen(seen: Boolean = true) {
+        store.edit { it[Keys.ONBOARDING] = seen }
+    }
+
     private object Keys {
         val THEME = intPreferencesKey("theme_mode")
         val BG = stringPreferencesKey("background_uri")
+        val ONBOARDING = androidx.datastore.preferences.core.booleanPreferencesKey("onboarding_seen")
     }
 }

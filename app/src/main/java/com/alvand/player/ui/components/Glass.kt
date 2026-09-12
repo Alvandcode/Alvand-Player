@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
@@ -61,29 +62,36 @@ fun fmtTime(ms: Long): String {
     return "${s / 60}:${(s % 60).toString().padStart(2, '0')}"
 }
 
-/** کاور آهنگ: عکس امبدد، وگرنه جای‌خالی تیره */
+/** کاور آهنگ: عکس امبدد، وگرنه جای‌خالی تیره — ضد race با نسل */
 @Composable
 fun ArtImage(song: Song?, modifier: Modifier = Modifier, corners: Shape) {
     val ctx = LocalContext.current
     var bmp by remember(song?.id) { mutableStateOf<android.graphics.Bitmap?>(null) }
     LaunchedEffect(song?.id) {
+        val id = song?.id
         bmp = null
-        song?.let { bmp = Artwork.load(it, ctx) }
+        if (song != null && id != null) {
+            val loaded = Artwork.load(song, ctx)
+            // فقط اگر هنوز همین آهنگ است بنشان (تعویض سریع = race قدیمی ننشیند)
+            if (song.id == id) bmp = loaded
+        }
     }
+    val current = bmp
     Box(
         modifier
             .clip(corners)
             .background(Brush.linearGradient(listOf(ArtDark1, ArtDark2)))
     ) {
-        if (bmp != null) {
+        if (current != null) {
             Image(
-                bmp!!.asImageBitmap(), null, Modifier.fillMaxSize(),
+                current.asImageBitmap(), null, Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
         } else {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    "♪", color = Color.White.copy(0.85f),
+                    stringResource(com.alvand.player.R.string.cover_fallback),
+                    color = Color.White.copy(0.85f),
                     fontSize = 64.sp, fontWeight = FontWeight.Bold
                 )
             }
@@ -91,13 +99,21 @@ fun ArtImage(song: Song?, modifier: Modifier = Modifier, corners: Shape) {
     }
 }
 
-/** میله‌های کوچک در حال پخش — گرد و تمیز */
+/** میله‌های کوچک در حال پخش — گرد و تمیز؛ وقتی پاز است انیمیشن اجرا نمی‌شود */
 @Composable
 fun MiniBars(
     playing: Boolean,
     modifier: Modifier = Modifier,
     color: Color = MonoInk
 ) {
+    if (!playing) {
+        Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.5.dp)) {
+            repeat(4) {
+                Box(Modifier.width(3.5.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(color))
+            }
+        }
+        return
+    }
     val inf = rememberInfiniteTransition(label = "mb")
     Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.5.dp)) {
         repeat(4) { i ->
@@ -107,7 +123,7 @@ fun MiniBars(
                 label = "m$i"
             )
             Box(
-                Modifier.width(3.5.dp).height(if (playing) h.dp else 4.dp)
+                Modifier.width(3.5.dp).height(h.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(color)
             )
@@ -292,11 +308,16 @@ fun ProgressArc(
     val latestDur by rememberUpdatedState(durationMs)
     // بیرون از DrawScope خوانده می‌شود (داخل Canvas کامپوزبل نیست)
     val pal = LocalAP.current
+    // کش مسیر پس‌زمینه تا در هر فریم پیشرفت Path جدید نسازیم
+    var cachedPath by remember { mutableStateOf<android.graphics.Path?>(null) }
+    var cachedW by remember { mutableStateOf(0f) }
+    var cachedH by remember { mutableStateOf(0f) }
     Canvas(
         modifier
             .height(86.dp)
             .fillMaxWidth()
-            .pointerInput(Unit) {
+            // کلید ابعاد: بعد از چرخش/ری‌سایز size قدیمی کپچر نشود
+            .pointerInput(latestDur) {
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     val wPx = size.width.toFloat()
@@ -334,7 +355,14 @@ fun ProgressArc(
                 }
             }
     ) {
-        val path = smilePath(size.width, size.height)
+        // مسیر پس‌زمینه فقط وقتی ابعاد عوض شد بازسازی شود (نه در هر فریم progress)
+        val path = if (cachedPath != null && cachedW == size.width && cachedH == size.height) {
+            cachedPath!!
+        } else {
+            smilePath(size.width, size.height).also {
+                cachedPath = it; cachedW = size.width; cachedH = size.height
+            }
+        }
         val sw = 6.dp.toPx()
         drawPath(path.asComposePath(), color = pal.track, style = Stroke(sw, cap = StrokeCap.Round))
         val p = progress.coerceIn(0f, 1f)
@@ -375,8 +403,14 @@ fun ProgressArc(
 fun MovingGlow(
     accent: Color,
     modifier: Modifier = Modifier,
-    alpha: Float = 0.35f
+    alpha: Float = 0.35f,
+    enabled: Boolean = true
 ) {
+    if (!enabled) {
+        // حالت ثابت بدون InfiniteTransition تا در بک‌گراند/شیت بسته CPU نسوزد
+        Box(modifier.background(accent.copy(alpha = alpha * 0.35f)))
+        return
+    }
     BoxWithConstraints(modifier) {
         val density = LocalDensity.current
         val wPx = with(density) { maxWidth.toPx() }.coerceAtLeast(1f)

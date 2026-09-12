@@ -13,9 +13,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
 
@@ -29,14 +26,33 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # compileSdk/targetSdk=36 needs platform + build-tools 36 explicitly
+      # (setup-android default may only bring 34/35)
+      - name: Install Android 36 packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      # gradle-wrapper.jar is not committed (see .gitignore exception).
+      # Bootstrap it with the exact version AGP 8.7.3 requires (8.9+).
+      # NOTE: old step used `--gradle-version 8.7` which re-downgraded the
+      # bumped properties back to 8.7 and broke every build with
+      # "Minimum supported Gradle version is 8.9".
+      - name: Provide Gradle 8.9 for wrapper bootstrap
+        if: hashFiles('gradle/wrapper/gradle-wrapper.jar') == ''
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
       - name: Grant execute permission for gradlew
         run: |
           ls -la
-          if [ ! -f gradlew ]; then
-            echo "gradlew not found, generating wrapper"
-            gradle wrapper --gradle-version 8.7 || true
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "wrapper jar missing - generating with Gradle 8.9 (must match AGP 8.7.3 requirement)"
+            gradle wrapper --gradle-version 8.9 --no-daemon
           fi
           chmod +x gradlew
+          ./gradlew --version --no-daemon
 
       - name: Decode release keystore
         env:
@@ -44,28 +60,16 @@ jobs:
         run: |
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 --decode > "${{ runner.temp }}/alvand-release.keystore"
+            chmod 600 "${{ runner.temp }}/alvand-release.keystore"
           else
-            echo "No keystore secret - APKs will be debug-signed with an ephemeral key (updates won't install over each other!)"
+            echo "::warning::No keystore secret - release will fall back to debug key and will NOT be published"
           fi
 
-      - name: Build Debug APK (stable-signed, installs over previous builds)
-        env:
-          ALVAND_KEYSTORE_PATH: ${{ runner.temp }}/alvand-release.keystore
-          ALVAND_KEYSTORE_PASSWORD: ${{ secrets.ALVAND_KEYSTORE_PASSWORD }}
-          ALVAND_KEY_ALIAS: ${{ secrets.ALVAND_KEY_ALIAS }}
-          ALVAND_KEY_PASSWORD: ${{ secrets.ALVAND_KEY_PASSWORD }}
+      - name: Lint + Unit tests
+        run: ./gradlew :app:lintDebug :app:testDebugUnitTest --stacktrace
+
+      - name: Build Debug APK (always debug-signed)
         run: ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Show keystore aliases (safe debug info)
-        env:
-          KS_B64: ${{ secrets.ALVAND_KEYSTORE_BASE64 }}
-          KS_PASS: ${{ secrets.ALVAND_KEYSTORE_PASSWORD }}
-        run: |
-          if [ -n "$KS_B64" ]; then
-            keytool -list -keystore "${{ runner.temp }}/alvand-release.keystore" -storepass "$KS_PASS"
-          else
-            echo "Skipped (no keystore secret)"
-          fi
 
       - name: Build signed Release (APK + AAB)
         env:
@@ -75,16 +79,30 @@ jobs:
           ALVAND_KEY_PASSWORD: ${{ secrets.ALVAND_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace
 
-      # بررسی اینکه هر دو APK با یک گواهی امضا شده‌اند (شرط نصب روی هم)
-      # فقط اطلاعاتی است و هرگز نباید جلوی آپلود/ریلیز را بگیرد
-      - name: Verify APK signatures match
-        continue-on-error: true
+      # بررسی بلاک‌کننده: release نباید با کلید موقت debug امضا شده باشد
+      - name: Verify release signature is stable
+        env:
+          KS_B64: ${{ secrets.ALVAND_KEYSTORE_BASE64 }}
         run: |
           BT=$(echo "$ANDROID_HOME"/build-tools/* | tr ' ' '\n' | sort -V | tail -n1)
-          echo "debug:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/debug/*.apk | grep -E "Verified|SHA-256" | head -n 3 || true
-          echo "release:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/*.apk | grep -E "Verified|SHA-256" | head -n 3 || true
+          echo "release certs:"; "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/*.apk | tee /tmp/release-certs.txt
+          if [ -z "$KS_B64" ]; then
+            echo "::warning::No keystore secret, release is debug-signed - skipping publish gates"
+            echo "RELEASE_STABLE=false" >> $GITHUB_ENV
+          else
+            DEBUG_SHA=$( "$BT/apksigner" verify --print-certs app/build/outputs/apk/debug/*.apk | grep -m1 "SHA-256" || true )
+            RELEASE_SHA=$(grep -m1 "SHA-256" /tmp/release-certs.txt || true)
+            echo "debug: $DEBUG_SHA"
+            echo "release: $RELEASE_SHA"
+            if [ -n "$DEBUG_SHA" ] && [ "$DEBUG_SHA" = "$RELEASE_SHA" ]; then
+              echo "::error::Release APK shares debug certificate - keystore was not applied"
+              exit 1
+            fi
+            echo "RELEASE_STABLE=true" >> $GITHUB_ENV
+          fi
 
       - name: Upload Release APK (signed)
+        if: env.RELEASE_STABLE == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: alvand-player-release-apk
@@ -97,10 +115,21 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Upload Release AAB
+        if: env.RELEASE_STABLE == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: alvand-player-release-aab
           path: app/build/outputs/bundle/release/*.aab
+
+      - name: Upload lint + test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-test-reports
+          if-no-files-found: warn
+          path: |
+            app/build/reports/lint-results-debug.html
+            app/build/test-results/testDebugUnitTest/
 
       # ۱) پوش تگ v* (مثلا v1.1.0) → ریلیز نسخه‌دار با یادداشت CHANGELOG
       - name: Extract release notes from CHANGELOG
@@ -111,7 +140,7 @@ jobs:
           cat release-notes.md
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && env.RELEASE_STABLE == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -120,13 +149,14 @@ jobs:
           body_path: release-notes.md
           generate_release_notes: true
 
-      # ۲) بعد از هر بیلد موفق (به‌جز PR) → ریلیز شناور Latest خودکار ساخته/به‌روز می‌شود
+      # ۲) فقط روی main (نه هر برنچ/تگ) → ریلیز شناور Latest به‌روز می‌شود و فقط آرتیفکت پایدار
       - name: Update rolling Latest release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.RELEASE_STABLE == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Latest build
+          prerelease: true
           files: |
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab

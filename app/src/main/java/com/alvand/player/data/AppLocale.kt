@@ -28,13 +28,32 @@ object AppLocale {
         Lang("fa", "فارسی")
     )
 
-    /** تغییر زبان اپ (خودکار ذخیره و اعمال می‌شود) */
-    fun apply(code: String) {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
+    private val codeSet = all.map { it.code }.toSet()
+
+    /** نرمالایز: "in" قدیمی → "id" مدرن؛ "zh-Hans-CN" → "zh" */
+    fun normalize(code: String): String {
+        val c = code.lowercase()
+        if (c == "in" || c == "ind") return "id"
+        if (c.startsWith("zh")) return "zh"
+        val base = c.substringBefore("-").substringBefore("_")
+        if (base == "in") return "id"
+        return if (base in codeSet) base else "en"
     }
 
-    /** تگ زبان فعلی اپ، مثل fa یا en */
-    fun currentTag(): String =
-        AppCompatDelegate.getApplicationLocales().toLanguageTags()
-            .ifBlank { "en" }.split(",").first().substringBefore("-").lowercase()
+    /** تغییر زبان اپ (خودکار ذخیره و اعمال می‌شود) */
+    fun apply(code: String) {
+        val n = normalize(code)
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(n))
+    }
+
+    /** تگ زبان فعلی اپ، مثل fa یا en — چندلوکیله و منطقه را درست هندل می‌کند */
+    fun currentTag(): String {
+        val tags = AppCompatDelegate.getApplicationLocales().toLanguageTags().ifBlank { return "en" }
+        // اولویت اول کاربر، بعد بقیه
+        for (raw in tags.split(",")) {
+            val n = normalize(raw.trim())
+            if (n in codeSet) return n
+        }
+        return normalize(tags.split(",").first())
+    }
 }

@@ -12,7 +12,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -68,17 +67,21 @@ fun sanitizeAccent(raw: Color, dark: Boolean = false): Color {
 @Composable
 fun rememberDynamicAccent(song: Song?, dark: Boolean = false): State<DynamicAccent> {
     val ctx = LocalContext.current
+    // فالبک را با کلید dark نگه دار تا موقع سوییچ تم فلش نزند
     val fallback = remember(dark) {
         if (dark) DynamicAccent(AlvandLavender, ArtDark2, fromArtwork = false)
         else DynamicAccent.Fallback
     }
-    var accent by remember { mutableStateOf(fallback) }
+    // state پایدار (نه ساخت State جدید در هر recompose که stability را می‌شکست)
+    val holder = remember(dark) { mutableStateOf(fallback) }
     LaunchedEffect(song?.id, dark) {
-        if (song == null) {
-            accent = fallback
+        val id = song?.id
+        if (song == null || id == null) {
+            holder.value = fallback
         } else {
+            // Artwork.colors خودش از کش load استفاده می‌کند — دوباره دیکد نمی‌شود
             val c = Artwork.colors(song, ctx)
-            accent = if (c == null || c.dominant == android.graphics.Color.BLACK) {
+            holder.value = if (c == null || c.dominant == android.graphics.Color.BLACK) {
                 fallback
             } else {
                 val raw = Color(c.dominant)
@@ -96,15 +99,17 @@ fun rememberDynamicAccent(song: Song?, dark: Boolean = false): State<DynamicAcce
             }
         }
     }
-    return remember(accent) { mutableStateOf(accent) }
+    return holder
 }
 
 /** رنگ متحرک نرم بین دو accent (برای تعویض آهنگ بدون پرش) */
 @Composable
 fun DynamicAccent.animated(): DynamicAccent {
+    // اگر از کاور نیامده، انیمیشن بیهوده اجرا نکن (جلوگیری از لوپ recompose)
+    if (!fromArtwork) return this
     val a by animateColorAsState(accent, label = "dynAccent")
     val d by animateColorAsState(accentDark, label = "dynAccentDark")
-    return remember(a, d, fromArtwork) { DynamicAccent(a, d, fromArtwork) }
+    return remember(a, d) { DynamicAccent(a, d, fromArtwork = true) }
 }
 
 /**

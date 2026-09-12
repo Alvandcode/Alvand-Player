@@ -84,14 +84,19 @@ fun PlayerBackground(
         mutableStateOf<android.graphics.Bitmap?>(null)
     }
     LaunchedEffect(song?.id) {
+        val id = song?.id
         coverBmp = null
-        song?.let { coverBmp = com.alvand.player.data.Artwork.load(it, ctx) }
+        if (song != null && id != null) {
+            val loaded = com.alvand.player.data.Artwork.load(song, ctx, maxSizePx = 256)
+            if (song.id == id) coverBmp = loaded
+        }
     }
+    val cover = coverBmp
     Box(modifier.fillMaxSize().background(pal.bg)) {
         // لایه ۱: کاور بلرشده — حس سینمایی زنده بدون نویز بصری
-        if (backgroundUri == null && coverBmp != null) {
+        if (backgroundUri == null && cover != null) {
             androidx.compose.foundation.Image(
-                bitmap = coverBmp!!.asImageBitmap(),
+                bitmap = cover.asImageBitmap(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
                     .then(if (Build.VERSION.SDK_INT >= 31) Modifier.blur(70.dp) else Modifier),
@@ -112,9 +117,13 @@ fun PlayerBackground(
                     )
             )
         } else if (backgroundUri != null) {
-            // لایه عکس دلخواه کاربر
+            // لایه عکس دلخواه کاربر — با سایز محدود تا عکس ۱۲مگاپیکسلی خام لود نشود
             AsyncImage(
-                model = backgroundUri,
+                model = coil.request.ImageRequest.Builder(ctx)
+                    .data(backgroundUri)
+                    .size(1080)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -152,7 +161,7 @@ fun PlayerBackground(
             color = accent.accent,
             centerFraction = Offset(0.5f, 0.08f),
             radiusFraction = 0.55f,
-            alpha = if (backgroundUri != null || coverBmp != null) 0.14f else 0.22f
+            alpha = if (backgroundUri != null || cover != null) 0.14f else 0.22f
         )
     }
 }
