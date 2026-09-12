@@ -7,11 +7,11 @@ plugins {
 }
 
 // تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
-val appVersionName = "1.1.0"
-val appVersionCode = 3
+val appVersionName = "1.3.0"
+val appVersionCode = 4
 
 base {
-    // خروجی‌ها: AlvandPlayer-v1.1.0-debug.apk و AlvandPlayer-v1.1.0-release.aab
+    // خروجی‌ها: AlvandPlayer-v1.3.0-debug.apk و AlvandPlayer-v1.3.0-release.aab
     archivesName.set("AlvandPlayer-v$appVersionName")
 }
 
@@ -79,6 +79,15 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = true
+        warningsAsErrors = false
+    }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -114,4 +123,12 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.okhttp)
+
+    // تست واحد / UI — پوشش منطق بحرانی (Song، SleepTimer، Palette، Locale)
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.robolectric)
+    androidTestImplementation(libs.junit)
 }

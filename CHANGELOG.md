@@ -2,6 +2,23 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] — 2026-09-12
+
+### Changed — بازطراحی Mono+Aura
+- 🎬 **Cinematic art panel**: U-shape (190dp) → modern 28dp card + soft
+  shadow + bottom scrim so the title stays readable on any cover.
+  🎬 **پنل سینمایی**: فرم U حذف شد؛ کارت مدرن با سایه نرم و اسکریم
+  پایین برای خوانایی تایتل روی هر کاوری.
+- 🖼️ **Blurred-cover background**: live blurred artwork behind the player
+  + single soft aura (was double blob + double glow) — richer, faster.
+  🖼️ **بکگراند بلر زنده**: کاور بلرشده پشت پلیر + تک‌هاله ملایم.
+- 🎵 **Readable playlist**: artwork thumbnails + artist + selected state +
+  empty state; labeled bottom handle (`Playlist • N`).
+  🎵 **پلی‌لیست خوانا**: کاور کوچک + خواننده + حالت انتخاب + حالت خالی.
+- 🌗 **Contrast & widget**: fixed low-contrast disabled icons, white icon on
+  accent, dark-glass widget with white controls, flat mono launcher icon.
+  🌗 **کنتراست و ویجت**: آیکون‌های خواناتر، ویجت شیشه تیره، آیکون فلت.
+
 ## [Unreleased]
 
 ### Added — جدید
@@ -60,4 +77,5 @@
   5-band EQ + BassBoost + LoudnessEnhancer + denoise, 17 languages, about page,
   stable release signing, auto CI (APK/AAB).
 
+[1.3.0]: https://github.com/Alvandcode/Alvand-Player/releases/tag/v1.3.0
 [1.1.0]: https://github.com/Alvandcode/Alvand-Player/releases/tag/v1.1.0
