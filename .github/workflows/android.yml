@@ -65,8 +65,12 @@ jobs:
             echo "::warning::No keystore secret - release will fall back to debug key and will NOT be published"
           fi
 
-      - name: Lint + Unit tests
-        run: ./gradlew :app:lintDebug :app:testDebugUnitTest --stacktrace
+      # عمداً دو استپ جدا تا در صورت قرمزی معلوم باشد lint مرده یا تست
+      - name: Lint (non-blocking report)
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Build Debug APK (always debug-signed)
         run: ./gradlew :app:assembleDebug --stacktrace

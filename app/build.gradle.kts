@@ -124,11 +124,11 @@ dependencies {
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.okhttp)
 
-    // تست واحد / UI — پوشش منطق بحرانی (Song، SleepTimer، Palette، Locale)
+    // تست واحد — پوشش منطق بحرانی (Song، SleepTimer، Palette، Locale)
+    // NOTE: فقط وابستگی‌های واقعاً استفاده‌شده (turbine/mockk استفاده نمی‌شوند و حذف شدند
+    // تا ریسک resolution نداشته باشیم)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
-    testImplementation(libs.turbine)
-    testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.junit)
 }
