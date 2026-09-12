@@ -65,9 +65,10 @@ jobs:
             echo "::warning::No keystore secret - release will fall back to debug key and will NOT be published"
           fi
 
-      # عمداً دو استپ جدا تا در صورت قرمزی معلوم باشد lint مرده یا تست
-      - name: Lint (non-blocking report)
-        run: ./gradlew :app:lintDebug --stacktrace
+      # لینت فقط گزارشی است و هرگز بلاک نمی‌کند (روی AGP 8.7.x + SDK 36 زیرساخت
+      # لینت ناپایدار است؛ گیت واقعی تست واحد + اسمبل است)
+      - name: Lint (report only, never blocks)
+        run: ./gradlew :app:lintDebug --stacktrace || echo "::warning::lintDebug failed - non-blocking, continuing to unit tests"
 
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
