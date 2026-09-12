@@ -9,6 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
@@ -17,6 +22,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -73,11 +79,11 @@ fun PlayerBackground(
     song: com.alvand.player.data.Song? = null
 ) {
     val pal = LocalAP.current
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var coverBmp by androidx.compose.runtime.remember(song?.id) {
-        androidx.compose.runtime.mutableStateOf<android.graphics.Bitmap?>(null)
+    val ctx = LocalContext.current
+    var coverBmp by remember(song?.id) {
+        mutableStateOf<android.graphics.Bitmap?>(null)
     }
-    androidx.compose.runtime.LaunchedEffect(song?.id) {
+    LaunchedEffect(song?.id) {
         coverBmp = null
         song?.let { coverBmp = com.alvand.player.data.Artwork.load(it, ctx) }
     }
