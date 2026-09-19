@@ -76,7 +76,7 @@ alvand-player/
 
 ## 📸 اسکرین‌شات و انتشار در فروشگاه
 
-- شات‌لیست، تنظیمات استاندارد و اسکریپت ضبط: [`docs/screenshots-README.md`](docs/screenshots-README.md)
+- شات‌لیست، تنظیمات استاندارد و اسکریپت ضبط: [`docs/screenshots-README.md`](./docs/screenshots-README.md)
   + `bash tools/capture-screenshots.sh`
 - متن‌های آماده گوگل‌پلی (انگلیسی + فارسی): `fastlane/metadata/android/{en-US,fa}/`
   (`title.txt`، `short_description.txt`، `full_description.txt`، `changelogs/3.txt`).
@@ -139,6 +139,36 @@ git push origin v1.0.0
 - **نصب:** اندروید ۶ تا ۱۷ (`minSdk 23` کف Jetpack است؛ روی ۱۷ بدون تارگت مستقیم هم اجرا می‌شود)
 - **درباره ما:** دکمه ☰ بالای خانه → گیت‌هاب، وب‌سایت، کانال تلگرام + حمایت مالی با تون‌کوین (TON)
 
+## 📱 نصب کاربر نهایی / Install (end users)
+
+- FA: اگر صفحه **Releases** خالی است، از **Actions** بگیرید: تب **Actions** >
+  آخرین اجرای موفق ورک‌فلو `Android CI – Build Alvand Player` >
+  بخش **Artifacts** (پایین صفحه) > دانلود `alvand-player-debug-apk`
+  (نصب مستقیم روی گوشی) یا `alvand-player-release-apk`.
+  نکته: دانلود Artifacts نیاز به لاگین گیت‌هاب دارد و فایل ZIP است — بعد از
+  دانلود آن را Unzip کنید و فایل `.apk` را نصب کنید.
+  روی گوشی: `Settings → Security → Install unknown apps / Unknown Sources`
+  را برای مرورگر/فایل‌منجر فعال کنید. نیازمند **اندروید ۶ به بالا**
+  (تست‌شده تا اندروید ۱۶؛ `minSdk 23` / `targetSdk 36`) است.
+- EN: If **Releases** is empty, use **Actions** > latest successful
+  `Android CI – Build Alvand Player` run > **Artifacts** >
+  download `alvand-player-debug-apk`. Unzip, enable Unknown Sources,
+  install on Android 6+.
+
+## ✅ پیش‌نیازها / Prerequisites
+
+مقادیر دقیق از `app/build.gradle.kts` و `.github/workflows/android.yml` خوانده شده
+(اگر متن قدیمی‌تری دیدید که `compileSdk 35` می‌گوید، ملاک همین‌جاست):
+
+- EN: **JDK 17** (CI: Temurin 17 via `setup-java`; `compileOptions` +
+  Kotlin `jvmTarget = "17"`), **Android Studio** سازگار با AGP `8.7.3`
+  (Ladybug به بعد) + **Gradle `8.9`** (طبق `gradle-wrapper.properties`).
+- FA: **SDK**: ‏`compileSdk = 36`، ‏`targetSdk = 36`، ‏`minSdk = 23`
+  (اندروید ۶ تا ۱۶؛ روی ۱۷ هم اجرا می‌شود) + `build-tools;36.0.0` و
+  `platforms;android-36` (قدم `Install Android 36 packages` در ورک‌فلو).
+- FA/EN: SDK را از Android Studio (`SDK Manager`) یا با `sdkmanager`
+  نصب کنید؛ سپس بیلد لوکال (پایین) را اجرا کنید.
+
 ## 🛠 بیلد لوکال
 ```bash
 ./gradlew :app:assembleDebug
@@ -165,7 +195,7 @@ ExoPlayer به‌صورت native از mp3, aac, ogg/vorbis, opus, flac, wav, m4a
 
 ## Contributing / مشارکت
 
-- EN: Issues and Pull Requests are welcome. Please see `CONTRIBUTING.md`.
+- EN: Issues and Pull Requests are welcome. Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
 - FA: برای گزارش مشکل یا پیشنهاد قابلیت جدید، لطفا ایشو یا پول‌ریکوئست ثبت کنید.
 
 ## License / لایسنس
