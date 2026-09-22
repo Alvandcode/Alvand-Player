@@ -78,4 +78,15 @@
     <string name="background_set">عکس دلخواه فعال است. عوضش کن یا به پیش‌فرض برگرد.</string>
     <string name="background_pick">انتخاب عکس…</string>
     <string name="background_remove">حذف (پیش‌فرض)</string>
+    <!-- کتابخانه v1.4.0 -->
+    <string name="favorites">علاقه‌مندی‌ها</string>
+    <string name="show_all">همه</string>
+    <string name="sort_default">جدیدترین</string>
+    <string name="sort_title">الفبا</string>
+    <string name="sort_artist">خواننده</string>
+    <string name="sort_longest">طولانی‌ترین</string>
+    <string name="like">علاقه</string>
+    <string name="unlike">حذف علاقه</string>
+    <string name="no_favorites">هنوز علاقه‌مندی نداری — روی ♡ هر آهنگ بزن.</string>
+    <string name="no_results">آهنگی با این جستجو پیدا نشد.</string>
 </resources>

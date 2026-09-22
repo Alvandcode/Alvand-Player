@@ -41,6 +41,11 @@ fun PlayerScreen(
 ) {
     val state by vm.playerState.collectAsState()
     val songs by vm.songs.collectAsState()
+    val filtered by vm.filteredSongs.collectAsState()
+    val query by vm.searchQuery.collectAsState()
+    val sortMode by vm.sortMode.collectAsState()
+    val likedSet by vm.liked.collectAsState()
+    val favOnly by vm.favoritesOnly.collectAsState()
     val bgUri by vm.backgroundUri.collectAsState()
     val pal = LocalAP.current
     val ctx = LocalContext.current
@@ -105,13 +110,63 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "${stringResource(R.string.playlist)} (${songs.size})",
+                    "${stringResource(R.string.playlist)} (${filtered.size}/${songs.size})",
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                     modifier = Modifier.weight(1f)
                 )
             }
+            // v1.4.0: جستجو + فیلتر علاقه‌مندی + سورت — بدون شکستن دیزاین مینیمال
+            OutlinedTextField(
+                value = query,
+                onValueChange = { vm.setSearchQuery(it) },
+                placeholder = { Text(stringResource(R.string.search_hint), fontSize = 13.sp) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = pal.sub, modifier = Modifier.size(18.dp)) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { vm.clearSearch() }, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.Clear, null, tint = pal.sub, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp)
+            )
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = !favOnly,
+                    onClick = { if (favOnly) vm.toggleFavoritesOnly() },
+                    label = { Text(stringResource(R.string.show_all), fontSize = 12.sp) }
+                )
+                FilterChip(
+                    selected = favOnly,
+                    onClick = { if (!favOnly) vm.toggleFavoritesOnly() },
+                    label = { Text("♡ ${stringResource(R.string.favorites)}", fontSize = 12.sp) }
+                )
+                Spacer(Modifier.weight(1f))
+                var sortOpen by remember { mutableStateOf(false) }
+                TextButton(onClick = { sortOpen = true }) {
+                    val sortLabel = when (sortMode) {
+                        1 -> stringResource(R.string.sort_title)
+                        2 -> stringResource(R.string.sort_artist)
+                        3 -> stringResource(R.string.sort_longest)
+                        else -> stringResource(R.string.sort_default)
+                    }
+                    Text("⇅ $sortLabel", color = dyn.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.sort_default)) }, onClick = { vm.setSortMode(0); sortOpen = false })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.sort_title)) }, onClick = { vm.setSortMode(1); sortOpen = false })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.sort_artist)) }, onClick = { vm.setSortMode(2); sortOpen = false })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.sort_longest)) }, onClick = { vm.setSortMode(3); sortOpen = false })
+                }
+            }
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
-                if (songs.isEmpty()) {
+                if (filtered.isEmpty()) {
                     item {
                         Column(
                             Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 28.dp),
@@ -120,26 +175,31 @@ fun PlayerScreen(
                             Text(stringResource(R.string.cover_fallback), color = pal.sub, fontSize = 40.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "${stringResource(R.string.playlist)} (0)",
-                                color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 15.sp
+                                if (favOnly) stringResource(R.string.no_favorites)
+                                else if (query.isNotBlank()) stringResource(R.string.no_results)
+                                else "${stringResource(R.string.playlist)} (0)",
+                                color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp
                             )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                stringResource(R.string.scan_songs),
-                                color = pal.sub, fontSize = 13.sp
-                            )
+                            if (songs.isEmpty()) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    stringResource(R.string.scan_songs),
+                                    color = pal.sub, fontSize = 13.sp
+                                )
+                            }
                         }
                     }
                 }
-                itemsIndexed(songs, key = { _, s -> s.id }) { i, s ->
+                itemsIndexed(filtered, key = { _, s -> s.id }) { i, s ->
                     val active = state.current?.id == s.id
                     val d = if (active) state.durationMs else s.durationMs
+                    val isFav = s.id in likedSet
                     Row(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 14.dp, vertical = 3.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (active) pal.glass else androidx.compose.ui.graphics.Color.Transparent)
-                            .clickable { vm.playList(songs, i) }
+                            .clickable { vm.playList(filtered, i) }
                             .padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -160,9 +220,20 @@ fun PlayerScreen(
                                 color = pal.sub, fontSize = 12.sp, maxLines = 1
                             )
                         }
+                        IconButton(
+                            onClick = { vm.toggleLike(s.id) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = stringResource(if (isFav) R.string.unlike else R.string.like),
+                                tint = if (isFav) dyn.accent else pal.sub,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                         if (active && state.isPlaying) {
                             MiniBars(true, color = dyn.accent)
-                            Spacer(Modifier.width(10.dp))
+                            Spacer(Modifier.width(6.dp))
                         }
                         Text(fmtTime(d), color = pal.sub, fontSize = 12.5.sp)
                     }
@@ -224,6 +295,23 @@ fun PlayerScreen(
                                     .background(pal.card.copy(alpha = 0.92f), CircleShape)
                             ) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
                             Spacer(Modifier.weight(1f))
+                            // v1.4.0: لایک آهنگ فعلی روی کاور — پایدار در DataStore
+                            if (current != null) {
+                                val curFav = current.id in likedSet
+                                IconButton(
+                                    onClick = { vm.toggleLike(current.id) },
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .background(pal.card.copy(alpha = 0.92f), CircleShape)
+                                ) {
+                                    Icon(
+                                        if (curFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = stringResource(if (curFav) R.string.unlike else R.string.like),
+                                        tint = if (curFav) dyn.accent else pal.ink
+                                    )
+                                }
+                                Spacer(Modifier.width(8.dp))
+                            }
                             SleepChip(vm, onClick = { showSleep = true })
                         }
                     }

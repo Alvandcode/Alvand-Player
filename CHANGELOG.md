@@ -2,6 +2,17 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.0] — 2026-09-22
+
+### Added — کتابخانه کاربردی
+- ♡ **علاقه‌مندی پایدار**: لایک‌ها در DataStore می‌مانند (قبلاً با بستن اپ می‌پرید)؛ دکمه ♡ در لیست + روی کاور آهنگ فعلی.
+  ♡ **Persistent favorites**: likes survive restarts (DataStore); heart button in playlist rows + on cover.
+- 🔍 **جستجو + سورت + فیلتر علاقه‌مندی‌ها**: سرچ زنده روی عنوان/خواننده/آلبوم، سورت جدیدترین/الفبا/خواننده/طولانی‌ترین، چیپ All/Favorites.
+  🔍 **Search + sort + favorites filter**: live search, sort Recent/A–Z/Artist/Longest, empty states.
+- 💾 **کش لیریک آنلاین**: نتیجه موفق LRCLIB روی دیسک ذخیره می‌شود تا دفعه بعد آفلاین بیاید؛ دستی کاربر همچنان اولویت دارد.
+  💾 **Online lyrics cache**: successful LRCLIB fetch is cached to disk for offline reuse.
+- 🧪 **تست LibraryFilter**: ۵ تست واحد برای فیلتر/سورت ترکیبی.
+
 ## [1.3.0] — 2026-09-12
 
 ### Changed — بازطراحی Mono+Aura

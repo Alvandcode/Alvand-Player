@@ -173,18 +173,52 @@ object LyricsManager {
                         "[%02d:%02d.00]$t".format(mm, ss)
                     }
                     .joinToString("\n")
-                val dir = File(context.filesDir, "lyrics").apply { mkdirs() }
-                    .takeIf { it.exists() }
-                    ?: (context.getExternalFilesDir("lyrics") ?: context.cacheDir)
-                val safe = sanitizeFileName(song.artist + "-" + song.title).take(80).ifBlank { "lyrics" }
-                // کلید پایدار بر اساس id تا save/load همیشه هم‌خوان باشند
-                val file = File(dir, "${song.id}_$safe.lrc")
-                // محدودیت حجم تا دیسک پر نشود
-                if (lrcText.toByteArray().size > MAX_LRC_FILE_BYTES) return@withContext null
-                file.writeText(lrcText)
-                file
+                writeLrcCache(song, context, lrcText)
             } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
         }
+
+    /**
+     * کش نتیجه آنلاین تا دفعه بعد بدون اینترنت از loadLocal بیاید.
+     * دستی کاربر اولویت دارد: اگر فایل manual/cache از قبل هست و source دستی است، بازنویسی نکن.
+     * اینجا ساده: فقط اگر فایلی نیست بنویس؛ اگر هست و تازه‌تر از ۳۰ روز نیست، نگه دار.
+     */
+    suspend fun cacheOnline(song: Song, context: Context, rawText: String): File? =
+        withContext(Dispatchers.IO) {
+            try {
+                if (rawText.isBlank()) return@withContext null
+                if (hasCache(song, context)) return@withContext null
+                if (rawText.toByteArray().size > MAX_LRC_FILE_BYTES) return@withContext null
+                writeLrcCache(song, context, rawText)
+            } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+        }
+
+    private fun writeLrcCache(song: Song, context: Context, lrcText: String): File? {
+        return try {
+            val dir = File(context.filesDir, "lyrics").apply { mkdirs() }
+                .takeIf { it.exists() }
+                ?: (context.getExternalFilesDir("lyrics") ?: context.cacheDir)
+            val safe = sanitizeFileName(song.artist + "-" + song.title).take(80).ifBlank { "lyrics" }
+            // کلید پایدار بر اساس id تا save/load همیشه هم‌خوان باشند
+            val file = File(dir, "${song.id}_$safe.lrc")
+            // محدودیت حجم تا دیسک پر نشود
+            if (lrcText.toByteArray().size > MAX_LRC_FILE_BYTES) return null
+            file.writeText(lrcText)
+            file
+        } catch (_: Exception) { null }
+    }
+
+    private fun hasCache(song: Song, context: Context): Boolean {
+        return try {
+            val dirs = listOfNotNull(
+                runCatching { File(context.filesDir, "lyrics") }.getOrNull(),
+                runCatching { context.getExternalFilesDir("lyrics") }.getOrNull()
+            )
+            dirs.any { dir ->
+                dir.listFiles { f -> f.name.startsWith("${song.id}_") && f.name.endsWith(".lrc") }
+                    ?.isNotEmpty() == true
+            }
+        } catch (_: Exception) { false }
+    }
 
     private fun loadFromCache(song: Song, context: Context): LyricsResult? {
         return try {

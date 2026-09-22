@@ -13,6 +13,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alvand.player.audio.AudioSettings
+import com.alvand.player.data.LibraryFilter
+import com.alvand.player.data.LibrarySort
 import com.alvand.player.data.Song
 import com.alvand.player.data.SongRepository
 import com.alvand.player.data.SettingsRepo
@@ -76,12 +78,39 @@ class AppViewModel @Inject constructor(
     val lyricsLoading: StateFlow<Boolean> = _lyricsLoading
     private val lyricsGen = AtomicLong(0)
 
-    private val _liked = MutableStateFlow<Set<Long>>(emptySet())
-    val liked: StateFlow<Set<Long>> = _liked
+    /** علاقه‌مندی پایدار (DataStore) — بین اجراها می‌ماند */
+    val liked: StateFlow<Set<Long>> =
+        settings.likedIds.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     fun toggleLike(id: Long) {
-        _liked.value = if (id in _liked.value) _liked.value - id else _liked.value + id
+        viewModelScope.launch { settings.toggleLike(id) }
     }
+
+    fun isLiked(id: Long): Boolean = id in liked.value
+
+    // ---- جستجو / سورت / فیلتر علاقه‌مندی‌ها ----
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    val sortMode: StateFlow<Int> =
+        settings.librarySort.stateIn(viewModelScope, SharingStarted.Eagerly, LibrarySort.DEFAULT)
+
+    private val _favoritesOnly = MutableStateFlow(false)
+    val favoritesOnly: StateFlow<Boolean> = _favoritesOnly
+
+    fun setSearchQuery(q: String) { _searchQuery.value = q }
+    fun clearSearch() { _searchQuery.value = "" }
+    fun setSortMode(mode: Int) {
+        viewModelScope.launch { settings.setLibrarySort(mode) }
+    }
+    fun toggleFavoritesOnly() { _favoritesOnly.value = !_favoritesOnly.value }
+
+    /** لیست نهایی برای UI: فیلتر + سرچ + سورت (خالص و تست‌پذیر) */
+    val filteredSongs: StateFlow<List<Song>> = combine(
+        _songs, _searchQuery, sortMode, liked, _favoritesOnly
+    ) { songs, query, sort, likeSet, favOnly ->
+        LibraryFilter.filterAndSort(songs, query, sort, likeSet, favOnly)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** بارگذاری (مجدد) آهنگ‌های دستگاه — بعد از دادن دسترسی صدا زده می‌شود */
     fun reloadLocalSongs() = scanDeviceSongs(announce = false)
@@ -189,6 +218,10 @@ class AppViewModel @Inject constructor(
                 if (res.lines.isEmpty()) {
                     val durSec = (song.durationMs / 1000).takeIf { it > 0 } ?: 0L
                     res = LyricsManager.fetchOnline(song.artist, song.title, durSec)
+                    // کش آنلاین تا دفعه بعد آفلاین بیاید (بدون بلاک UI)
+                    if (res.lines.isNotEmpty() && res.plainText.isNotBlank()) {
+                        runCatching { LyricsManager.cacheOnline(song, appContext, res.plainText) }
+                    }
                 }
                 // فقط اگر هنوز همین آهنگ است اعمال کن (ضد race اسکیپ سریع)
                 if (lyricsGen.get() == gen) {
@@ -228,6 +261,9 @@ class AppViewModel @Inject constructor(
             _lyricsLoading.value = true
             val durSec = (c.durationMs / 1000).takeIf { it > 0 } ?: 0L
             val res = LyricsManager.fetchOnline(c.artist, c.title, durSec)
+            if (res.lines.isNotEmpty() && res.plainText.isNotBlank()) {
+                runCatching { LyricsManager.cacheOnline(c, appContext, res.plainText) }
+            }
             if (lyricsGen.get() == gen) {
                 _lyrics.value = res
                 _lyricsLoading.value = false

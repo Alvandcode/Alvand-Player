@@ -83,4 +83,15 @@
     <string name="unknown_artist">Unknown Artist</string>
     <string name="unknown_title">Unknown</string>
     <string name="sleep_chip_fmt">☾ %1$s</string>
+    <!-- Library v1.4.0: search / sort / favorites -->
+    <string name="favorites">Favorites</string>
+    <string name="show_all">All</string>
+    <string name="sort_default">Recent</string>
+    <string name="sort_title">A–Z</string>
+    <string name="sort_artist">Artist</string>
+    <string name="sort_longest">Longest</string>
+    <string name="like">Like</string>
+    <string name="unlike">Unlike</string>
+    <string name="no_favorites">No favorites yet — tap ♡ on any song.</string>
+    <string name="no_results">No songs match your search.</string>
 </resources>
