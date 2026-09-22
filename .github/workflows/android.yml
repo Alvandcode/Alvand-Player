@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   build:
@@ -96,7 +97,9 @@ jobs:
           fi
 
       - name: Build Debug APK (always debug-signed)
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: |
+          ./gradlew :app:assembleDebug --stacktrace --console=plain 2>&1 | tee "${{ runner.temp }}/ci-build.log"
+          test ${PIPESTATUS[0]} -eq 0
 
       - name: Build signed Release (APK + AAB)
         env:
@@ -104,7 +107,32 @@ jobs:
           ALVAND_KEYSTORE_PASSWORD: ${{ secrets.ALVAND_KEYSTORE_PASSWORD }}
           ALVAND_KEY_ALIAS: ${{ secrets.ALVAND_KEY_ALIAS }}
           ALVAND_KEY_PASSWORD: ${{ secrets.ALVAND_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace
+        run: |
+          ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace --console=plain 2>&1 | tee -a "${{ runner.temp }}/ci-build.log"
+          test ${PIPESTATUS[0]} -eq 0
+
+      # اگر بیلد شکست: خطاهای کامپایلر را در یک ایشوی رهگیری منتشر کن تا بدون
+      # دسترسی به لاگ‌ها هم علت دیده شود (لاگ کامل’artefakt نمی‌خواهد). فقط روی
+      # main/tag تا PRها اسپم نسازند؛ ایشوهای موقت بعداً بسته می‌شوند.
+      - name: Publish build errors to tracking issue
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LOG="${{ runner.temp }}/ci-build.log"
+          if [ -f "$LOG" ]; then
+            ERRORS=$(grep -E -A8 "^e: |error:|FAILED|Execution failed|What went wrong|Caused by|\.kt:[0-9]+" "$LOG" | head -c 30000)
+          else
+            ERRORS="(no build log captured)"
+          fi
+          {
+            echo "🤖 Auto-report — run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} — commit ${{ github.sha }} — $(date -u +%FT%TZ)"
+            echo ""
+            echo '```'
+            echo "$ERRORS"
+            echo '```'
+          } > /tmp/ci-error-body.md
+          gh issue create --title "🔴 Build failed on ${{ github.ref_name }} (${{ github.sha }})" --body-file /tmp/ci-error-body.md 2>&1 | head -3 || true
 
       # بررسی بلاک‌کننده: release نباید با کلید موقت debug امضا شده باشد
       - name: Verify release signature is stable

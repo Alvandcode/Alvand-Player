@@ -139,8 +139,8 @@ class PlaybackService : MediaLibraryService() {
         override fun onAddMediaItems(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
-            mediaItems: MutableList<MediaItem>
-        ): ListenableFuture<MutableList<MediaItem>> {
+            mediaItems: List<MediaItem>
+        ): ListenableFuture<List<MediaItem>> {
             // درخواست صوتی Auto/Assistant را همان‌طور که هست قبول کن (رزولوشن URI در MusicPlayerManager)
             return Futures.immediateFuture(mediaItems)
         }

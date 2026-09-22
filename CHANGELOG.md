@@ -2,6 +2,13 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.2] — 2026-09-22
+
+### Fixed — خطای کامپایل Auto
+- 🩹 **`onAddMediaItems` types**: امضای override با `MutableList` با Media3 1.5.1 نمی‌خواند (`ListenableFuture` invariant است) — به `List<MediaItem>` برگشت.
+  🩹 **Compile fix**: `onAddMediaItems` override now uses `List<MediaItem>` to match Media3 1.5.1.
+- 📢 **گزارشگر خودکار**: اگر بیلد بشکند، خطاها در ایشوی 🔴 منتشر می‌شوند + لاگ کامل در `ci-build.log`.
+
 ## [1.6.1] — 2026-09-22
 
 ### Fixed — سبز شدن CI
