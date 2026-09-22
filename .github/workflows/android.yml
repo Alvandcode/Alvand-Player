@@ -24,7 +24,7 @@ jobs:
           cache: gradle
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       # compileSdk/targetSdk=36 needs platform + build-tools 36 explicitly
       # (setup-android default may only bring 34/35)
