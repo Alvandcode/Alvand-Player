@@ -35,6 +35,9 @@ class PlaybackService : MediaLibraryService() {
         const val ACTION_WIDGET_TOGGLE = "com.alvand.player.WIDGET_TOGGLE"
         const val ACTION_WIDGET_NEXT = "com.alvand.player.WIDGET_NEXT"
         const val ACTION_WIDGET_PREV = "com.alvand.player.WIDGET_PREV"
+
+        /** روت کتابخانه برای Android Auto */
+        const val ROOT_ID = "alvand-root"
     }
 
     private val widgetListener = object : Player.Listener {
@@ -97,10 +100,6 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
-
-    companion object {
-        const val ROOT_ID = "alvand-root"
-    }
 
     /** کتابخانه حداقلی برای Android Auto: root = صف فعلی (فاز بعد: پلی‌لیست‌ها/آلبوم‌ها) */
     private val libraryCallback = object : MediaLibrarySession.Callback {

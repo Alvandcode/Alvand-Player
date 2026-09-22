@@ -151,7 +151,18 @@ fun PlayerScreen(
                                 .padding(horizontal = 10.dp, vertical = 9.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            ArtImage(album.artworkSong ?: return@itemsIndexed, Modifier.size(44.dp), RoundedCornerShape(12.dp))
+                            val cover = album.artworkSong
+                            if (cover != null) {
+                                ArtImage(cover, Modifier.size(44.dp), RoundedCornerShape(12.dp))
+                            } else {
+                                Box(
+                                    Modifier.size(44.dp)
+                                        .background(pal.track, RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("♪", color = pal.sub, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(album.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)

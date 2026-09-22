@@ -21,7 +21,12 @@ and manual paste, synced line by line.
 
 🌍 17 LANGUAGES — switch inside the app, no restart needed.
 
+♡ FAVORITES + PLAYLISTS — persistent likes, Room playlists, recently played,
+Albums/Artists tabs, live search and smart sort.
+
 🔔 FULL INTEGRATION — notification, lock-screen and Bluetooth/media-output
 controls, background playback that survives closing the app.
+
+🚗 ANDROID AUTO — browse your current queue from the car.
 
 Free, fast and private — your music stays on your device.
