@@ -43,7 +43,7 @@ jobs:
       # "Minimum supported Gradle version is 8.9".
       - name: Provide Gradle 8.9 for wrapper bootstrap
         if: hashFiles('gradle/wrapper/gradle-wrapper.jar') == ''
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.9"
 
