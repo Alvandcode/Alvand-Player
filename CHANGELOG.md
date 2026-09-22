@@ -2,6 +2,16 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.0] — 2026-09-22 (Unreleased — Auto + Quality)
+
+### Added — خودرو و کیفیت انتشار
+- 🚗 **Android Auto**: `PlaybackService` از `MediaSessionService` به `MediaLibraryService` رفت؛ root = صف فعلی برای browse، `automotive_app_desc.xml` + اکسپورت سرویس.
+  🚗 **Android Auto**: MediaLibraryService with browsable queue root.
+- ✅ **CI بلاک‌کننده**: تست‌های واحد blocking شدند؛ چک `tag == appVersionName` + وجود سکشن CHANGELOG برای تگ.
+  ✅ **Blocking CI**: unit tests gate builds; tag/version/changelog consistency check.
+- 🤖 **Dependabot + CODEOWNERS**: آپدیت هفتگی Gradle/Actions، اونر ریویو خودکار.
+  🤖 **Repo health**: Dependabot + CODEOWNERS.
+
 ## [1.5.0] — 2026-09-22 (Unreleased — Room Playlists)
 
 ### Added — پلی‌لیست و کتابخانه واقعی

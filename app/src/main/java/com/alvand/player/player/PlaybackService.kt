@@ -7,15 +7,24 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibrarySession
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
 import androidx.media3.exoplayer.ExoPlayer
 import com.alvand.player.MainActivity
 import com.alvand.player.player.widget.PlayerWidgetProvider
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 
-/** سرویس پس‌زمینه برای پخش + نوتیفیکیشن مدیا + ویجت هوم‌اسکرین */
-class PlaybackService : MediaSessionService() {
-    private var session: MediaSession? = null
+/**
+ * سرویس پس‌زمینه برای پخش + نوتیفیکیشن مدیا + ویجت هوم‌اسکرین + Android Auto.
+ * v1.6.0: MediaSessionService → MediaLibraryService تا Auto/Assistant بتوانند صف را browse کنند.
+ * کتابخانه کامل (پلی‌لیست‌ها) فاز بعد؛ فعلاً root = صف فعلی پلیر.
+ */
+class PlaybackService : MediaLibraryService() {
+    private var session: MediaLibrarySession? = null
     private var player: ExoPlayer? = null
 
     companion object {
@@ -77,7 +86,7 @@ class PlaybackService : MediaSessionService() {
                 },
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            session = MediaSession.Builder(this, exo)
+            session = MediaLibrarySession.Builder(this, exo, libraryCallback)
                 .setSessionActivity(sessionActivity)
                 .build()
         } catch (e: Exception) {
@@ -87,7 +96,56 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
+
+    companion object {
+        const val ROOT_ID = "alvand-root"
+    }
+
+    /** کتابخانه حداقلی برای Android Auto: root = صف فعلی (فاز بعد: پلی‌لیست‌ها/آلبوم‌ها) */
+    private val libraryCallback = object : MediaLibrarySession.Callback {
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: MediaLibraryService.LibraryParams?
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val root = MediaItem.Builder()
+                .setMediaId(ROOT_ID)
+                .setMediaMetadata(
+                    androidx.media3.common.MediaMetadata.Builder()
+                        .setTitle("Alvand Player")
+                        .setIsBrowsable(true)
+                        .setIsPlayable(false)
+                        .build()
+                )
+                .build()
+            return Futures.immediateFuture(LibraryResult.ofItem(root, params))
+        }
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: MediaLibraryService.LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val p = player
+            val items: List<MediaItem> = if (parentId == ROOT_ID && p != null && p.mediaItemCount > 0) {
+                (0 until p.mediaItemCount).mapNotNull { runCatching { p.getMediaItemAt(it) }.getOrNull() }
+            } else emptyList()
+            return Futures.immediateFuture(LibraryResult.ofItemList(items, params))
+        }
+
+        override fun onAddMediaItems(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>
+        ): ListenableFuture<MutableList<MediaItem>> {
+            // درخواست صوتی Auto/Assistant را همان‌طور که هست قبول کن (رزولوشن URI در MusicPlayerManager)
+            return Futures.immediateFuture(mediaItems)
+        }
+    }
 
     /** اکشن‌های ویجت (بدون باز کردن اپ) */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
