@@ -7,6 +7,21 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+    ignore:
+      # Gradle 9.x به AGP 9 نیاز دارد — مهاجرت دستی، نه خودکار
+      - dependency-name: "gradle-wrapper"
+        update-types: ["version-update:semver-major"]
+      # AGP 9.x به Gradle 9 + JDK 21 نیاز دارد — مهاجرت دستی
+      - dependency-name: "com.android.application"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "com.android.library"
+        update-types: ["version-update:semver-major"]
+      # media3 جدید API عوض کرده (کد ما با 1.5.1 نوشته شده) — فعلاً پین
+      - dependency-name: "androidx.media3:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Room 2.8.x به KSP2/Kotlin 2.1+ نیاز دارد (ما KSP1/Kotlin 2.0.21 هستیم) — فعلاً پین
+      - dependency-name: "androidx.room:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
