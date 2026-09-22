@@ -28,3 +28,7 @@
 -keep class com.alvand.player.data.** { *; }
 -keep class com.alvand.player.audio.** { *; }
 -keep class com.alvand.player.lyrics.** { *; }
+# Room — DAO و Entity نباید strip شوند
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.**

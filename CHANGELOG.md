@@ -2,6 +2,16 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.5.0] — 2026-09-22 (Unreleased — Room Playlists)
+
+### Added — پلی‌لیست و کتابخانه واقعی
+- 📂 **پلی‌لیست با Room**: ساخت/حذف/تغییرنام، افزودن بدون تکرار، پخش پلی‌لیست، ماندگاری بین اجراها (`playlists` + `playlist_songs`).
+  📂 **Room playlists**: create/rename/delete, dedup add, play, persisted.
+- 🕘 **تاریخچه پخش**: Recently Played + شمارش تکرار (`play_history`)، پاک‌سازی، ثبت خودکار روی هر آهنگ.
+  🕘 **Play history**: auto-record on track change, recent list with play counts.
+- 💿 **تب Albums/Artists**: گروه‌بندی از متادیتای MediaStore (بدون DB)، پخش یک‌تپ آلبوم/خواننده.
+  💿 **Albums/Artists tabs**: grouped from MediaStore metadata, one-tap play.
+
 ## [1.4.0] — 2026-09-22
 
 ### Added — کتابخانه کاربردی

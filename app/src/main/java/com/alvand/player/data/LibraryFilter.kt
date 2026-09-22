@@ -46,4 +46,37 @@ object LibraryFilter {
     /** ایندکس امن برای playList روی لیست فیلترشده: id آهنگ را به ایندکس صف واقعی مپ کن */
     fun indexOf(queue: List<Song>, songId: Long): Int =
         queue.indexOfFirst { it.id == songId }.coerceAtLeast(0)
+
+    /** گروه‌بندی آلبوم/خواننده برای تب‌های کتابخانه — بدون DB، از متادیتای MediaStore */
+    fun groupByAlbum(songs: List<Song>): List<AlbumGroup> =
+        songs.groupBy { it.album.trim().ifBlank { "Unknown Album" } }
+            .map { (album, list) ->
+                AlbumGroup(
+                    name = album,
+                    artist = list.groupBy { it.artist }.maxByOrNull { it.value.size }?.key ?: "",
+                    songs = list,
+                    artworkSong = list.firstOrNull()
+                )
+            }
+            .sortedBy { it.name.lowercase() }
+
+    fun groupByArtist(songs: List<Song>): List<ArtistGroup> =
+        songs.groupBy { it.artist.trim().ifBlank { "Unknown Artist" } }
+            .map { (artist, list) ->
+                ArtistGroup(name = artist, songs = list, albums = list.map { it.album }.distinct().size)
+            }
+            .sortedBy { it.name.lowercase() }
 }
+
+data class AlbumGroup(
+    val name: String,
+    val artist: String,
+    val songs: List<Song>,
+    val artworkSong: Song? = null
+)
+
+data class ArtistGroup(
+    val name: String,
+    val songs: List<Song>,
+    val albums: Int = 1
+)

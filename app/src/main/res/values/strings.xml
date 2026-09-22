@@ -94,4 +94,22 @@
     <string name="unlike">Unlike</string>
     <string name="no_favorites">No favorites yet — tap ♡ on any song.</string>
     <string name="no_results">No songs match your search.</string>
+    <!-- Library v1.5.0 -->
+    <string name="tab_songs">Songs</string>
+    <string name="tab_albums">Albums</string>
+    <string name="tab_artists">Artists</string>
+    <string name="tab_playlists">Playlists</string>
+    <string name="tab_recent">Recent</string>
+    <string name="new_playlist">New playlist</string>
+    <string name="playlist_name_hint">Playlist name</string>
+    <string name="create">Create</string>
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="added_to_playlist">Added ✓</string>
+    <string name="already_in_playlist">Already in playlist</string>
+    <string name="delete_playlist">Delete playlist?</string>
+    <string name="delete">Delete</string>
+    <string name="no_playlists">No playlists yet — create your first one.</string>
+    <string name="no_history">No recent plays yet.</string>
+    <string name="clear_history">Clear history</string>
+    <string name="songs_n">%1$d songs</string>
 </resources>

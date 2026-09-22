@@ -7,8 +7,8 @@ plugins {
 }
 
 // تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
-val appVersionName = "1.4.0"
-val appVersionCode = 5
+val appVersionName = "1.5.0"
+val appVersionCode = 6
 
 base {
     // خروجی‌ها: AlvandPlayer-v1.3.0-debug.apk و AlvandPlayer-v1.3.0-release.aab
@@ -99,6 +99,9 @@ dependencies {
     implementation(libs.datastore.prefs)
     implementation(libs.appcompat) // انتخاب زبان داخل اپ (per-app locales)
     implementation(libs.palette.ktx) // پالت رنگی داینامیک از کاور
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)

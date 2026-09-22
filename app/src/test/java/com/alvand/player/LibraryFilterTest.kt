@@ -59,4 +59,30 @@ class LibraryFilterTest {
         val out = LibraryFilter.filterAndSort(list, "yellow", 3, setOf(1L, 2L), true)
         assertEquals(listOf(2L, 1L), out.map { it.id })
     }
+
+    @Test
+    fun `groupByAlbum clusters and sorts`() {
+        val list = listOf(
+            song(1, "A1", "X", album = "Zebra"),
+            song(2, "A2", "X", album = "Zebra"),
+            song(3, "B1", "Y", album = "apple")
+        )
+        val groups = LibraryFilter.groupByAlbum(list)
+        assertEquals(2, groups.size)
+        assertEquals("apple", groups.first().name)
+        assertEquals(2, groups.last().songs.size)
+    }
+
+    @Test
+    fun `groupByArtist counts albums`() {
+        val list = listOf(
+            song(1, "A", "Coldplay", album = "A1"),
+            song(2, "B", "Coldplay", album = "A2"),
+            song(3, "C", "Coldplay", album = "A1")
+        )
+        val groups = LibraryFilter.groupByArtist(list)
+        assertEquals(1, groups.size)
+        assertEquals(3, groups.first().songs.size)
+        assertEquals(2, groups.first().albums)
+    }
 }

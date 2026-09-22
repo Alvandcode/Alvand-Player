@@ -13,11 +13,17 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alvand.player.audio.AudioSettings
+import com.alvand.player.data.AlbumGroup
+import com.alvand.player.data.ArtistGroup
 import com.alvand.player.data.LibraryFilter
 import com.alvand.player.data.LibrarySort
+import com.alvand.player.data.PlaylistRepository
 import com.alvand.player.data.Song
 import com.alvand.player.data.SongRepository
 import com.alvand.player.data.SettingsRepo
+import com.alvand.player.data.local.PlayHistoryEntity
+import com.alvand.player.data.local.PlaylistEntity
+import com.alvand.player.data.local.PlaylistSongEntity
 import com.alvand.player.lyrics.LyricsManager
 import com.alvand.player.lyrics.LyricsResult
 import com.alvand.player.player.MusicPlayerManager
@@ -36,7 +42,8 @@ class AppViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     val manager: MusicPlayerManager,
     private val repo: SongRepository,
-    private val settings: SettingsRepo
+    private val settings: SettingsRepo,
+    private val playlists: PlaylistRepository
 ) : ViewModel() {
 
     val playerState = manager.ui
@@ -111,6 +118,62 @@ class AppViewModel @Inject constructor(
     ) { songs, query, sort, likeSet, favOnly ->
         LibraryFilter.filterAndSort(songs, query, sort, likeSet, favOnly)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    // ---- v1.5.0: پلی‌لیست‌ها + تاریخچه + گروه‌بندی ----
+    val playlistList: StateFlow<List<PlaylistEntity>> =
+        playlists.observePlaylists().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val recentHistory: StateFlow<List<PlayHistoryEntity>> =
+        playlists.observeRecent(50).stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _selectedPlaylistId = MutableStateFlow<Long?>(null)
+    val selectedPlaylistId: StateFlow<Long?> = _selectedPlaylistId
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val selectedPlaylistSongs: StateFlow<List<PlaylistSongEntity>> =
+        _selectedPlaylistId.flatMapLatest { pid ->
+            if (pid == null) kotlinx.coroutines.flow.flowOf(emptyList())
+            else playlists.observePlaylistSongs(pid)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun selectPlaylist(id: Long?) { _selectedPlaylistId.value = id }
+
+    suspend fun createPlaylist(name: String): Long = playlists.createPlaylist(name)
+    fun createPlaylistAsync(name: String, onDone: (Long?) -> Unit = {}) {
+        viewModelScope.launch {
+            onDone(runCatching { playlists.createPlaylist(name) }.getOrNull())
+        }
+    }
+    fun deletePlaylist(id: Long) {
+        viewModelScope.launch {
+            runCatching { playlists.deletePlaylist(id) }
+            if (_selectedPlaylistId.value == id) _selectedPlaylistId.value = null
+        }
+    }
+    fun addToPlaylist(pid: Long, song: Song, onDone: (Boolean) -> Unit = {}) {
+        viewModelScope.launch { onDone(runCatching { playlists.addToPlaylist(pid, song) }.getOrDefault(false)) }
+    }
+    fun removeFromPlaylist(pid: Long, songId: Long) {
+        viewModelScope.launch { runCatching { playlists.removeFromPlaylist(pid, songId) } }
+    }
+    fun playPlaylistSongs(pid: Long) {
+        viewModelScope.launch {
+            val entities = runCatching {
+                playlists.observePlaylistSongs(pid).first()
+            }.getOrNull() ?: emptyList()
+            val songsToPlay = entities.map { playlists.entityToSong(it) }
+            if (songsToPlay.isNotEmpty()) manager.setQueue(songsToPlay, 0, true)
+        }
+    }
+    fun clearHistory() {
+        viewModelScope.launch { runCatching { playlists.clearHistory() } }
+    }
+
+    /** گروه‌بندی زنده برای تب‌های آلبوم/خواننده */
+    val albumGroups: StateFlow<List<AlbumGroup>> = _songs.map { LibraryFilter.groupByAlbum(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val artistGroups: StateFlow<List<ArtistGroup>> = _songs.map { LibraryFilter.groupByArtist(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** بارگذاری (مجدد) آهنگ‌های دستگاه — بعد از دادن دسترسی صدا زده می‌شود */
     fun reloadLocalSongs() = scanDeviceSongs(announce = false)
@@ -209,9 +272,11 @@ class AppViewModel @Inject constructor(
             )
         }
         // لود لیریک هر آهنگ جدید: اول لوکال/امبدد، بعد آنلاین — با نسل تا پاسخ قدیمی روی آهنگ جدید ننشیند
+        // + ثبت تاریخچه پخش برای Recently Played (v1.5.0)
         viewModelScope.launch {
             playerState.map { it.current }.distinctUntilChanged().collect { song ->
                 if (song == null) return@collect
+                runCatching { playlists.recordPlay(song) }
                 val gen = lyricsGen.incrementAndGet()
                 _lyricsLoading.value = true
                 var res = LyricsManager.loadLocal(song, appContext)

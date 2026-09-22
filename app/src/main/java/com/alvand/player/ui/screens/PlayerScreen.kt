@@ -115,6 +115,91 @@ fun PlayerScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
+            // v1.5.0: تب‌های کتابخانه — Songs / Albums / Artists / Playlists / Recent
+            val albums by vm.albumGroups.collectAsState()
+            val artists by vm.artistGroups.collectAsState()
+            var libTab by remember { mutableStateOf(0) }
+            var addToPlSong by remember { mutableStateOf<com.alvand.player.data.Song?>(null) }
+            ScrollableTabRow(
+                selectedTabIndex = libTab,
+                edgePadding = 18.dp,
+                containerColor = pal.sheet,
+                contentColor = pal.ink
+            ) {
+                Tab(selected = libTab == 0, onClick = { libTab = 0 }, text = { Text(stringResource(R.string.tab_songs), fontSize = 12.sp) })
+                Tab(selected = libTab == 1, onClick = { libTab = 1 }, text = { Text("${stringResource(R.string.tab_albums)} (${albums.size})", fontSize = 12.sp) })
+                Tab(selected = libTab == 2, onClick = { libTab = 2 }, text = { Text("${stringResource(R.string.tab_artists)} (${artists.size})", fontSize = 12.sp) })
+                Tab(selected = libTab == 3, onClick = { libTab = 3 }, text = { Text(stringResource(R.string.tab_playlists), fontSize = 12.sp) })
+                Tab(selected = libTab == 4, onClick = { libTab = 4 }, text = { Text(stringResource(R.string.tab_recent), fontSize = 12.sp) })
+            }
+            if (addToPlSong != null) {
+                AddToPlaylistDialog(vm, song = addToPlSong!!, onDismiss = { addToPlSong = null })
+            }
+            when (libTab) {
+            1 -> {
+                // تب آلبوم‌ها
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
+                    if (albums.isEmpty()) {
+                        item { Text(stringResource(R.string.no_results), color = pal.sub, fontSize = 13.sp, modifier = Modifier.padding(22.dp)) }
+                    }
+                    itemsIndexed(albums, key = { _, a -> a.name + "|" + a.artist }) { _, album ->
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 3.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { vm.playList(album.songs, 0) }
+                                .padding(horizontal = 10.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ArtImage(album.artworkSong ?: return@itemsIndexed, Modifier.size(44.dp), RoundedCornerShape(12.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(album.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)
+                                Text(album.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = pal.sub, fontSize = 12.sp, maxLines = 1)
+                            }
+                            Text(stringResource(R.string.songs_n, album.songs.size), color = pal.sub, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+            2 -> {
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
+                    if (artists.isEmpty()) {
+                        item { Text(stringResource(R.string.no_results), color = pal.sub, fontSize = 13.sp, modifier = Modifier.padding(22.dp)) }
+                    }
+                    itemsIndexed(artists, key = { _, a -> a.name }) { _, ar ->
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 3.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { vm.playList(ar.songs, 0) }
+                                .padding(horizontal = 10.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Person, null, tint = pal.sub, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(ar.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)
+                                Text(stringResource(R.string.songs_n, ar.songs.size) + " • ${ar.albums} alb.", color = pal.sub, fontSize = 12.sp, maxLines = 1)
+                            }
+                            IconButton(onClick = { vm.playList(ar.songs, 0) }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.PlayArrow, null, tint = dyn.accent, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            }
+            3 -> {
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
+                    item { PlaylistsTab(vm) }
+                }
+            }
+            4 -> {
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
+                    item { RecentTab(vm) }
+                }
+            }
+            else -> {
             // v1.4.0: جستجو + فیلتر علاقه‌مندی + سورت — بدون شکستن دیزاین مینیمال
             OutlinedTextField(
                 value = query,
@@ -231,6 +316,17 @@ fun PlayerScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
+                        IconButton(
+                            onClick = { addToPlSong = s },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.PlaylistAdd,
+                                contentDescription = stringResource(R.string.add_to_playlist),
+                                tint = pal.sub,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                         if (active && state.isPlaying) {
                             MiniBars(true, color = dyn.accent)
                             Spacer(Modifier.width(6.dp))
@@ -255,6 +351,8 @@ fun PlayerScreen(
                     )
                 }
             }
+            } // else -> songs tab
+            } // when(libTab)
         }
     ) {
         // بکگراند سینمایی همیشه زیر همه‌چیز است؛ کاور بلرشده + تک‌هاله

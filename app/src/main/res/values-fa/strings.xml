@@ -89,4 +89,22 @@
     <string name="unlike">حذف علاقه</string>
     <string name="no_favorites">هنوز علاقه‌مندی نداری — روی ♡ هر آهنگ بزن.</string>
     <string name="no_results">آهنگی با این جستجو پیدا نشد.</string>
+    <!-- کتابخانه v1.5.0 -->
+    <string name="tab_songs">آهنگ‌ها</string>
+    <string name="tab_albums">آلبوم‌ها</string>
+    <string name="tab_artists">خواننده‌ها</string>
+    <string name="tab_playlists">پلی‌لیست‌ها</string>
+    <string name="tab_recent">اخیراً</string>
+    <string name="new_playlist">پلی‌لیست جدید</string>
+    <string name="playlist_name_hint">نام پلی‌لیست</string>
+    <string name="create">ساخت</string>
+    <string name="add_to_playlist">افزودن به پلی‌لیست</string>
+    <string name="added_to_playlist">اضافه شد ✓</string>
+    <string name="already_in_playlist">قبلاً در پلی‌لیست هست</string>
+    <string name="delete_playlist">پلی‌لیست حذف شود؟</string>
+    <string name="delete">حذف</string>
+    <string name="no_playlists">هنوز پلی‌لیستی نداری — اولی را بساز.</string>
+    <string name="no_history">هنوز چیزی پخش نکردی.</string>
+    <string name="clear_history">پاک کردن تاریخچه</string>
+    <string name="songs_n">%1$d آهنگ</string>
 </resources>
