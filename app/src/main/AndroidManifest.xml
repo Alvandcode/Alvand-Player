@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- ExoPlayer.setWakeMode(WAKE_MODE_LOCAL) در PlaybackService بدون این پرمیشن
+         موقع پخش SecurityException می‌دهد و اپ روی thread اصلی کرش می‌کند -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".AlvandApp"

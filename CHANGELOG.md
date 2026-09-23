@@ -2,6 +2,12 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.5] — 2026-09-23
+
+### Fixed — کرش موقع پخش
+- 🔋 **`WAKE_LOCK` جاافتاده**: سرویس پخش با `setWakeMode(WAKE_MODE_LOCAL)` ویک‌لاک می‌خواست ولی پرمیشن در مانیفست نبود؛ با زدن Play روی thread اصلی `SecurityException` می‌داد و اپ می‌پرید. پرمیشن اضافه شد (عادی، بدون نیاز به اجازه کاربر).
+  🔋 **Play crash fix**: missing `WAKE_LOCK` permission crashed playback on start. Found via the in-app crash report — thanks!
+
 ## [1.6.4] — 2026-09-23
 
 ### Changed — بازگشت ظاهر قبلی
