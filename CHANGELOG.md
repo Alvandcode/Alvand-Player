@@ -4,10 +4,13 @@
 
 ## [1.6.2] — 2026-09-22
 
-### Fixed — خطای کامپایل Auto
-- 🩹 **`onAddMediaItems` types**: امضای override با `MutableList` با Media3 1.5.1 نمی‌خواند (`ListenableFuture` invariant است) — به `List<MediaItem>` برگشت.
-  🩹 **Compile fix**: `onAddMediaItems` override now uses `List<MediaItem>` to match Media3 1.5.1.
-- 📢 **گزارشگر خودکار**: اگر بیلد بشکند، خطاها در ایشوی 🔴 منتشر می‌شوند + لاگ کامل در `ci-build.log`.
+### Fixed — خطاهای کامپایل (اولین بیلد واقعی از ۱۲ سپتامبر)
+- 🩹 **`MediaLibrarySession` تودرتو**: در Media3 1.5.1 این کلاس مستقل نیست بلکه `MediaLibraryService.MediaLibrarySession` است (همراه `Callback` و `Builder`).
+  🩹 **Nested session API**: use `MediaLibraryService.MediaLibrarySession[.Callback/.Builder]` for Media3 1.5.1.
+- 🩹 **`onAddMediaItems` types**: امضای override با `MutableList` نمی‌خواند (`ListenableFuture` invariant است) — به `List<MediaItem>` برگشت.
+- 🩹 **`Modifier.clip` import**: در `PlayerScreen` جا افتاده بود (از v1.3.0 که هیچ‌وقت کامپایل نشده بود).
+- 🩹 **`controller.audioSessionId`**: این خاصیت روی اینترفیس `Player` در 1.5.1 نیست (فقط `ExoPlayer`) — اتصال EQ حالا فقط از `PlaybackService.audioSessionId` با تلاش مجدد خودکار.
+- 📢 **گزارشگر خودکار**: اگر بیلد بشکند، خطاها در ایشوی 🔴 منتشر می‌شوند.
 
 ## [1.6.1] — 2026-09-22
 

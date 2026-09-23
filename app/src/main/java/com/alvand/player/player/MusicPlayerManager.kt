@@ -341,9 +341,13 @@ class MusicPlayerManager @Inject constructor(
     /** اتصال اکولایزر به سشن صوتی سرویس (فقط وقتی عوض شده باشد) */
     private fun attachEq() {
         if (released) return
-        val id = PlaybackService.audioSessionId.takeIf { it > 0 }
-            ?: runCatching { controller?.audioSessionId }.getOrNull()?.takeIf { it > 0 }
-            ?: return
+        // NOTE: MediaController (رابط Player) در Media3 1.5.1 خاصیت audioSessionId ندارد؛
+        // تنها منبع معتبر PlaybackService.audioSessionId است که سرویس نگه می‌دارد.
+        val id = PlaybackService.audioSessionId.takeIf { it > 0 } ?: run {
+            // سشن هنوز از سرویس نرسیده — کمی بعد دوباره تلاش کن (خودترمیم)
+            scheduleEqAttach(500)
+            return
+        }
         if (id == lastEqSession && eqManager.isAttached()) return
         // بایندر سنگین را روی Main بلاک نکن — attach خودش امن است ولی IPC دارد
         scope.launch(Dispatchers.IO) {

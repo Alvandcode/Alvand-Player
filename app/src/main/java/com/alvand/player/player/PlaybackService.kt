@@ -9,7 +9,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
-import androidx.media3.session.MediaLibrarySession
 import androidx.media3.session.MediaSession
 import androidx.media3.exoplayer.ExoPlayer
 import com.alvand.player.MainActivity
@@ -24,7 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture
  * کتابخانه کامل (پلی‌لیست‌ها) فاز بعد؛ فعلاً root = صف فعلی پلیر.
  */
 class PlaybackService : MediaLibraryService() {
-    private var session: MediaLibrarySession? = null
+    private var session: MediaLibraryService.MediaLibrarySession? = null
     private var player: ExoPlayer? = null
 
     companion object {
@@ -89,7 +88,7 @@ class PlaybackService : MediaLibraryService() {
                 },
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            session = MediaLibrarySession.Builder(this, exo, libraryCallback)
+            session = MediaLibraryService.MediaLibrarySession.Builder(this, exo, libraryCallback)
                 .setSessionActivity(sessionActivity)
                 .build()
         } catch (e: Exception) {
@@ -102,9 +101,9 @@ class PlaybackService : MediaLibraryService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
 
     /** کتابخانه حداقلی برای Android Auto: root = صف فعلی (فاز بعد: پلی‌لیست‌ها/آلبوم‌ها) */
-    private val libraryCallback = object : MediaLibrarySession.Callback {
+    private val libraryCallback = object : MediaLibraryService.MediaLibrarySession.Callback {
         override fun onGetLibraryRoot(
-            session: MediaLibrarySession,
+            session: MediaLibraryService.MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             params: MediaLibraryService.LibraryParams?
         ): ListenableFuture<LibraryResult<MediaItem>> {
@@ -122,7 +121,7 @@ class PlaybackService : MediaLibraryService() {
         }
 
         override fun onGetChildren(
-            session: MediaLibrarySession,
+            session: MediaLibraryService.MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             parentId: String,
             page: Int,
