@@ -2,6 +2,13 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.3] — 2026-09-23
+
+### Added — شکار کرش داخل اپ
+- 🐞 **گزارش کرش درون‌برنامه‌ای**: هر کرش با مدل گوشی و نسخه اندروید در فایل ذخیره می‌شود؛ بعد از باز شدن دوباره، دیالوگ نمایش/کپی/اشتراک می‌آید + بخش «گزارش خطا» در صفحه درباره ما. هیچ‌چیز خودکار ارسال نمی‌شود.
+  🐞 **In-app crash reports**: uncaught crashes saved with device info; resend dialog on next start + Bug report card in About. Nothing sent automatically.
+- 🛡 **تاریخچه از مسیر پخش جدا شد**: ثبت Recently Played دیگر در نخ بحرانی پخش نیست (IO + fire-and-forget) تا خطای دیتابیس نتواند پخش را خراب کند.
+
 ## [1.6.2] — 2026-09-22
 
 ### Fixed — خطاهای کامپایل (اولین بیلد واقعی از ۱۲ سپتامبر)

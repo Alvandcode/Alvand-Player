@@ -80,6 +80,13 @@ fun PlayerScreen(
         }
     }
 
+    // v1.6.3: اگر دفعه قبل کرش کرده، دیالوگ گزارش را نشان بده
+    val crash by vm.crashReport.collectAsState()
+    LaunchedEffect(Unit) { vm.loadUnseenCrash() }
+    if (crash != null) {
+        CrashReportDialog(vm, crash!!, onDismiss = { vm.markCrashSeen() })
+    }
+
     if (showMenu) MenuSheet(vm, onPickFile, onPickBackground, onOpenAbout,
         onPlayLink = {}, onDismiss = { showMenu = false })
     if (showLyricsFull) LyricsSheet(vm, onDismiss = { showLyricsFull = false })

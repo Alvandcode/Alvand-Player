@@ -78,7 +78,7 @@ fun AppNavHost(
             )
         }
         composable(Routes.ABOUT) {
-            AboutScreen(onBack = { navController.popBackStack() })
+            AboutScreen(vm, onBack = { navController.popBackStack() })
         }
     }
 }

@@ -112,4 +112,14 @@
     <string name="no_history">No recent plays yet.</string>
     <string name="clear_history">Clear history</string>
     <string name="songs_n">%1$d songs</string>
+    <!-- Crash report v1.6.3 -->
+    <string name="crash_title">The app crashed last time ⚠</string>
+    <string name="crash_desc">Copy or share this report so we can fix the exact problem. Nothing is sent automatically.</string>
+    <string name="crash_copy">Copy report</string>
+    <string name="crash_share">Share report</string>
+    <string name="crash_close">Close</string>
+    <string name="crash_none">No crashes recorded. If the app closes on play, open this page after restart.</string>
+    <string name="crash_clear">Delete report</string>
+    <string name="crash_report">Bug report</string>
+    <string name="crash_share_title">Share crash report</string>
 </resources>

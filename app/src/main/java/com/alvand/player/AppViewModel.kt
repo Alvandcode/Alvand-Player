@@ -15,6 +15,8 @@ import androidx.lifecycle.viewModelScope
 import com.alvand.player.audio.AudioSettings
 import com.alvand.player.data.AlbumGroup
 import com.alvand.player.data.ArtistGroup
+import com.alvand.player.data.CrashInfo
+import com.alvand.player.data.CrashLog
 import com.alvand.player.data.LibraryFilter
 import com.alvand.player.data.LibrarySort
 import com.alvand.player.data.PlaylistRepository
@@ -272,11 +274,13 @@ class AppViewModel @Inject constructor(
             )
         }
         // لود لیریک هر آهنگ جدید: اول لوکال/امبدد، بعد آنلاین — با نسل تا پاسخ قدیمی روی آهنگ جدید ننشیند
-        // + ثبت تاریخچه پخش برای Recently Played (v1.5.0)
         viewModelScope.launch {
             playerState.map { it.current }.distinctUntilChanged().collect { song ->
                 if (song == null) return@collect
-                runCatching { playlists.recordPlay(song) }
+                // تاریخچه بیرون از مسیر بحرانی: خطای DB هرگز نباید پخش یا لیریک را خراب کند
+                viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching { playlists.recordPlay(song) }
+                }
                 val gen = lyricsGen.incrementAndGet()
                 _lyricsLoading.value = true
                 var res = LyricsManager.loadLocal(song, appContext)
@@ -355,6 +359,29 @@ class AppViewModel @Inject constructor(
     fun updateAudio(s: AudioSettings) = manager.applyAudio(s)
 
     fun clearPermissionError() { _permissionError.value = false }
+
+    // ---- v1.6.3: گزارش کرش داخل اپ ----
+    private val _crash = MutableStateFlow<CrashInfo?>(null)
+    val crashReport: StateFlow<CrashInfo?> = _crash
+
+    /** فقط کرشِ دیده‌نشده (برای دیالوگ شروع) */
+    fun loadUnseenCrash() {
+        _crash.value = runCatching { CrashLog.unseenCrash(appContext) }.getOrNull()
+    }
+
+    fun loadLastCrash() {
+        _crash.value = runCatching { CrashLog.lastCrash(appContext) }.getOrNull()
+    }
+
+    fun markCrashSeen() {
+        runCatching { CrashLog.markSeen(appContext) }
+        _crash.value = null
+    }
+
+    fun clearCrashReport() {
+        runCatching { CrashLog.clear(appContext) }
+        _crash.value = null
+    }
 
     override fun onCleared() {
         runCatching { appContext.contentResolver.unregisterContentObserver(mediaObserver) }

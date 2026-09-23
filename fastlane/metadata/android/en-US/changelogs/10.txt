@@ -1,0 +1,1 @@
+🐞 In-app crash reports (copy/share) • 🛡 history decoupled from playback path.

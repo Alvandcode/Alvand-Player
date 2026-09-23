@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.R
+import com.alvand.player.ui.components.CrashCard
 import com.alvand.player.ui.theme.*
 
 private const val URL_GITHUB = "https://github.com/Alvandcode"
@@ -34,12 +35,13 @@ private const val TON_ADDRESS = "UQCB9rzvwmq0FJDaBkHVdBgbfZPb06FWdKco3woAHH6AXuU
 
 /** درباره ما — تم‌دار (روشن/تیره) */
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen(vm: com.alvand.player.AppViewModel, onBack: () -> Unit) {
     val ctx = LocalContext.current
     val uri = LocalUriHandler.current
     val clip = LocalClipboardManager.current
     val version = remember { appVersion(ctx) }
     val pal = LocalAP.current
+    LaunchedEffect(Unit) { vm.loadLastCrash() }
 
     Column(
         Modifier.fillMaxSize().background(pal.bg)
@@ -123,6 +125,8 @@ fun AboutScreen(onBack: () -> Unit) {
                 }
             }
         }
+        Spacer(Modifier.height(12.dp))
+        CrashCard(vm)
     }
 }
 
