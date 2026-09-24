@@ -225,13 +225,13 @@ fun PlayerScreen(
                         SleepChip(vm, onClick = { showSleep = true })
                     }
                     Spacer(Modifier.height(16.dp))
-                    // کاور دایره‌ای وسط‌چین با هاله نور چرخان (موقع پخش می‌چرخد، با پاز می‌ایستد)
+                    // کاور دایره‌ای وسط‌چین با هاله نور نرم (نفس‌کشیدن موقع پخش)
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Box(contentAlignment = Alignment.Center) {
                             CoverHalo(
                                 playing = state.isPlaying,
                                 accent = dyn.accent,
-                                diameter = circleD + 36.dp
+                                diameter = circleD + 72.dp
                             )
                             ArtImage(
                                 current,

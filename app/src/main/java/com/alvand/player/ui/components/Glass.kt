@@ -40,7 +40,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -263,57 +262,55 @@ fun ArtPanel(
 }
 
 /**
- * هاله نور چرخان دور کاور دایره‌ای: موقع پخش می‌چرخد، با پاز می‌ایستد.
- * حلقه پایه کم‌رنگ همیشه هست؛ دنباله نورانی فقط موقع پخش دیده و چرخانده می‌شود.
- * سرعت بر مبنای زمان مطلق است (۵٫۵ ثانیه هر دور) تا روی ۶۰/۹۰/۱۲۰ هرتز یکسان باشد.
+ * هاله نور نرم دور کاور دایره‌ای: موقع پخش نفس می‌کشد (کم‌نور/پرنور)،
+ * با توقف آهنگ کاملاً خاموش می‌شود (فقط خط لبه کم‌رنگ می‌ماند).
+ * بدون نقطه چرخان — فقط درخشش پخش‌شونده.
  */
 @Composable
 fun CoverHalo(
     playing: Boolean,
     accent: Color,
     diameter: Dp,
-    modifier: Modifier = Modifier,
-    ringWidth: Dp = 9.dp
+    modifier: Modifier = Modifier
 ) {
-    var angle by remember { mutableFloatStateOf(0f) }
-    // حلقه فریم‌به‌فریم: با پاز، افکت کنسل و زاویه فریز می‌شود
-    LaunchedEffect(playing) {
-        if (!playing) return@LaunchedEffect
-        while (true) {
-            withFrameNanos { nanos ->
-                angle = ((nanos / 1_000_000.0 / 5500.0 * 360.0) % 360.0).toFloat()
-            }
-        }
+    var pulse by remember { mutableFloatStateOf(0.5f) }
+    if (playing) {
+        val inf = rememberInfiniteTransition(label = "haloPulse")
+        val a by inf.animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2200, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "haloA"
+        )
+        pulse = a
     }
     Canvas(modifier.size(diameter)) {
-        val ringPx = ringWidth.toPx()
-        val pad = ringPx / 2 + 5.dp.toPx()
-        val arcSize = Size(size.width - pad * 2, size.height - pad * 2)
-        val arcTopLeft = Offset(pad, pad)
-        // حلقه پایه کم‌رنگ (ثابت)
-        drawArc(
-            color = accent.copy(alpha = 0.16f),
-            startAngle = 0f, sweepAngle = 360f, useCenter = false,
-            topLeft = arcTopLeft, size = arcSize,
-            style = Stroke(width = ringPx, cap = StrokeCap.Round)
-        )
-        // دنباله نورانی چرخان — فقط موقع پخش
+        val c = Offset(size.width / 2, size.height / 2)
+        // شعاع خط لبه: ۳۰ واحد داخل‌تر از لبه بوم تا لایه بیرونی بریده نشود
+        val rEdge = size.minDimension / 2 - 30.dp.toPx()
         if (playing) {
-            rotate(angle) {
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        0.0f to Color.Transparent,
-                        0.55f to accent.copy(alpha = 0.05f),
-                        0.8f to accent,
-                        1.0f to Color.White,
-                        center = Offset(size.width / 2, size.height / 2)
-                    ),
-                    startAngle = 0f, sweepAngle = 130f, useCenter = false,
-                    topLeft = arcTopLeft, size = arcSize,
-                    style = Stroke(width = ringPx, cap = StrokeCap.Round)
-                )
-            }
+            // لایه بیرونی پخش و نرم
+            drawCircle(
+                color = accent.copy(alpha = 0.10f * pulse),
+                radius = rEdge + 13.dp.toPx(), center = c,
+                style = Stroke(width = 26.dp.toPx())
+            )
+            // لایه میانی پررنگ‌تر
+            drawCircle(
+                color = accent.copy(alpha = 0.28f * pulse),
+                radius = rEdge + 4.dp.toPx(), center = c,
+                style = Stroke(width = 12.dp.toPx())
+            )
         }
+        // خط لبه دایره (همیشه هست؛ موقع پخش پررنگ، موقع پاز کم‌رنگ)
+        drawCircle(
+            color = accent.copy(alpha = if (playing) 0.85f else 0.30f),
+            radius = rEdge, center = c,
+            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+        )
     }
 }
 
