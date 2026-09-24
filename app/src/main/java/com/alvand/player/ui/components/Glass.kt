@@ -49,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.data.Artwork
@@ -260,9 +261,63 @@ fun ArtPanel(
     }
 }
 
+/**
+ * هاله نور چرخان دور کاور دایره‌ای: موقع پخش می‌چرخد، با پاز می‌ایستد.
+ * حلقه پایه کم‌رنگ همیشه هست؛ دنباله نورانی فقط موقع پخش دیده و چرخانده می‌شود.
+ * سرعت بر مبنای زمان مطلق است (۵٫۵ ثانیه هر دور) تا روی ۶۰/۹۰/۱۲۰ هرتز یکسان باشد.
+ */
+@Composable
+fun CoverHalo(
+    playing: Boolean,
+    accent: Color,
+    diameter: Dp,
+    modifier: Modifier = Modifier,
+    ringWidth: Dp = 9.dp
+) {
+    var angle by remember { mutableFloatStateOf(0f) }
+    // حلقه فریم‌به‌فریم: با پاز، افکت کنسل و زاویه فریز می‌شود
+    LaunchedEffect(playing) {
+        if (!playing) return@LaunchedEffect
+        while (true) {
+            withFrameNanos { nanos ->
+                angle = ((nanos / 1_000_000.0 / 5500.0 * 360.0) % 360.0).toFloat()
+            }
+        }
+    }
+    Canvas(modifier.size(diameter)) {
+        val ringPx = ringWidth.toPx()
+        val pad = ringPx / 2 + 5.dp.toPx()
+        val arcSize = Size(size.width - pad * 2, size.height - pad * 2)
+        val arcTopLeft = Offset(pad, pad)
+        // حلقه پایه کم‌رنگ (ثابت)
+        drawArc(
+            color = accent.copy(alpha = 0.16f),
+            startAngle = 0f, sweepAngle = 360f, useCenter = false,
+            topLeft = arcTopLeft, size = arcSize,
+            style = Stroke(width = ringPx, cap = StrokeCap.Round)
+        )
+        // دنباله نورانی چرخان — فقط موقع پخش
+        if (playing) {
+            rotate(angle) {
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        0.0f to Color.Transparent,
+                        0.55f to accent.copy(alpha = 0.05f),
+                        0.8f to accent,
+                        1.0f to Color.White,
+                        center = Offset(size.width / 2, size.height / 2)
+                    ),
+                    startAngle = 0f, sweepAngle = 130f, useCenter = false,
+                    topLeft = arcTopLeft, size = arcSize,
+                    style = Stroke(width = ringPx, cap = StrokeCap.Round)
+                )
+            }
+        }
+    }
+}
+
 /** قوس لبخندی مسیر نوار پیشرفت زیر کادر */
-private fun smilePath(w: Float, h: Float): android.graphics.Path {
-    val y0 = h * 0.16f
+private fun smilePath(w: Float, h: Float): android.graphics.Path {    val y0 = h * 0.16f
     val yBot = h * 0.88f
     return android.graphics.Path().apply {
         moveTo(0f, y0)

@@ -9,6 +9,10 @@ local.properties
 # کی‌استور باید خارج از ریپو نگه داشته شود (مثلاً %USERPROFILE%\.keystores)
 *.jks
 *.keystore
+# استثنا: دیباگ‌کی‌استور ثابت (gradle/debug.keystore) عمداً کامیت می‌شود تا
+# همه خروجی‌های دیباگ یک امضا داشته باشند و آپدیت روی نسخه قبلی نصب شود.
+# کلید دیباگ محرمانه نیست (android/android) و فقط پکیج .debug را امضا می‌کند.
+!gradle/debug.keystore
 keystore-base64.txt
 keystore.properties
 *.pem

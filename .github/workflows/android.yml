@@ -96,7 +96,7 @@ jobs:
             exit 1
           fi
 
-      - name: Build Debug APK (always debug-signed)
+      - name: Build Debug APK (stable ciDebug-signed, installs over previous)
         run: |
           ./gradlew :app:assembleDebug --stacktrace --console=plain 2>&1 | tee "${{ runner.temp }}/ci-build.log"
           test ${PIPESTATUS[0]} -eq 0

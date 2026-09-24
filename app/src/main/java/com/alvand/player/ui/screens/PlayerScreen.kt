@@ -225,22 +225,21 @@ fun PlayerScreen(
                         SleepChip(vm, onClick = { showSleep = true })
                     }
                     Spacer(Modifier.height(16.dp))
-                    // کاور دایره‌ای وسط‌چین با سایه نرم
+                    // کاور دایره‌ای وسط‌چین با هاله نور چرخان (موقع پخش می‌چرخد، با پاز می‌ایستد)
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        ArtImage(
-                            current,
-                            Modifier.size(circleD).shadow(28.dp, CircleShape),
-                            CircleShape
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            CoverHalo(
+                                playing = state.isPlaying,
+                                accent = dyn.accent,
+                                diameter = circleD + 36.dp
+                            )
+                            ArtImage(
+                                current,
+                                Modifier.size(circleD).shadow(28.dp, CircleShape),
+                                CircleShape
+                            )
+                        }
                     }
-                    // هاله ظریف زیر کاور (تک‌لایه، کم‌رنگ برای پرفورمنس)
-                    MovingGlow(
-                        accent = dyn.accent,
-                        modifier = Modifier.fillMaxWidth()
-                            .padding(horizontal = 60.dp)
-                            .height(14.dp),
-                        alpha = 0.16f
-                    )
                     // عنوان و خواننده زیر دایره (وسط‌چین)
                     Column(
                         Modifier.fillMaxWidth().padding(horizontal = 28.dp),

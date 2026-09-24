@@ -7,8 +7,8 @@ plugins {
 }
 
 // تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
-val appVersionName = "1.6.6"
-val appVersionCode = 13
+val appVersionName = "1.6.7"
+val appVersionCode = 14
 
 base {
     // خروجی‌ها: AlvandPlayer-v1.3.0-debug.apk و AlvandPlayer-v1.3.0-release.aab
@@ -47,6 +47,16 @@ android {
             keyAlias = System.getenv("ALVAND_KEY_ALIAS") ?: "alvand"
             keyPassword = System.getenv("ALVAND_KEY_PASSWORD")
         }
+        // کانفیگ «ciDebug»: دیباگ‌کی‌استور ثابتِ کامیت‌شده — کلید دیباگ محرمانه
+        // نیست (android/android) و فقط پکیج .debug را امضا می‌کند؛ در عوض همه
+        // خروجی‌های دیباگ (لوکال و CI) یک امضا دارند و آپدیت روی قبلی نصب می‌شود.
+        create("ciDebug") {
+            storeFile = rootDir.resolve("gradle/debug.keystore")
+            storeType = "PKCS12"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
     // true یعنی کی‌استور ثابت در دسترس است (فایل هست + پسورد ست شده)
     // در CI سکرت‌ها ست‌اند؛ لوکال فقط وقتی فایل و env هر دو باشند.
@@ -68,8 +78,9 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
-            // امنیت: debug همیشه با کلید debug امضا می‌شود تا کلید release
-            // در آرتیفکت‌های پابلیک debug لو نرود و تفکیک debug/release حفظ شود.
+            // همیشه با دیباگ‌کی‌استور ثابت کامیت‌شده امضا می‌شود تا همه خروجی‌های
+            // دیباگ (CI و لوکال) یک گواهی داشته باشند و آپدیت روی قبلی نصب شود.
+            signingConfig = signingConfigs.getByName("ciDebug")
         }
     }
     compileOptions {

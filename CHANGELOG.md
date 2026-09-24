@@ -2,6 +2,14 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.7] — 2026-09-23
+
+### Added — هاله چرخان + نصب آپدیت
+- 🌀 **هاله نور چرخان دور دایره**: نوار نورانی زیر کاور حذف شد؛ به‌جایش حلقه نور دور دایره موقع پخش می‌چرخد و با توقف می‌ایستد (حلقه کم‌رنگ ثابت همیشه هست).
+  🌀 **Rotating halo**: light bar removed; glowing ring orbits the cover while playing, freezes on pause.
+- 📲 **نصب آپدیت روی نسخه قبلی**: دیباگ‌کی‌استور ثابت (`gradle/debug.keystore`) کامیت شد تا همه خروجی‌های دیباگ یک امضا داشته باشند و خطای «App not installed» تمام شود. فقط **یک‌بار آخر** حذف/نصب لازم است چون نسخه فعلی گوشی با کلید موقت امضا شده.
+  📲 **Updates install over old**: stable debug keystore committed; one last reinstall needed.
+
 ## [1.6.6] — 2026-09-23
 
 ### Changed — کاور دایره‌ای
