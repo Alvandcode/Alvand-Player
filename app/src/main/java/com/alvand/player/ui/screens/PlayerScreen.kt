@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -200,40 +202,36 @@ fun PlayerScreen(
             // ریسپانسیو: روی صفحه‌های پهن (تبلت) محتوا وسط‌چین با عرض محدود
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val wide = maxWidth > 600.dp
-                // کاور سینمایی با ارتفاع متعادل (قبلا ۵۶٪ و خیلی بلند بود)
-                val artH = (maxHeight * 0.46f).coerceIn(260.dp, 480.dp)
+                // قطر دایره کاور: ۸۰٪ عرض صفحه (تبلت: ثابت ۳۶۰)
+                val circleD = if (wide) 360.dp else (maxWidth * 0.80f).coerceIn(240.dp, 400.dp)
                 Column(
                     Modifier
                         .then(if (wide) Modifier.width(560.dp).align(Alignment.TopCenter) else Modifier.fillMaxSize())
                         .verticalScroll(rememberScrollState())
                 ) {
                     Spacer(Modifier.statusBarsPadding().height(8.dp))
-                    // کاور مدرن با حاشیه استاندارد و سایه نرم
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = if (wide) 60.dp else 20.dp)
+                    // نوار بالا: منو + تایمر خواب
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = if (wide) 60.dp else 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ArtPanel(
-                            song = current,
-                            modifier = Modifier.fillMaxWidth().height(artH)
-                                .shadow(24.dp, RoundedCornerShape(28.dp)),
-                            glow = dyn.accent
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(pal.card.copy(alpha = 0.92f), CircleShape)
+                        ) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
+                        Spacer(Modifier.weight(1f))
+                        SleepChip(vm, onClick = { showSleep = true })
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    // کاور دایره‌ای وسط‌چین با سایه نرم
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        ArtImage(
+                            current,
+                            Modifier.size(circleD).shadow(28.dp, CircleShape),
+                            CircleShape
                         )
-                        // نوار سه‌خط + تایمر خواب روی کاور (بالا) — خوانا روی هر کاوری
-                        Row(
-                            Modifier.fillMaxWidth().padding(top = 12.dp, start = 10.dp, end = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(
-                                onClick = { showMenu = true },
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .background(pal.card.copy(alpha = 0.92f), CircleShape)
-                            ) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
-                            Spacer(Modifier.weight(1f))
-                            SleepChip(vm, onClick = { showSleep = true })
-                        }
                     }
                     // هاله ظریف زیر کاور (تک‌لایه، کم‌رنگ برای پرفورمنس)
                     MovingGlow(
@@ -243,6 +241,25 @@ fun PlayerScreen(
                             .height(14.dp),
                         alpha = 0.16f
                     )
+                    // عنوان و خواننده زیر دایره (وسط‌چین)
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            current?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.app_name),
+                            color = pal.ink, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
+                            letterSpacing = 0.2.sp, maxLines = 1, textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            current?.artist?.takeIf { it.isNotBlank() } ?: "—",
+                            color = pal.sub, fontSize = 13.sp, letterSpacing = 0.4.sp,
+                            maxLines = 1, textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                     // نوار پیشرفت لبخندی جدا زیر کادر (هم‌رنگ کاور)
                     ProgressArc(
                         progress = if (dur > 0) shownPos.toFloat() / dur else 0f,

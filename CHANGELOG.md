@@ -2,6 +2,12 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.6] — 2026-09-23
+
+### Changed — کاور دایره‌ای
+- ⭕ **کاور دایره‌ای وسط‌چین** به‌جای مربع گرد؛ عنوان و خواننده زیر دایره (وسط‌چین)؛ نوار منو/تایمر خواب بالای دایره.
+  ⭕ **Circular cover art** centered with title/artist below; menu/sleep row moved above.
+
 ## [1.6.5] — 2026-09-23
 
 ### Fixed — کرش موقع پخش
