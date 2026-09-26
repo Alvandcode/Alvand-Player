@@ -6,8 +6,8 @@
 - [x] `./gradlew :app:assembleRelease :app:bundleRelease` با کی‌استور پایدار
 - [x] `apksigner verify --print-certs` روی APK Release
 - [x] `versionCode=15 / versionName=1.6.8` با تگ `v1.6.8` و سکشن `## [1.6.8]` در CHANGELOG یکی است
-- [ ] Secretهای `ALVAND_*` و متغیر `ALVAND_RELEASE_CERT_SHA256` در سطح Repository تنظیم شده‌اند
-- [x] Release ‏`v1.6.8` از Build محلی امضاشده ساخته شد (APK/AAB/mapping/SHA256SUMS)
+- [x] Environment ‏`release` با محدودیت `main` و تگ `v*` و چهار Secret تنظیم شد
+- [x] Build محلی امضاشدهٔ v1.6.8 تأیید شد (APK/AAB/mapping/SHA256SUMS)
 
 ## ۲) فروشگاه (fastlane/metadata/android/{en-US,fa}/)
 - [x] title/short/full + changelogs/5,6,7.txt (en + fa)

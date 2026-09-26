@@ -93,8 +93,8 @@ alvand-player/
 از خود کلید و فایل Credentials **بکاپ آفلاین** بگیرید؛ اگر گم شوند، دیگر نمی‌توانید
 روی نسخه‌های قبلی آپدیت بدهید.
 
-در GitHub Actions چهار Secret و یک Variable سطح Repository بسازید
-(Settings → Secrets and variables → Actions → New repository secret):
+در GitHub Environment با نام `release` چهار Secret و یک Variable بسازید
+(Settings → Environments → release → Environment secrets):
 - `ALVAND_KEYSTORE_BASE64` ← محتوای `alvand-release.p12.base64.txt`
 - `ALVAND_KEYSTORE_PASSWORD` ← `Store password` در فایل Credentials
 - `ALVAND_KEY_ALIAS` ← `alvand`
@@ -126,8 +126,9 @@ git push -u origin main
 `AlvandPlayer-v1.6.8-release.apk` و `AlvandPlayer-v1.6.8-release.aab`.
 پس از ثبت Secretها، از تب **Actions** → ورک‌فلو `Android CI` → **Run workflow**
 تگ موجود (مثل `v1.6.8`) را وارد کنید. Job امضاشده Quality را دوباره اجرا می‌کند،
-گواهی را بررسی می‌کند و Release را به‌روزرسانی می‌کند. Push تگ به‌تنهایی فقط
-Quality را اجرا می‌کند و هیچ Secretی در PR در دسترس نیست.
+گواهی را بررسی می‌کند و Release را به‌روزرسانی می‌کند. Environment ‏`release` فقط
+روی `main` و تگ‌های `v*` قابل استقرار است و Push تگ به‌تنهایی فقط Quality را
+اجرا می‌کند؛ هیچ Secretی در PR در دسترس نیست.
 
 ## 📱 سازگاری
 - **نصب:** اندروید ۶ تا ۱۷ (`minSdk 23` کف Jetpack است؛ روی ۱۷ بدون تارگت مستقیم هم اجرا می‌شود)
