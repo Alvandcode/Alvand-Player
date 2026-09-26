@@ -64,9 +64,10 @@ data class Song(
             val p = path.trim()
             val lower = p.lowercase()
             val isHttp = lower.startsWith("http://") || lower.startsWith("https://")
-            val ext = p.substringBefore('?').substringAfterLast('.', "").lowercase()
-                .substringAfterLast('/', "")
-            if (ext in SUPPORTED_EXTENSIONS) return true
+            val withoutQuery = p.substringBefore('?').substringBefore('#')
+            val fileName = withoutQuery.substringAfterLast('/')
+            val ext = fileName.substringAfterLast('.', "").lowercase()
+            if (ext.isNotEmpty() && ext in SUPPORTED_EXTENSIONS) return true
             // لینک http بدون پسوند فقط اگر هینت HLS/DASH یا کوئری صوتی داشته باشد
             if (isHttp) {
                 if (lower.contains(".m3u8") || lower.contains(".mpd")) return true

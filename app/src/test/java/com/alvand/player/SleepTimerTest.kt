@@ -30,7 +30,8 @@ class SleepTimerTest {
             scope = this,
             setVolume = {},
             getVolume = { 0.7f },
-            onExpire = { fail("should not expire") }
+            onExpire = { fail("should not expire") },
+            elapsedRealtime = { testScheduler.currentTime }
         )
         timer.start(1000)
         testScheduler.advanceTimeBy(5000)
@@ -45,10 +46,11 @@ class SleepTimerTest {
             scope = this,
             setVolume = { vol = it },
             getVolume = { 0.7f },
-            onExpire = { expired = true }
+            onExpire = { expired = true },
+            elapsedRealtime = { testScheduler.currentTime }
         )
-        timer.start(3000, fadeMs = 2000)
-        testScheduler.advanceTimeBy(3500)
+        timer.start(5000, fadeMs = 2000)
+        testScheduler.advanceTimeBy(5500)
         testScheduler.runCurrent()
         assertTrue(expired)
         // ولوم به ولوم اولیه کاربر برمی‌گردد، نه همیشه 1f
@@ -61,7 +63,8 @@ class SleepTimerTest {
         val timer = SleepTimer(
             scope = this,
             setVolume = {},
-            onExpire = { expired = true }
+            onExpire = { expired = true },
+            elapsedRealtime = { testScheduler.currentTime }
         )
         timer.start(5000, fadeMs = 1000)
         testScheduler.advanceTimeBy(2000)

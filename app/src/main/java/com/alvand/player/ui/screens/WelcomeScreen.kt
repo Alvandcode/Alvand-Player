@@ -42,6 +42,13 @@ fun WelcomeScreen(onStart: () -> Unit) {
             letterSpacing = 0.2.sp
         )
         Spacer(Modifier.weight(1f))
+        Text(
+            stringResource(R.string.allow_access),
+            color = pal.sub,
+            fontSize = 13.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(Modifier.height(16.dp))
         Button(
             onClick = onStart,
             shape = RoundedCornerShape(28.dp),

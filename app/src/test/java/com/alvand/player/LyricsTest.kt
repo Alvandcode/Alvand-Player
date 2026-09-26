@@ -23,8 +23,14 @@ class LyricsTest {
     }
 
     @Test
-    fun `parseLrc clamps seconds to 59 (no 60s bug)`() {
-        // رگرسیون: تایم‌استمپ دستی قدیمی [00:60.00] نباید کرش کند؛ ثانیه نامعتبر نادیده گرفته می‌شود
+    fun `online lyrics require local miss and explicit opt in`() {
+        assertTrue(LyricsManager.shouldFetchOnline(hasLocalLyrics = false, onlineEnabled = true))
+        assertFalse(LyricsManager.shouldFetchOnline(hasLocalLyrics = false, onlineEnabled = false))
+        assertFalse(LyricsManager.shouldFetchOnline(hasLocalLyrics = true, onlineEnabled = true))
+    }
+
+    @Test
+    fun `parseLrc rejects out of range seconds`() {
         val raw = "[00:60.00]bad\n[01:02.00]good"
         val lines = LyricsManager.parseLrc(raw)
         assertTrue(lines.none { it.text == "bad" })

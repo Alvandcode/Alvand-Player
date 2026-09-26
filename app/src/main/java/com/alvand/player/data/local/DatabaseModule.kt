@@ -16,9 +16,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext ctx: Context): AlvandDatabase =
-        Room.databaseBuilder(ctx, AlvandDatabase::class.java, "alvand.db")
-            .fallbackToDestructiveMigration()
-            .build()
+        Room.databaseBuilder(ctx, AlvandDatabase::class.java, "alvand.db").build()
 
     @Provides
     fun provideDao(db: AlvandDatabase): LibraryDao = db.libraryDao()

@@ -24,6 +24,8 @@
     <string name="tab_lyrics">Lyrics</string>
     <string name="tab_eq">EQ &amp; Noise</string>
     <string name="get_lyrics">Fetch lyrics</string>
+    <string name="online_lyrics">Automatic online lyrics</string>
+    <string name="online_lyrics_desc">When enabled, a track without local lyrics sends its title and artist to LRCLIB.</string>
     <string name="no_lyrics">No lyrics found — fetch from web or set manually.</string>
     <string name="manual_hint">Set lyrics manually / LRC</string>
     <string name="save_lyrics">Save lyrics</string>
@@ -48,6 +50,8 @@
     <string name="play_error">Cannot play this file (format or access problem).</string>
     <string name="allow_access">To see your on-device songs, allow access to music files.</string>
     <string name="allow">Allow</string>
+    <string name="open_settings">Open settings</string>
+    <string name="no_music">No music was found on this device. Scan again or open a file from the menu.</string>
     <string name="eq_need_play">Play a song first to hear the effect.</string>
     <string name="eq_off">Equalizer is off.</string>
     <string name="menu">Menu</string>

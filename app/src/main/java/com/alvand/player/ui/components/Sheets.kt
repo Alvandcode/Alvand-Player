@@ -34,6 +34,8 @@ fun MenuSheet(
     vm: AppViewModel,
     onPickFile: () -> Unit,
     onPickBackground: () -> Unit,
+    hasAudioPermission: Boolean,
+    onRequestAudioPermission: () -> Unit,
     onOpenAbout: () -> Unit,
     onPlayLink: () -> Unit,
     onDismiss: () -> Unit
@@ -62,7 +64,8 @@ fun MenuSheet(
                 if (scanning) stringResource(R.string.scanning)
                 else stringResource(R.string.scan_songs)
             ) {
-                vm.scanDeviceSongs()
+                if (hasAudioPermission) vm.scanDeviceSongs()
+                else onRequestAudioPermission()
                 onDismiss()
             }
             MenuItem(
@@ -143,7 +146,8 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Switch(checked = eq.eqEnabled, onCheckedChange = { vm.updateAudio(eq.copy(eqEnabled = it)) })
             }
             // بازخورد اتصال: فقط isPlaying را کالکت کن تا position هر ۵۰۰ms کل شیت را نسوزاند
-            val isPlaying by vm.playerState.map { it.isPlaying }.collectAsState(initial = false)
+            val isPlayingFlow = remember(vm) { vm.playerState.map { it.isPlaying } }
+            val isPlaying by isPlayingFlow.collectAsState(initial = false)
             @Suppress("UNUSED_EXPRESSION")
             isPlaying
             if (!vm.manager.eqManager.isAttached()) {
@@ -213,8 +217,10 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
 fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     val lyrics by vm.lyrics.collectAsState()
     val loading by vm.lyricsLoading.collectAsState()
+    val onlineEnabled by vm.onlineLyricsEnabled.collectAsState()
     // فقط position را کالکت کن (نه کل PlayerUiState) + جستجوی دودویی به‌جای اسکن خطی O(n)
-    val pos by vm.playerState.map { it.positionMs }.collectAsState(initial = 0L)
+    val positionFlow = remember(vm) { vm.playerState.map { it.positionMs } }
+    val pos by positionFlow.collectAsState(initial = 0L)
     var manual by remember { mutableStateOf("") }
     val activeIdx by remember(lyrics, pos) {
         derivedStateOf {
@@ -241,6 +247,19 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 TextButton(onClick = { vm.refreshLyricsOnline() }) { Text(stringResource(R.string.get_lyrics)) }
             }
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = pal.ink)
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.online_lyrics), color = pal.ink, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.online_lyrics_desc), color = pal.sub, fontSize = 11.sp)
+                }
+                Switch(
+                    checked = onlineEnabled,
+                    onCheckedChange = vm::setOnlineLyricsEnabled
+                )
+            }
             if (lyrics.lines.isEmpty() && !loading) {
                 Text(stringResource(R.string.no_lyrics), color = pal.sub, fontSize = 13.sp)
             } else {
@@ -306,7 +325,8 @@ fun MarqueeLine(
 @Composable
 fun LyricsPreviewCard(vm: AppViewModel, onOpenFull: () -> Unit) {
     val lyrics by vm.lyrics.collectAsState()
-    val pos by vm.playerState.map { it.positionMs }.collectAsState(initial = 0L)
+    val positionFlow = remember(vm) { vm.playerState.map { it.positionMs } }
+    val pos by positionFlow.collectAsState(initial = 0L)
     val pal = LocalAP.current
     val activeIdx by remember(lyrics, pos) {
         derivedStateOf {

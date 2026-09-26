@@ -10,33 +10,15 @@ object AppLocale {
 
     val all = listOf(
         Lang("en", "English"),
-        Lang("zh", "中文 (简体)"),
-        Lang("hi", "हिन्दी"),
-        Lang("es", "Español"),
-        Lang("fr", "Français"),
-        Lang("ar", "العربية"),
-        Lang("pt", "Português"),
-        Lang("ru", "Русский"),
-        Lang("ur", "اردو"),
-        Lang("id", "Bahasa Indonesia"),
-        Lang("de", "Deutsch"),
-        Lang("ja", "日本語"),
-        Lang("it", "Italiano"),
-        Lang("tr", "Türkçe"),
-        Lang("ko", "한국어"),
-        Lang("vi", "Tiếng Việt"),
         Lang("fa", "فارسی")
     )
 
     private val codeSet = all.map { it.code }.toSet()
 
-    /** نرمالایز: "in" قدیمی → "id" مدرن؛ "zh-Hans-CN" → "zh" */
+    /** نرمالایز تگ زبان؛ زبان‌های بدون ترجمه به انگلیسی برمی‌گردند */
     fun normalize(code: String): String {
         val c = code.lowercase()
-        if (c == "in" || c == "ind") return "id"
-        if (c.startsWith("zh")) return "zh"
         val base = c.substringBefore("-").substringBefore("_")
-        if (base == "in") return "id"
         return if (base in codeSet) base else "en"
     }
 

@@ -47,7 +47,7 @@ object LyricsManager {
             if (text.isEmpty() || text.startsWith("ti:") || text.startsWith("ar:")) return@forEach
             matches.forEach { m ->
                 val min = m.groupValues[1].toLongOrNull() ?: return@forEach
-                val sec = m.groupValues[2].toLongOrNull()?.coerceIn(0, 59) ?: return@forEach
+                val sec = m.groupValues[2].toLongOrNull()?.takeIf { it in 0..59 } ?: return@forEach
                 val fracRaw = m.groupValues[3]
                 val ms = when (fracRaw.length) {
                     0 -> 0L
@@ -60,6 +60,9 @@ object LyricsManager {
         }
         return out.sortedBy { it.timeMs }
     }
+
+    fun shouldFetchOnline(hasLocalLyrics: Boolean, onlineEnabled: Boolean): Boolean =
+        !hasLocalLyrics && onlineEnabled
 
     /** ۱) لیریک امبدد داخل تگ فایل — با بستن امن retriever */
     suspend fun readEmbedded(song: Song, context: Context): LyricsResult? =

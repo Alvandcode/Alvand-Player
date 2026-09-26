@@ -15,6 +15,14 @@ base {
     archivesName.set("AlvandPlayer-v$appVersionName")
 }
 
+val releaseKeystorePath = System.getenv("ALVAND_KEYSTORE_PATH")
+    ?: rootDir.resolve("alvand-release.keystore").absolutePath
+val releaseKeystoreFile = file(releaseKeystorePath)
+val hasReleaseSigning = releaseKeystoreFile.isFile &&
+    !System.getenv("ALVAND_KEYSTORE_PASSWORD").isNullOrBlank() &&
+    !System.getenv("ALVAND_KEY_ALIAS").isNullOrBlank() &&
+    !System.getenv("ALVAND_KEY_PASSWORD").isNullOrBlank()
+
 android {
     namespace = "com.alvand.player"
     // اندروید ۶ (API 23) تا اندروید ۱۶ (API 36).
@@ -28,20 +36,14 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         vectorDrawables { useSupportLibrary = true }
-        // زبان‌های پشتیبانی‌شده (۱۷ لوکیل) — باید با locales_config.xml یکی باشد.
-        // نکته: کد مدرن اندونزیایی "id" است نه "in" قدیمی.
-        resConfigs(
-            "en", "zh", "hi", "es", "fr", "ar", "pt", "ru", "ur",
-            "id", "de", "ja", "it", "tr", "ko", "vi", "fa"
-        )
+        resourceConfigurations += listOf("en", "fa")
     }
     signingConfigs {
         // کانفیگ «alvand»: کی‌استور فقط از مسیر امن خارج از ریپو یا env می‌آید.
         // هرگز فایل keystore را داخل پوشه پروژه نگه ندارید (ریسک لو رفتن با zip/backup).
         // مسیر پیش‌فرض روت ریپو است چون فایل قدیمی آنجا بود؛ برای امنیت به ../ یا %USERPROFILE% منتقل کنید.
         create("alvand") {
-            val defaultPath = rootDir.resolve("alvand-release.keystore").absolutePath
-            storeFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: defaultPath)
+            storeFile = releaseKeystoreFile
             storeType = "PKCS12"
             storePassword = System.getenv("ALVAND_KEYSTORE_PASSWORD")
             keyAlias = System.getenv("ALVAND_KEY_ALIAS") ?: "alvand"
@@ -58,17 +60,15 @@ android {
             keyPassword = "android"
         }
     }
-    // true یعنی کی‌استور ثابت در دسترس است (فایل هست + پسورد ست شده)
-    // در CI سکرت‌ها ست‌اند؛ لوکال فقط وقتی فایل و env هر دو باشند.
-    val stableKsFile = file(System.getenv("ALVAND_KEYSTORE_PATH") ?: rootDir.resolve("alvand-release.keystore").absolutePath)
-    val hasStableKs = stableKsFile.exists() && !System.getenv("ALVAND_KEYSTORE_PASSWORD").isNullOrEmpty()
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+
     buildTypes {
         release {
-            // امضای پایدار: نسخه جدید همیشه روی قبلی نصب می‌شود.
-            // اگر کی‌استور نباشد عمداً خطا می‌دهیم تا APK با کلید موقت debug
-            // به‌اشتباه با نام release منتشر نشود (با checkReleaseSigning کنترل می‌شود).
-            signingConfig = if (hasStableKs) signingConfigs.getByName("alvand")
-            else signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("alvand")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -91,7 +91,7 @@ android {
     buildFeatures { compose = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     lint {
-        abortOnError = false
+        abortOnError = true
         checkReleaseBuilds = true
         warningsAsErrors = false
     }
@@ -99,6 +99,23 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.isReturnDefaultValues = true
     }
+}
+
+val verifyReleaseSigning by tasks.registering {
+    group = "verification"
+    description = "Fails release builds unless production signing is configured."
+    doLast {
+        check(hasReleaseSigning) {
+            "Release signing requires ALVAND_KEYSTORE_PATH, ALVAND_KEYSTORE_PASSWORD, " +
+                "ALVAND_KEY_ALIAS, and ALVAND_KEY_PASSWORD."
+        }
+    }
+}
+
+tasks.matching {
+    it.name in setOf("assembleRelease", "bundleRelease", "packageRelease", "signReleaseBundle")
+}.configureEach {
+    dependsOn(verifyReleaseSigning)
 }
 
 dependencies {

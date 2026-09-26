@@ -1,7 +1,7 @@
 package com.alvand.player
 
 import com.alvand.player.data.AppLocale
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -11,15 +11,12 @@ import org.robolectric.RobolectricTestRunner
 class AppLocaleTest {
 
     @Test
-    fun `normalize maps legacy in to id`() {
-        assertEquals("id", AppLocale.normalize("in"))
-        assertEquals("id", AppLocale.normalize("id"))
-        assertEquals("id", AppLocale.normalize("IN"))
+    fun `supported locales are english and persian`() {
+        assertEquals(listOf("en", "fa"), AppLocale.all.map { it.code })
     }
 
     @Test
     fun `normalize strips region`() {
-        assertEquals("zh", AppLocale.normalize("zh-Hans-CN"))
         assertEquals("fa", AppLocale.normalize("fa-IR"))
         assertEquals("en", AppLocale.normalize("en-US"))
     }
@@ -28,5 +25,6 @@ class AppLocaleTest {
     fun `normalize falls back to en`() {
         assertEquals("en", AppLocale.normalize("xx"))
         assertEquals("en", AppLocale.normalize(""))
+        assertEquals("en", AppLocale.normalize("zh-Hans-CN"))
     }
 }

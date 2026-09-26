@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,6 +37,8 @@ class SettingsRepo @Inject constructor(
     val themeMode: Flow<Int> = store.data.map { it[Keys.THEME] ?: ThemeMode.SYSTEM }
     val backgroundUri: Flow<String?> = store.data.map { it[Keys.BG] }
     val onboardingSeen: Flow<Boolean> = store.data.map { it[Keys.ONBOARDING] ?: false }
+    val onlineLyricsEnabled: Flow<Boolean> =
+        store.data.map { it[Keys.ONLINE_LYRICS] ?: false }.distinctUntilChanged()
 
     /** علاقه‌مندی‌های پایدار: Set<String> چون DataStore longSet ندارد */
     val likedIds: Flow<Set<Long>> = store.data.map { prefs ->
@@ -58,6 +62,10 @@ class SettingsRepo @Inject constructor(
         store.edit { it[Keys.ONBOARDING] = seen }
     }
 
+    suspend fun setOnlineLyricsEnabled(enabled: Boolean) {
+        store.edit { it[Keys.ONLINE_LYRICS] = enabled }
+    }
+
     suspend fun toggleLike(id: Long) {
         store.edit { prefs ->
             val cur = prefs[Keys.LIKED] ?: emptySet()
@@ -73,7 +81,8 @@ class SettingsRepo @Inject constructor(
     private object Keys {
         val THEME = intPreferencesKey("theme_mode")
         val BG = stringPreferencesKey("background_uri")
-        val ONBOARDING = androidx.datastore.preferences.core.booleanPreferencesKey("onboarding_seen")
+        val ONBOARDING = booleanPreferencesKey("onboarding_seen")
+        val ONLINE_LYRICS = booleanPreferencesKey("online_lyrics_enabled")
         val LIKED = stringSetPreferencesKey("liked_ids")
         val SORT = intPreferencesKey("library_sort")
     }

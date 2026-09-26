@@ -27,6 +27,9 @@ fun AppNavHost(
     vm: AppViewModel = hiltViewModel(),
     onPickFile: () -> Unit,
     onPickBackground: () -> Unit,
+    onRequestAudioPermission: () -> Unit,
+    onRequestNotificationPermission: () -> Unit,
+    onOpenAppSettings: () -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
     val navEvents = vm.navEvents
@@ -61,6 +64,7 @@ fun AppNavHost(
             // بعد از ورود، خوشامد از بک‌استک حذف می‌شود تا با بک برنگردیم
             WelcomeScreen {
                 vm.setOnboardingSeen()
+                onRequestAudioPermission()
                 navController.navigate(Routes.PLAYER) {
                     popUpTo(Routes.WELCOME) { inclusive = true }
                     launchSingleTop = true
@@ -72,6 +76,9 @@ fun AppNavHost(
                 vm,
                 onPickFile = onPickFile,
                 onPickBackground = onPickBackground,
+                onRequestAudioPermission = onRequestAudioPermission,
+                onRequestNotificationPermission = onRequestNotificationPermission,
+                onOpenAppSettings = onOpenAppSettings,
                 onOpenAbout = {
                     navController.navigate(Routes.ABOUT) { launchSingleTop = true }
                 }

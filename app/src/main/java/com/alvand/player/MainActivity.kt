@@ -3,8 +3,10 @@ package com.alvand.player
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     private val pickAudio = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
+            requestNotificationPermission()
             val name = uri.lastPathSegment?.substringAfterLast('/') ?: "Local audio"
             vm.playUri(uri, name)
             vm.navigateTo(Routes.PLAYER)
@@ -35,16 +38,13 @@ class MainActivity : AppCompatActivity() {
             navTarget.value = Routes.PLAYER
         }
     }
-    // بعد از جواب کاربر به دسترسی فایل صوتی، فقط اگر grant شد اسکن کن
-    private val permReq = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-        val granted = grants.values.any { it }
-        if (granted) {
-            vm.clearPermissionError()
-            vm.reloadLocalSongs()
-        } else {
-            // deny — اسکن بی‌فایده نزن؛ پیام rationale در UI نشان داده می‌شود
+    private val audioPermissionRequest =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            vm.onAudioPermissionResult(granted)
         }
-    }
+
+    private val notificationPermissionRequest =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     // انتخاب عکس بکگراند (OpenDocument تا دسترسی ماندگار بگیریم و بعد از ری‌استارت هم بماند)
     private val pickBackground =
@@ -68,9 +68,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // فقط اولین ساخت (نه چرخش) پرمیشن بخواه و intent را هندل کن
         if (savedInstanceState == null) {
-            requestPermsIfNeeded()
             handleIntent(intent)
         }
         setContent {
@@ -85,6 +83,9 @@ class MainActivity : AppCompatActivity() {
                     vm = vm,
                     onPickFile = { pickAudio.launch("audio/*") },
                     onPickBackground = { pickBackground.launch(arrayOf("image/*")) },
+                    onRequestAudioPermission = ::requestAudioPermission,
+                    onRequestNotificationPermission = ::requestNotificationPermission,
+                    onOpenAppSettings = ::openAppSettings,
                 )
             }
         }
@@ -92,6 +93,11 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             vm.navEvents.collect { navTarget.value = it }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        vm.syncAudioPermission()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -107,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         if (uri != null && intent?.action in listOf(Intent.ACTION_VIEW, Intent.ACTION_SEND)) {
             val url = uri.toString()
             if (Song.isSupportedPath(url)) {
+                requestNotificationPermission()
                 if (vm.playDirectLink(url)) {
                     vm.navigateTo(Routes.PLAYER)
                     @Suppress("DEPRECATION")
@@ -116,24 +123,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun requestPermsIfNeeded() {
-        val perms = buildList {
-            if (Build.VERSION.SDK_INT >= 33) {
-                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                    add(Manifest.permission.READ_MEDIA_AUDIO)
-                }
-            } else {
-                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                }
-            }
-            if (Build.VERSION.SDK_INT >= 33 &&
-                ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-            ) {
-                add(Manifest.permission.POST_NOTIFICATIONS)
-            }
+    private fun requestAudioPermission() {
+        val permission = if (Build.VERSION.SDK_INT >= 33) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
         }
-        if (perms.isNotEmpty()) permReq.launch(perms.toTypedArray())
-        else vm.reloadLocalSongs()
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            vm.onAudioPermissionResult(true)
+        } else {
+            audioPermissionRequest.launch(permission)
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < 33) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) return
+        notificationPermissionRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun openAppSettings() {
+        startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:$packageName")
+            )
+        )
     }
 }

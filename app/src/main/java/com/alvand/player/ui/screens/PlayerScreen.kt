@@ -40,10 +40,15 @@ fun PlayerScreen(
     vm: AppViewModel,
     onPickFile: () -> Unit,
     onPickBackground: () -> Unit,
+    onRequestAudioPermission: () -> Unit,
+    onRequestNotificationPermission: () -> Unit,
+    onOpenAppSettings: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
     val state by vm.playerState.collectAsState()
     val songs by vm.songs.collectAsState()
+    val audioPermissionGranted by vm.audioPermissionGranted.collectAsState()
+    val isScanning by vm.isScanning.collectAsState()
     val bgUri by vm.backgroundUri.collectAsState()
     val pal = LocalAP.current
     val ctx = LocalContext.current
@@ -84,8 +89,16 @@ fun PlayerScreen(
         CrashReportDialog(vm, crash!!, onDismiss = { vm.markCrashSeen() })
     }
 
-    if (showMenu) MenuSheet(vm, onPickFile, onPickBackground, onOpenAbout,
-        onPlayLink = {}, onDismiss = { showMenu = false })
+    if (showMenu) MenuSheet(
+        vm = vm,
+        onPickFile = onPickFile,
+        onPickBackground = onPickBackground,
+        hasAudioPermission = audioPermissionGranted,
+        onRequestAudioPermission = onRequestAudioPermission,
+        onOpenAbout = onOpenAbout,
+        onPlayLink = {},
+        onDismiss = { showMenu = false }
+    )
     if (showLyricsFull) LyricsSheet(vm, onDismiss = { showLyricsFull = false })
     if (showSleep) SleepTimerDialog(vm, onDismiss = { showSleep = false })
 
@@ -135,7 +148,10 @@ fun PlayerScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                stringResource(R.string.scan_songs),
+                                stringResource(
+                                    if (audioPermissionGranted) R.string.scan_songs
+                                    else R.string.allow_access
+                                ),
                                 color = pal.sub, fontSize = 13.sp
                             )
                         }
@@ -149,7 +165,10 @@ fun PlayerScreen(
                             .padding(horizontal = 14.dp, vertical = 3.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (active) pal.glass else androidx.compose.ui.graphics.Color.Transparent)
-                            .clickable { vm.playList(songs, i) }
+                            .clickable {
+                                onRequestNotificationPermission()
+                                vm.playList(songs, i)
+                            }
                             .padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -303,6 +322,53 @@ fun PlayerScreen(
                             big = true,
                             accent = dyn.accent
                         )
+                    }
+                    if (songs.isEmpty()) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (audioPermissionGranted) R.string.no_music
+                                    else R.string.allow_access
+                                ),
+                                color = pal.sub,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            if (audioPermissionGranted) {
+                                Button(
+                                    onClick = { vm.scanDeviceSongs() },
+                                    enabled = !isScanning,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = pal.ink,
+                                        contentColor = pal.bg
+                                    )
+                                ) {
+                                    Text(stringResource(if (isScanning) R.string.scanning else R.string.scan_songs))
+                                }
+                            } else {
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Button(
+                                        onClick = onRequestAudioPermission,
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = pal.ink,
+                                            contentColor = pal.bg
+                                        )
+                                    ) { Text(stringResource(R.string.allow)) }
+                                    OutlinedButton(
+                                        onClick = onOpenAppSettings,
+                                        modifier = Modifier.weight(1f)
+                                    ) { Text(stringResource(R.string.open_settings)) }
+                                }
+                            }
+                        }
                     }
                     // فضای دسته پایینی
                     Spacer(Modifier.height(84.dp))

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ویجت هوم‌اسکرین: عنوان + ۳ دکمه (قبلی/پخش/بعدی). تپ روی متن → باز شدن اپ -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
@@ -46,7 +47,7 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_desc"
         android:src="@drawable/ic_widget_prev"
-        android:tint="#FFF2F2F5" />
+        app:tint="#FFF2F2F5" />
 
     <ImageButton
         android:id="@+id/widget_toggle"
@@ -55,7 +56,7 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_name"
         android:src="@drawable/ic_widget_play"
-        android:tint="#FFF2F2F5" />
+        app:tint="#FFF2F2F5" />
 
     <ImageButton
         android:id="@+id/widget_next"
@@ -64,5 +65,5 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/widget_desc"
         android:src="@drawable/ic_widget_next"
-        android:tint="#FFF2F2F5" />
+        app:tint="#FFF2F2F5" />
 </LinearLayout>

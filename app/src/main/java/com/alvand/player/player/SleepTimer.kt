@@ -37,7 +37,8 @@ class SleepTimer(
     private val scope: CoroutineScope,
     private val setVolume: (Float) -> Unit,
     private val getVolume: () -> Float = { 1f },
-    private val onExpire: () -> Unit
+    private val onExpire: () -> Unit,
+    private val elapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() }
 ) {
     private val _state = MutableStateFlow(SleepTimerState())
     val state: StateFlow<SleepTimerState> = _state
@@ -101,7 +102,7 @@ class SleepTimer(
 
     private fun CoroutineScope.launchTimer(totalMs: Long, fadeMs: Long, gen: Long, startVolume: Float): Job =
         launch {
-            val deadline = SystemClock.elapsedRealtime() + totalMs
+            val deadline = elapsedRealtime() + totalMs
             try {
                 // تیک اول سریع تا UI یک ثانیه دیر نکند
                 _state.value = SleepTimerState(active = true, remainingMs = totalMs, totalMs = totalMs, fading = fadeMs >= totalMs)
@@ -109,7 +110,7 @@ class SleepTimer(
                 while (true) {
                     delay(1000)
                     if (generation.get() != gen) return@launch // کنسل شده‌ایم
-                    val remaining = (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0)
+                    val remaining = (deadline - elapsedRealtime()).coerceAtLeast(0)
                     val fading = fadeMs > 0 && remaining <= fadeMs && remaining > 0
                     if (fading) {
                         // fade ادراکی نرم‌تر: جذر نسبت به‌جای خطی

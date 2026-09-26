@@ -2,13 +2,13 @@
 
 [![Stars](https://img.shields.io/github/stars/Alvandcode/Alvand-Player?style=flat-square)](https://github.com/Alvandcode/Alvand-Player/stargazers) [![License](https://img.shields.io/github/license/Alvandcode/Alvand-Player?style=flat-square)](./LICENSE) [![Last commit](https://img.shields.io/github/last-commit/Alvandcode/Alvand-Player?style=flat-square)](https://github.com/Alvandcode/Alvand-Player/commits)
 
-> Minimal black-and-white Android music player (Kotlin + Media3) — background playback, lyrics, 5-band equalizer, 17 languages.
+> Minimal black-and-white Android music player (Kotlin + Media3) — background playback, lyrics, 5-band equalizer, English and Persian.
 
 <div dir="rtl">
 
 ## موزیک‌پلیر الوند
 
-موزیک‌پلیر مینیمال سیاه‌وسفید اندروید با کاتلین و Media3؛ پخش در پس‌زمینه، نمایش متن ترانه، اکولایزر پنج بانده و پشتیبانی از ۱۷ زبان.
+موزیک‌پلیر مینیمال سیاه‌وسفید اندروید با کاتلین و Media3؛ پخش در پس‌زمینه، نمایش متن ترانه، اکولایزر پنج بانده و پشتیبانی از انگلیسی و فارسی.
 
 </div>
 
@@ -25,10 +25,10 @@
 | پخش تمام فرمت‌ها (mp3/aac/ogg/opus/flac/wav/m4a/amr/midi + HLS/DASH) | ✅ ExoPlayer / Media3 |
 | کنترل از نوار اعلان، لاک‌اسکرین و خروجی مدیا + پخش پس‌زمینه | ✅ MediaSession |
 | لینک مستقیم (Paste URL + باز کردن از اپ‌های دیگر) | ✅ |
-| لیریک: امبدد تگ + فایل ‎.lrc‎ + جستجوی آنلاین (LRCLIB) + ست دستی | ✅ |
+| لیریک: امبدد تگ + فایل ‎.lrc‎ + جستجوی اختیاری آنلاین (LRCLIB) + ست دستی | ✅ |
 | اکولایزر 5 باند + BassBoost + تقویت صدا (LoudnessEnhancer) | ✅ |
 | حذف نویز (Hiss/Hum مبتنی بر EQ) | ✅ |
-| ۱۷ زبان + انتخاب زبان داخل اپ | ✅ |
+| انگلیسی + فارسی + انتخاب زبان داخل اپ | ✅ |
 | UI مینیمال سیاه‌سفید، حلقه پیشرفت لمسی، کاور واقعی آهنگ | ✅ |
 | 🎨 پالت رنگی داینامیک از کاور (گرادیان + کنترل‌های هم‌رنگ) | ✅ v1.1.0 |
 | 🌙 تایمر خواب با محو تدریجی صدا (۵–۹۰ دقیقه + پایان آهنگ) | ✅ v1.1.0 |
@@ -40,11 +40,9 @@
 | نصب روی اندروید ۶ تا ۱۷، فایل خروجی با نام+ورژن | ✅ |
 | بیلد خودکار در گیت‌هاب (APK/AAB) | ✅ |
 
-## 🌍 زبان‌ها (۱۷)
-English 🇬🇧 • 中文 🇨🇳 • हिन्दी 🇮🇳 • Español 🇪🇸 • Français 🇫🇷 • العربية 🇸🇦 •
-Português 🇵🇹 • Русский 🇷🇺 • اردو 🇵🇰 • Bahasa Indonesia 🇮🇩 •
-Deutsch 🇩🇪 • 日本語 🇯🇵 • Italiano 🇮🇹 • Türkçe 🇹🇷 •
-한국어 🇰🇷 • Tiếng Việt 🇻🇳 • فارسی 🇮🇷
+## 🌍 زبان‌ها
+- English 🇬🇧
+- فارسی 🇮🇷
 
 - زبان پیش‌فرض = زبان گوشی (خودکار).
 - تغییر دستی: دکمه 🌐 بالای صفحه خانه → انتخاب زبان (بدون خروج از اپ اعمال می‌شود).
@@ -68,7 +66,7 @@ alvand-player/
 ├── fastlane/metadata/android/{en-US,fa}/  (title/short/full/changelogs)
 ├── docs/screenshots-README.md + tools/capture-screenshots.sh
 ├── CHANGELOG.md
-├── app/src/main/res/values-*/strings.xml   (۱۷ زبان)
+├── app/src/main/res/values/strings.xml + values-fa/strings.xml   (en + fa)
 ├── app/src/main/res/xml/locales_config.xml
 ├── app/src/main/res/drawable/ic_alvand.xml (لوگو/آیکون)
 ├── .github/workflows/android.yml
@@ -90,24 +88,22 @@ alvand-player/
 - وکتور `drawable/ic_alvand.xml` فقط به‌عنوان نسخه تک‌رنگ (monochrome) آیکون نگه داشته شده.
 
 ## 🔏 امضای دیجیتال (نصب نسخه‌ها روی هم)
-اپ با یک کی‌استور ثابت امضا می‌شود؛ پس نسخه جدید روی قبلی نصب می‌شود و هشدار
-امضا رفع می‌شود. فایل `alvand-release.keystore` و `keystore-base64.txt` هرگز
-کامیت نمی‌شوند (در `.gitignore` هستند) — از آن‌ها **بکاپ** بگیرید؛ اگر گم شوند
-دیگر هیچ‌وقت نمی‌توانید آپدیت روی نسخه‌های قبلی بدهید!
+اپ با یک کی‌استور ثابت امضا می‌شود؛ نسخه جدید روی قبلی نصب می‌شود. کلید Release
+داخل ریپو نیست و در `%USERPROFILE%\.keystores\alvand-release.p12` نگهداری می‌شود.
+از خود کلید و فایل Credentials **بکاپ آفلاین** بگیرید؛ اگر گم شوند، دیگر نمی‌توانید
+روی نسخه‌های قبلی آپدیت بدهید.
 
-۴ سکرت زیر را در ریپو بسازید (Settings → Secrets and variables → Actions → New repository secret):
-- `ALVAND_KEYSTORE_BASE64` ← کل محتوای فایل `keystore-base64.txt`
-- `ALVAND_KEYSTORE_PASSWORD` ← پسورد کی‌استور (موقع ساخت به شما داده شد)
-- `ALVAND_KEY_ALIAS` ← معمولاً `alvand` (لاگ قدم «Show keystore aliases» در Actions آن را تأیید می‌کند)
-- `ALVAND_KEY_PASSWORD` ← معمولاً همان پسورد کی‌استور
+در GitHub Actions چهار Secret و یک Variable سطح Repository بسازید
+(Settings → Secrets and variables → Actions → New repository secret):
+- `ALVAND_KEYSTORE_BASE64` ← محتوای `alvand-release.p12.base64.txt`
+- `ALVAND_KEYSTORE_PASSWORD` ← `Store password` در فایل Credentials
+- `ALVAND_KEY_ALIAS` ← `alvand`
+- `ALVAND_KEY_PASSWORD` ← `Key password` در فایل Credentials
+- `ALVAND_RELEASE_CERT_SHA256` ← اثر انگشت SHA-256 گواهی Release (متغیر، نه Secret)
 
-بدون این سکرت‌ها هم بیلد می‌گیرد ولی با کلید موقتی debug امضا می‌شود —
-آن‌وقت هر خروجی CI امضای متفاوت دارد و برای نصب نسخه جدید باید قبلی را حذف کنید!
-
-> ⚠️ **یک‌بار آخر:** اگر تا حالا نسخه‌ای نصب کرده‌اید که با کلید موقتی امضا شده،
-> برای مهاجرت به امضای ثابت **یک‌بار** اپ را حذف و نسخه جدید را نصب کنید؛
-> از آن به بعد همه آپدیت‌ها (debug و release) روی هم نصب می‌شوند.
-> قدم «Verify APK signatures match» در Actions نشان می‌دهد هر دو APK یک گواهی دارند.
+بدون کی‌استور یا متغیر گواهی، Build مربوط به Release عمداً متوقف می‌شود و هیچ
+APK/AAB با کلید موقت یا گواهی ناشناخته منتشر نمی‌شود. Debug یک بستهٔ جدا با
+application id ‎`com.alvand.player.debug` است.
 
 ## 🚀 انتشار روی گیت‌هاب (قدم‌به‌قدم)
 
@@ -122,18 +118,16 @@ git push -u origin main
 ```
 
 بعد از پوش، تب **Actions** → ورک‌فلو `Android CI` اجرا می‌شود و خروجی‌ها در **Artifacts** قرار می‌گیرد:
-- `alvand-player-debug-apk` → نصب مستقیم روی گوشی
-- `alvand-player-release-aab` → انتشار در گوگل‌پلی
+- `alvand-player-debug-apk` → فقط برای توسعه و آزمون
+- `alvand-player-release-bundle` → APK، AAB، mapping و checksumهای نسخهٔ Release
 
 ## 🏷 انتشار نسخه (Release)
 نام فایل‌ها خودکار با ورژن ساخته می‌شود:
-`AlvandPlayer-v1.0.0-debug.apk` و `AlvandPlayer-v1.0.0-release.aab`.
-برای اینکه فایل‌ها در صفحه **Releases** ریپو بیایند، تگ بزنید و پوش کنید:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+`AlvandPlayer-v1.6.8-release.apk` و `AlvandPlayer-v1.6.8-release.aab`.
+پس از ثبت Secretها، از تب **Actions** → ورک‌فلو `Android CI` → **Run workflow**
+تگ موجود (مثل `v1.6.8`) را وارد کنید. Job امضاشده Quality را دوباره اجرا می‌کند،
+گواهی را بررسی می‌کند و Release را به‌روزرسانی می‌کند. Push تگ به‌تنهایی فقط
+Quality را اجرا می‌کند و هیچ Secretی در PR در دسترس نیست.
 
 ## 📱 سازگاری
 - **نصب:** اندروید ۶ تا ۱۷ (`minSdk 23` کف Jetpack است؛ روی ۱۷ بدون تارگت مستقیم هم اجرا می‌شود)
@@ -141,19 +135,16 @@ git push origin v1.0.0
 
 ## 📱 نصب کاربر نهایی / Install (end users)
 
-- FA: اگر صفحه **Releases** خالی است، از **Actions** بگیرید: تب **Actions** >
-  آخرین اجرای موفق ورک‌فلو `Android CI – Build Alvand Player` >
-  بخش **Artifacts** (پایین صفحه) > دانلود `alvand-player-debug-apk`
-  (نصب مستقیم روی گوشی) یا `alvand-player-release-apk`.
-  نکته: دانلود Artifacts نیاز به لاگین گیت‌هاب دارد و فایل ZIP است — بعد از
-  دانلود آن را Unzip کنید و فایل `.apk` را نصب کنید.
+- FA: از بخش **Releases** فایل `AlvandPlayer-v*-release.apk` را دریافت کنید. اگر
+  صفحهٔ Releases خالی است، هنوز تنظیمات انتشار کامل نشده است. خروجی Debug فقط برای
+  توسعه‌دهندگان است و نباید به‌عنوان نسخهٔ نهایی نصب شود.
+  نکته: Artifacts گیت‌هاب فایل ZIP است؛ پس از دانلود آن را باز و فایل `.apk` امضاشده را نصب کنید.
   روی گوشی: `Settings → Security → Install unknown apps / Unknown Sources`
   را برای مرورگر/فایل‌منجر فعال کنید. نیازمند **اندروید ۶ به بالا**
   (تست‌شده تا اندروید ۱۶؛ `minSdk 23` / `targetSdk 36`) است.
-- EN: If **Releases** is empty, use **Actions** > latest successful
-  `Android CI – Build Alvand Player` run > **Artifacts** >
-  download `alvand-player-debug-apk`. Unzip, enable Unknown Sources,
-  install on Android 6+.
+- EN: Download `AlvandPlayer-v*-release.apk` from **Releases**. If Releases is empty,
+  publication is not fully configured yet. Debug artifacts are for development only.
+  Unzip the artifact, enable installation from the trusted file manager, and install the signed APK on Android 6+.
 
 ## ✅ پیش‌نیازها / Prerequisites
 
@@ -182,7 +173,7 @@ ExoPlayer به‌صورت native از mp3, aac, ogg/vorbis, opus, flac, wav, m4a
 ## 📝 لیریک
 1. **امبدد:** تگ USLT/SYLT داخل فایل خودکار خوانده و نمایش داده می‌شود.
 2. **فایل هم‌نام:** `song.lrc` کنار آهنگ.
-3. **آنلاین:** دکمه «دریافت متن» → API رایگان LRCLIB.
+3. **آنلاین:** دریافت یک‌باره با دکمه «دریافت متن» یا دریافت خودکارِ صریح از تنظیم شیت لیریک → LRCLIB.
 4. **دستی:** Paste/Set → ذخیره به‌صورت `.lrc`.
 
 ## 🎚 اکولایزر / تقویت / نویز

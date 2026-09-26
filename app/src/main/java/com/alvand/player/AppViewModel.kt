@@ -31,11 +31,13 @@ import com.alvand.player.lyrics.LyricsResult
 import com.alvand.player.player.MusicPlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** ویومدل اصلی اپ — وابستگی‌ها با Hilt تزریق می‌شوند */
@@ -58,6 +60,14 @@ class AppViewModel @Inject constructor(
         settings.backgroundUri.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val onboardingSeen: StateFlow<Boolean> =
         settings.onboardingSeen.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    private val _onlineLyricsEnabled = MutableStateFlow(false)
+    val onlineLyricsEnabled: StateFlow<Boolean> = _onlineLyricsEnabled
+    private val onlineLyricsEdited = AtomicBoolean(false)
+    private val onlineLyricsReady = CompletableDeferred<Boolean>()
+    private val onlineLyricsSource: Flow<Boolean> = flow {
+        onlineLyricsReady.await()
+        emitAll(_onlineLyricsEnabled)
+    }
 
     fun setThemeMode(mode: Int) {
         viewModelScope.launch { settings.setThemeMode(mode) }
@@ -65,6 +75,12 @@ class AppViewModel @Inject constructor(
 
     fun setOnboardingSeen() {
         viewModelScope.launch { settings.setOnboardingSeen(true) }
+    }
+
+    fun setOnlineLyricsEnabled(enabled: Boolean) {
+        onlineLyricsEdited.set(true)
+        _onlineLyricsEnabled.value = enabled
+        viewModelScope.launch { settings.setOnlineLyricsEnabled(enabled) }
     }
 
     fun setBackground(uriString: String?) {
@@ -188,8 +204,8 @@ class AppViewModel @Inject constructor(
     val lastScanAdded: StateFlow<Int?> = _lastScanAdded
     fun consumeScanMessage() { _lastScanAdded.value = null }
 
-    private val _permissionError = MutableStateFlow(false)
-    val permissionError: StateFlow<Boolean> = _permissionError
+    private val _audioPermissionGranted = MutableStateFlow(hasAudioPermission())
+    val audioPermissionGranted: StateFlow<Boolean> = _audioPermissionGranted
 
     fun hasAudioPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= 33) {
@@ -201,11 +217,27 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    fun syncAudioPermission() {
+        val granted = hasAudioPermission()
+        val changed = _audioPermissionGranted.value != granted
+        _audioPermissionGranted.value = granted
+        if (changed && granted) reloadLocalSongs()
+    }
+
+    fun onAudioPermissionResult(granted: Boolean) {
+        _audioPermissionGranted.value = granted
+        if (granted) reloadLocalSongs()
+    }
+
     /**
      * اسکن آهنگ‌های گوشی از MediaStore و ادغام با پلی‌لیست.
      * آهنگ‌های قبلی (لینک/فایل دستی) حفظ می‌شوند؛ فقط لوکال‌ها به‌روز می‌شوند.
      */
     fun scanDeviceSongs(announce: Boolean = true) {
+        if (!hasAudioPermission()) {
+            _audioPermissionGranted.value = false
+            return
+        }
         if (_isScanning.value) return
         viewModelScope.launch {
             _isScanning.value = true
@@ -213,11 +245,11 @@ class AppViewModel @Inject constructor(
                 val local = try {
                     repo.loadLocalSongs()
                 } catch (e: SecurityException) {
-                    _permissionError.value = true
+                    _audioPermissionGranted.value = false
                     Log.w("VM", "scan: permission denied", e)
                     return@launch
                 }
-                _permissionError.value = false
+                _audioPermissionGranted.value = true
                 val prev = _songs.value
                 val remote = prev.filter { it.isRemote }
                 val manualLocal = prev.filter { !it.isRemote && it.id < 0 }
@@ -265,7 +297,6 @@ class AppViewModel @Inject constructor(
 
     init {
         scanDeviceSongs(announce = false)
-        // دیده‌بان فایل‌های صوتی گوشی تا وقتی اپ زنده است
         runCatching {
             appContext.contentResolver.registerContentObserver(
                 observedUri(),
@@ -273,31 +304,51 @@ class AppViewModel @Inject constructor(
                 mediaObserver
             )
         }
-        // لود لیریک هر آهنگ جدید: اول لوکال/امبدد، بعد آنلاین — با نسل تا پاسخ قدیمی روی آهنگ جدید ننشیند
         viewModelScope.launch {
-            playerState.map { it.current }.distinctUntilChanged().collect { song ->
-                if (song == null) return@collect
-                // تاریخچه بیرون از مسیر بحرانی: خطای DB هرگز نباید پخش یا لیریک را خراب کند
-                viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                    runCatching { playlists.recordPlay(song) }
-                }
-                val gen = lyricsGen.incrementAndGet()
-                _lyricsLoading.value = true
-                var res = LyricsManager.loadLocal(song, appContext)
-                if (res.lines.isEmpty()) {
-                    val durSec = (song.durationMs / 1000).takeIf { it > 0 } ?: 0L
-                    res = LyricsManager.fetchOnline(song.artist, song.title, durSec)
-                    // کش آنلاین تا دفعه بعد آفلاین بیاید (بدون بلاک UI)
-                    if (res.lines.isNotEmpty() && res.plainText.isNotBlank()) {
-                        runCatching { LyricsManager.cacheOnline(song, appContext, res.plainText) }
+            val persisted = runCatching { settings.onlineLyricsEnabled.first() }.getOrDefault(false)
+            if (!onlineLyricsEdited.get()) _onlineLyricsEnabled.value = persisted
+            onlineLyricsReady.complete(_onlineLyricsEnabled.value)
+        }
+        var lastHistorySong: Song? = null
+        viewModelScope.launch {
+            combine(
+                playerState.map { it.current }.distinctUntilChanged(),
+                onlineLyricsSource
+            ) { song, onlineEnabled -> song to onlineEnabled }
+                .collectLatest { (song, onlineEnabled) ->
+                    _onlineLyricsEnabled.value = onlineEnabled
+                    if (song == null) {
+                        lyricsGen.incrementAndGet()
+                        lastHistorySong = null
+                        _lyrics.value = LyricsResult(emptyList(), "", "none")
+                        _lyricsLoading.value = false
+                        return@collectLatest
+                    }
+                    if (song != lastHistorySong) {
+                        lastHistorySong = song
+                        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            runCatching { playlists.recordPlay(song) }
+                        }
+                    }
+                    val gen = lyricsGen.incrementAndGet()
+                    _lyricsLoading.value = true
+                    var res = LyricsManager.loadLocal(song, appContext)
+                    if (LyricsManager.shouldFetchOnline(
+                            hasLocalLyrics = res.lines.isNotEmpty(),
+                            onlineEnabled = onlineEnabled
+                        )
+                    ) {
+                        val durSec = (song.durationMs / 1000).takeIf { it > 0 } ?: 0L
+                        res = LyricsManager.fetchOnline(song.artist, song.title, durSec)
+                        if (lyricsGen.get() == gen && res.lines.isNotEmpty() && res.plainText.isNotBlank()) {
+                            runCatching { LyricsManager.cacheOnline(song, appContext, res.plainText) }
+                        }
+                    }
+                    if (lyricsGen.get() == gen) {
+                        _lyrics.value = res
+                        _lyricsLoading.value = false
                     }
                 }
-                // فقط اگر هنوز همین آهنگ است اعمال کن (ضد race اسکیپ سریع)
-                if (lyricsGen.get() == gen) {
-                    _lyrics.value = res
-                    _lyricsLoading.value = false
-                }
-            }
         }
     }
 
@@ -334,7 +385,7 @@ class AppViewModel @Inject constructor(
                 runCatching { LyricsManager.cacheOnline(c, appContext, res.plainText) }
             }
             if (lyricsGen.get() == gen) {
-                _lyrics.value = res
+                if (res.lines.isNotEmpty()) _lyrics.value = res
                 _lyricsLoading.value = false
             }
         }
@@ -357,8 +408,6 @@ class AppViewModel @Inject constructor(
     }
 
     fun updateAudio(s: AudioSettings) = manager.applyAudio(s)
-
-    fun clearPermissionError() { _permissionError.value = false }
 
     // ---- v1.6.3: گزارش کرش داخل اپ ----
     private val _crash = MutableStateFlow<CrashInfo?>(null)

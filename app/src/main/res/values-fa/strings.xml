@@ -24,6 +24,8 @@
     <string name="tab_lyrics">متن آهنگ</string>
     <string name="tab_eq">اکولایزر و نویز</string>
     <string name="get_lyrics">دریافت متن</string>
+    <string name="online_lyrics">دریافت خودکار متن آنلاین</string>
+    <string name="online_lyrics_desc">در صورت فعال‌بودن، عنوان و خوانندهٔ آهنگی که متن محلی ندارد برای LRCLIB ارسال می‌شود.</string>
     <string name="no_lyrics">متنی پیدا نشد — از وب بگیرید یا دستی ست کنید.</string>
     <string name="manual_hint">ست دستی متن / LRC</string>
     <string name="save_lyrics">ذخیره متن</string>
@@ -48,6 +50,8 @@
     <string name="play_error">پخش این فایل ممکن نیست (مشکل فرمت یا دسترسی).</string>
     <string name="allow_access">برای دیدن آهنگ‌های گوشی، دسترسی به فایل‌های صوتی را بدهید.</string>
     <string name="allow">اجازه بده</string>
+    <string name="open_settings">باز کردن تنظیمات</string>
+    <string name="no_music">آهنگی روی دستگاه پیدا نشد. دوباره اسکن کنید یا از منو فایل باز کنید.</string>
     <string name="eq_need_play">برای شنیدن اثر، اول یک آهنگ پخش کنید.</string>
     <string name="eq_off">اکولایزر خاموش است.</string>
     <string name="menu">منو</string>
@@ -117,4 +121,8 @@
     <string name="crash_clear">حذف گزارش</string>
     <string name="crash_report">گزارش خطا</string>
     <string name="crash_share_title">اشتراک گزارش خطا</string>
+    <string name="cover_fallback">♪</string>
+    <string name="unknown_artist">هنرمند نامشخص</string>
+    <string name="unknown_title">عنوان نامشخص</string>
+    <string name="sleep_chip_fmt">☾ %1$s</string>
 </resources>

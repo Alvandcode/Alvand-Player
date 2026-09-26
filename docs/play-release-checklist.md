@@ -1,14 +1,17 @@
-# Play Release Checklist — Alvand Player v1.6.0
+# Play Release Checklist — Alvand Player v1.6.8
 
 ## ۱) بیلد نهایی
-- [ ] `./gradlew :app:testDebugUnitTest` سبز (blocking در CI)
-- [ ] `./gradlew :app:assembleRelease :app:bundleRelease` با کی‌استور پایدار
-- [ ] `apksigner verify --print-certs` روی release با SHA کی‌استور ثابت یکی است (قدم CI)
-- [ ] `versionCode=7 / versionName=1.6.0` با تگ `v1.6.0` و سکشن `## [1.6.0]` در CHANGELOG یکی است
+- [x] `./gradlew :app:testDebugUnitTest` — ۲۷ تست، بدون خطا
+- [x] `./gradlew :app:lintDebug` — بدون خطا
+- [x] `./gradlew :app:assembleRelease :app:bundleRelease` با کی‌استور پایدار
+- [x] `apksigner verify --print-certs` روی APK Release
+- [x] `versionCode=15 / versionName=1.6.8` با تگ `v1.6.8` و سکشن `## [1.6.8]` در CHANGELOG یکی است
+- [ ] Secretهای `ALVAND_*` و متغیر `ALVAND_RELEASE_CERT_SHA256` در سطح Repository تنظیم شده‌اند
+- [x] Release ‏`v1.6.8` از Build محلی امضاشده ساخته شد (APK/AAB/mapping/SHA256SUMS)
 
 ## ۲) فروشگاه (fastlane/metadata/android/{en-US,fa}/)
 - [x] title/short/full + changelogs/5,6,7.txt (en + fa)
-- [ ] اسکرین‌شات‌ها: `bash tools/capture-screenshots.sh` — حداقل: Player + Playlist tabs + Lyrics + EQ + Widget
+- [ ] اسکرین‌شات‌ها: `bash tools/capture-screenshots.sh` — حداقل: Player + Lyrics + EQ + Widget
 - [ ] Feature Graphic ۱۰۲۴×۵۰۰ + آیکون ۵۱۲×۵۱۲ (از `alvand_icon.png`)
 - [ ] Privacy Policy URL → `PRIVACY.md` (آپلود در سایت یا گیست، لینک در Play Console)
 - [ ] Data Safety (مهم!):
@@ -23,6 +26,7 @@
 - [ ] آدرس سورس + ایشو + donate (TON) در متادیتا
 
 ## ۴) بعد از انتشار
-- [ ] `git tag v1.6.0 && git push origin v1.6.0` → Release خودکار با یادداشت CHANGELOG
+- [x] `git tag v1.6.8 && git push origin v1.6.8` و Release با Artifactهای امضاشده
+- [ ] پس از تنظیم Secretها: Actions → Android CI → Run workflow → tag=`v1.6.8`
 - [ ] تست نصب روی اندروید ۶ (minSdk 23) و ۱۶، + Android Auto با `Desktop Head Unit`
 - [ ] بستن ایشوهای مرتبط + آپدیت Roadmap به v1.7.0 (پلی‌لیست در Auto، اکولایزر per-song)
