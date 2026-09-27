@@ -13,12 +13,12 @@ import com.alvand.player.R
 import com.alvand.player.player.PlaybackService
 
 /**
- * ویجت هوم‌اسکرین: نمایش آهنگ فعلی + قبلی/پخش-توقف/بعدی.
+ * ┘ê█î╪¼╪¬ ┘ç┘ê┘àΓÇî╪º╪│┌⌐╪▒█î┘å: ┘å┘à╪º█î╪┤ ╪ó┘ç┘å┌» ┘ü╪╣┘ä█î + ┘é╪¿┘ä█î/┘╛╪«╪┤-╪¬┘ê┘é┘ü/╪¿╪╣╪»█î.
  *
- * - دکمه‌ها مستقیم به [PlaybackService] می‌روند (بدون باز کردن اپ).
- * - تپ روی متن → باز شدن اپ (singleTop).
- * - به‌روزرسانی از سمت [PlaybackService] با [updateAll] پوش می‌شود
- *   (بدون updatePeriodMillis دوره‌ای — مصرف باتری صفر در سکون).
+ * - ╪»┌⌐┘à┘çΓÇî┘ç╪º ┘à╪│╪¬┘é█î┘à ╪¿┘ç [PlaybackService] ┘à█îΓÇî╪▒┘ê┘å╪» (╪¿╪»┘ê┘å ╪¿╪º╪▓ ┌⌐╪▒╪»┘å ╪º┘╛).
+ * - ╪¬┘╛ ╪▒┘ê█î ┘à╪¬┘å ΓåÆ ╪¿╪º╪▓ ╪┤╪»┘å ╪º┘╛ (singleTop).
+ * - ╪¿┘çΓÇî╪▒┘ê╪▓╪▒╪│╪º┘å█î ╪º╪▓ ╪│┘à╪¬ [PlaybackService] ╪¿╪º [updateAll] ┘╛┘ê╪┤ ┘à█îΓÇî╪┤┘ê╪»
+ *   (╪¿╪»┘ê┘å updatePeriodMillis ╪»┘ê╪▒┘çΓÇî╪º█î ΓÇö ┘à╪╡╪▒┘ü ╪¿╪º╪¬╪▒█î ╪╡┘ü╪▒ ╪»╪▒ ╪│┌⌐┘ê┘å).
  */
 class PlayerWidgetProvider : AppWidgetProvider() {
 
@@ -27,7 +27,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // استیت واقعی را از کش persist شده بخوان (نه فقط RAM که بعد از ریبوت می‌پرد)
+        // ╪º╪│╪¬█î╪¬ ┘ê╪º┘é╪╣█î ╪▒╪º ╪º╪▓ ┌⌐╪┤ persist ╪┤╪»┘ç ╪¿╪«┘ê╪º┘å (┘å┘ç ┘ü┘é╪╖ RAM ┌⌐┘ç ╪¿╪╣╪» ╪º╪▓ ╪▒█î╪¿┘ê╪¬ ┘à█îΓÇî┘╛╪▒╪»)
         loadPersisted(context)
         for (id in appWidgetIds) {
             runCatching { appWidgetManager.updateAppWidget(id, buildViews(context)) }
@@ -39,11 +39,11 @@ class PlayerWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        // چیزی برای پاک‌سازی خاص نیست
+        // ┌å█î╪▓█î ╪¿╪▒╪º█î ┘╛╪º┌⌐ΓÇî╪│╪º╪▓█î ╪«╪º╪╡ ┘å█î╪│╪¬
     }
 
     override fun onDisabled(context: Context) {
-        // آخرین ویجت پاک شد — کش را ریست کن
+        // ╪ó╪«╪▒█î┘å ┘ê█î╪¼╪¬ ┘╛╪º┌⌐ ╪┤╪» ΓÇö ┌⌐╪┤ ╪▒╪º ╪▒█î╪│╪¬ ┌⌐┘å
         runCatching {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
         }
@@ -66,7 +66,13 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             if (playing) R.drawable.ic_widget_pause
             else R.drawable.ic_widget_play
         )
-        // دکمه‌های قبلی/بعدی هم آیکون اپ (برای سازگاری OEM)
+        views.setContentDescription(
+            R.id.widget_toggle,
+            context.getString(if (playing) R.string.widget_pause else R.string.widget_play)
+        )
+        views.setContentDescription(R.id.widget_prev, context.getString(R.string.widget_prev))
+        views.setContentDescription(R.id.widget_next, context.getString(R.string.widget_next))
+        // ╪»┌⌐┘à┘çΓÇî┘ç╪º█î ┘é╪¿┘ä█î/╪¿╪╣╪»█î ┘ç┘à ╪ó█î┌⌐┘ê┘å ╪º┘╛ (╪¿╪▒╪º█î ╪│╪º╪▓┌»╪º╪▒█î OEM)
         runCatching { views.setImageViewResource(R.id.widget_prev, R.drawable.ic_widget_prev) }
         runCatching { views.setImageViewResource(R.id.widget_next, R.drawable.ic_widget_next) }
         views.setOnClickPendingIntent(
@@ -81,7 +87,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             R.id.widget_prev,
             serviceIntent(context, PlaybackService.ACTION_WIDGET_PREV, REQ_PREV)
         )
-        // تپ روی متن → باز شدن اپ (singleTop تا استک تکراری نسازد)
+        // ╪¬┘╛ ╪▒┘ê█î ┘à╪¬┘å ΓåÆ ╪¿╪º╪▓ ╪┤╪»┘å ╪º┘╛ (singleTop ╪¬╪º ╪º╪│╪¬┌⌐ ╪¬┌⌐╪▒╪º╪▒█î ┘å╪│╪º╪▓╪»)
         val openApp = PendingIntent.getActivity(
             context, REQ_OPEN,
             Intent(context, MainActivity::class.java).apply {
@@ -97,7 +103,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
 
     private fun serviceIntent(context: Context, action: String, req: Int): PendingIntent {
         val intent = Intent(context, PlaybackService::class.java).setAction(action)
-        // اندروید ۱۲+ استارت سرویس از بک‌گراند محدود است؛ getForegroundService امن‌تر است
+        // ╪º┘å╪»╪▒┘ê█î╪» █▒█▓+ ╪º╪│╪¬╪º╪▒╪¬ ╪│╪▒┘ê█î╪│ ╪º╪▓ ╪¿┌⌐ΓÇî┌»╪▒╪º┘å╪» ┘à╪¡╪»┘ê╪» ╪º╪│╪¬╪¢ getForegroundService ╪º┘à┘åΓÇî╪¬╪▒ ╪º╪│╪¬
         return if (Build.VERSION.SDK_INT >= 26) {
             runCatching {
                 PendingIntent.getForegroundService(
@@ -139,14 +145,14 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        /** پوش وضعیت جدید به همه ویجت‌ها (از سرویس پخش صدا زده می‌شود) */
+        /** ┘╛┘ê╪┤ ┘ê╪╢╪╣█î╪¬ ╪¼╪»█î╪» ╪¿┘ç ┘ç┘à┘ç ┘ê█î╪¼╪¬ΓÇî┘ç╪º (╪º╪▓ ╪│╪▒┘ê█î╪│ ┘╛╪«╪┤ ╪╡╪»╪º ╪▓╪»┘ç ┘à█îΓÇî╪┤┘ê╪») */
         fun updateAll(context: Context, title: String?, artist: String?, playing: Boolean) {
             synchronized(Lock) {
                 if (title != null) lastTitle = title.ifBlank { "Alvand Player" }
                 if (artist != null) lastArtist = artist
                 lastPlaying = playing
             }
-            // persist تا بعد از ریبوت/مرگ پروسس onUpdate درست رندر کند
+            // persist ╪¬╪º ╪¿╪╣╪» ╪º╪▓ ╪▒█î╪¿┘ê╪¬/┘à╪▒┌» ┘╛╪▒┘ê╪│╪│ onUpdate ╪»╪▒╪│╪¬ ╪▒┘å╪»╪▒ ┌⌐┘å╪»
             runCatching {
                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                     .putString("title", lastTitle)
@@ -161,7 +167,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             for (id in ids) {
                 runCatching { mgr.updateAppWidget(id, provider.buildViews(context)) }
             }
-            // notifyAppWidgetViewDataChanged فقط برای AdapterView است — برای TextView بی‌اثر بود، حذف شد
+            // notifyAppWidgetViewDataChanged ┘ü┘é╪╖ ╪¿╪▒╪º█î AdapterView ╪º╪│╪¬ ΓÇö ╪¿╪▒╪º█î TextView ╪¿█îΓÇî╪º╪½╪▒ ╪¿┘ê╪»╪î ╪¡╪░┘ü ╪┤╪»
         }
     }
 }

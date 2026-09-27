@@ -48,9 +48,12 @@ data class PlayerUiState(
  */
 @Singleton
 class MusicPlayerManager @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     val eqManager: EqualizerManager
 ) {
+    private companion object {
+        const val EQ_ATTACH_MAX_TRIES = 8
+    }
 
     private val app = context.applicationContext
 
@@ -210,6 +213,8 @@ class MusicPlayerManager @Inject constructor(
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle(s.title).setArtist(s.artist).setAlbumTitle(s.album)
+                        .setIsPlayable(true).setIsBrowsable(false)
+                        .setDurationMs(if (s.durationMs > 0) s.durationMs else null)
                         .build()
                 ).build()
         }
@@ -328,6 +333,7 @@ class MusicPlayerManager @Inject constructor(
     fun clearError() { _ui.value = _ui.value.copy(error = null) }
 
     private var lastEqSession = 0
+    private var eqAttachAttempts = 0
 
     private fun scheduleEqAttach(delayMs: Long = 0) {
         if (released) return
@@ -344,10 +350,15 @@ class MusicPlayerManager @Inject constructor(
         // NOTE: MediaController (رابط Player) در Media3 1.5.1 خاصیت audioSessionId ندارد؛
         // تنها منبع معتبر PlaybackService.audioSessionId است که سرویس نگه می‌دارد.
         val id = PlaybackService.audioSessionId.takeIf { it > 0 } ?: run {
-            // سشن هنوز از سرویس نرسیده — کمی بعد دوباره تلاش کن (خودترمیم)
+            // سشن هنوز نرسیده — محدود تلاش کن، بعد ول کن (بی‌نهایت retry نشود)
+            if (++eqAttachAttempts > EQ_ATTACH_MAX_TRIES) {
+                runCatching { eqManager.release() }
+                return
+            }
             scheduleEqAttach(500)
             return
         }
+        eqAttachAttempts = 0
         if (id == lastEqSession && eqManager.isAttached()) return
         // بایندر سنگین را روی Main بلاک نکن — attach خودش امن است ولی IPC دارد
         scope.launch(Dispatchers.IO) {

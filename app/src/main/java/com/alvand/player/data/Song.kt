@@ -36,7 +36,7 @@ data class Song(
 
         fun fromDirectLink(url: String, titleFallback: String = "Stream"): Song? {
             val trimmed = url.trim()
-            if (!(trimmed.startsWith("http://") || trimmed.startsWith("https://"))) return null
+            if (!trimmed.startsWith("https://")) return null
             // فقط http(s) کافی نیست — باید پسوند صوتی یا هینت استریم داشته باشد
             if (!isSupportedPath(trimmed)) return null
             var title = trimmed.substringAfterLast('/').substringBefore('?')
@@ -63,13 +63,13 @@ data class Song(
         fun isSupportedPath(path: String): Boolean {
             val p = path.trim()
             val lower = p.lowercase()
-            val isHttp = lower.startsWith("http://") || lower.startsWith("https://")
+            val isHttps = lower.startsWith("https://")
             val withoutQuery = p.substringBefore('?').substringBefore('#')
             val fileName = withoutQuery.substringAfterLast('/')
             val ext = fileName.substringAfterLast('.', "").lowercase()
             if (ext.isNotEmpty() && ext in SUPPORTED_EXTENSIONS) return true
             // لینک http بدون پسوند فقط اگر هینت HLS/DASH یا کوئری صوتی داشته باشد
-            if (isHttp) {
+            if (isHttps) {
                 if (lower.contains(".m3u8") || lower.contains(".mpd")) return true
                 // بقیه URLهای متنی/html قبول نیست (قبلاً با || http همه قبول می‌شد)
                 return false

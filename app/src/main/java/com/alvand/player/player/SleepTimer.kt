@@ -88,7 +88,8 @@ class SleepTimer(
     }
 
     fun cancel() {
-        cancelInternal(restoreVolume = true)
+        val s = _state.value
+        cancelInternal(restoreVolume = s.active || s.fading)
     }
 
     @Synchronized
@@ -133,10 +134,13 @@ class SleepTimer(
                 }
             } finally {
                 // اگر کنسل خارجی خوردیم و هنوز همین نسل است، state مرده نماند
-                if (generation.get() == gen && _state.value.active) {
-                    _state.value = SleepTimerState()
+                if (generation.get() == gen) {
+                    if (_state.value.active) {
+                        _state.value = SleepTimerState()
+                    }
+                    // فقط همین نسل حق بازگرداندن ولوم را دارد (نسل جدید fade خودش دارد)
+                    runCatching { setVolume(startVolume.coerceIn(0f, 1f)) }
                 }
-                runCatching { setVolume(startVolume.coerceIn(0f, 1f)) }
             }
         }
 }

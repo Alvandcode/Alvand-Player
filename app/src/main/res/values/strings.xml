@@ -14,7 +14,7 @@
     <string name="recently_played">Recently Played</string>
     <string name="direct_link_title">Play direct link</string>
     <string name="direct_link_msg">Paste an mp3/flac/m3u8… link (all formats):</string>
-    <string name="invalid_link">Invalid link (must start with http)</string>
+    <string name="invalid_link">Invalid link (must be an HTTPS audio link)</string>
     <string name="play">Play</string>
     <string name="close">Close</string>
     <string name="playing_from">Playing from</string>
@@ -66,6 +66,11 @@
     <!-- Home-screen widget -->
     <string name="widget_name">Alvand Player</string>
     <string name="widget_desc">Play, pause and skip without opening the app</string>
+    <string name="widget_prev">Previous track</string>
+    <string name="widget_next">Next track</string>
+    <string name="widget_play">Play</string>
+    <string name="widget_pause">Pause</string>
+    <string name="playback_channel">Playback</string>
     <!-- Library scanner -->
     <string name="scan_songs">Scan device songs</string>
     <string name="scanning">Scanning…</string>

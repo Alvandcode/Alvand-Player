@@ -103,7 +103,7 @@ object LyricsManager {
                                 lrc.inputStream().buffered().use { ins ->
                                     val buf = ByteArray(MAX_LRC_FILE_BYTES.toInt() + 1)
                                     val n = ins.read(buf)
-                                    if (n <= 0) "" else buf.copyOf(n).toString(detectCharset(buf.copyOf(n)))
+                                    if (n <= 0) "" else decodeText(buf.copyOf(n))
                                 }
                             }.getOrNull() ?: ""
                             if (raw.isNotBlank()) {
@@ -247,12 +247,20 @@ object LyricsManager {
         return input.replace(Regex("[\\\\/:*?\"<>|\\x00-\\x1F]"), "").trim().take(80)
     }
 
-    private fun detectCharset(bytes: ByteArray): java.nio.charset.Charset {
-        // BOMチェック ساده؛ وگرنه UTF-8 (فارسی معمولاً UTF-8 است)
+    private fun decodeText(bytes: ByteArray): String {
+        if (bytes.isEmpty()) return ""
+        // BOM utf-8
         if (bytes.size >= 3 && bytes[0] == 0xEF.toByte() && bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte()) {
-            return Charsets.UTF_8
+            return bytes.copyOfRange(3, bytes.size).toString(Charsets.UTF_8)
         }
-        return Charsets.UTF_8
+        // اول UTF-8 سخت‌گیرانه؛ اگر نشد، فارسیِ ویندوزی = windows-1256
+        return runCatching {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(bytes))
+                .toString()
+        }.getOrElse { bytes.toString(java.nio.charset.Charset.forName("windows-1256")) }
     }
 
     private fun findSidecarLrc(context: Context, uri: Uri): File? {

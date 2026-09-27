@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -173,8 +174,10 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             val mgr = vm.manager.eqManager
             repeat(mgr.bandCount) { i ->
+                val hz = mgr.bandFreqHz(i)
+                val label = if (hz in 1..999) "${hz}Hz" else "${hz / 1000}k"
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${mgr.bandFreqHz(i) / 1000}k", color = pal.sub, fontSize = 11.sp, modifier = Modifier.width(38.dp))
+                    Text(label, color = pal.sub, fontSize = 11.sp, modifier = Modifier.width(44.dp))
                     Slider(
                         value = (eq.bandLevels.getOrNull(i) ?: 0).toFloat(),
                         onValueChange = {
@@ -356,7 +359,7 @@ fun LyricsPreviewCard(vm: AppViewModel, onOpenFull: () -> Unit) {
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp,
                     modifier = Modifier.weight(1f)
                 )
-                Icon(Icons.Default.OpenInNew, null, tint = pal.sub, modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, null, tint = pal.sub, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.height(6.dp))
             if (lyrics.lines.isEmpty()) {

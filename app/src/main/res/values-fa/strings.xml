@@ -14,7 +14,7 @@
     <string name="recently_played">اخیراً پخش‌شده</string>
     <string name="direct_link_title">پخش لینک مستقیم</string>
     <string name="direct_link_msg">لینک mp3/flac/m3u8 و… را بچسبانید (همه فرمت‌ها):</string>
-    <string name="invalid_link">لینک معتبر نیست (باید با http شروع شود)</string>
+    <string name="invalid_link">لینک معتبر نیست (باید لینک صوتی HTTPS باشد)</string>
     <string name="play">پخش</string>
     <string name="close">بستن</string>
     <string name="playing_from">در حال پخش از</string>
@@ -66,6 +66,11 @@
     <!-- ویجت هوم‌اسکرین -->
     <string name="widget_name">الوند پلیر</string>
     <string name="widget_desc">پخش، توقف و آهنگ بعدی بدون باز کردن اپ</string>
+    <string name="widget_prev">آهنگ قبلی</string>
+    <string name="widget_next">آهنگ بعدی</string>
+    <string name="widget_play">پخش</string>
+    <string name="widget_pause">مکث</string>
+    <string name="playback_channel">پخش</string>
     <!-- اسکنر کتابخانه -->
     <string name="scan_songs">اسکن آهنگ‌های گوشی</string>
     <string name="scanning">در حال اسکن…</string>

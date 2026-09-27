@@ -8,6 +8,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +18,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.WindowCompat
 import com.alvand.player.data.Artwork
 import com.alvand.player.data.Song
 
@@ -105,11 +108,9 @@ fun rememberDynamicAccent(song: Song?, dark: Boolean = false): State<DynamicAcce
 /** رنگ متحرک نرم بین دو accent (برای تعویض آهنگ بدون پرش) */
 @Composable
 fun DynamicAccent.animated(): DynamicAccent {
-    // اگر از کاور نیامده، انیمیشن بیهوده اجرا نکن (جلوگیری از لوپ recompose)
-    if (!fromArtwork) return this
     val a by animateColorAsState(accent, label = "dynAccent")
     val d by animateColorAsState(accentDark, label = "dynAccentDark")
-    return remember(a, d) { DynamicAccent(a, d, fromArtwork = true) }
+    return remember(a, d, fromArtwork) { DynamicAccent(a, d, fromArtwork) }
 }
 
 /**
@@ -124,6 +125,18 @@ fun AlvandTheme(
 ) {
     val pal = if (darkTheme) DarkPalette else LightPalette
     val accent = dynamic?.accent ?: if (darkTheme) AlvandLavender else MonoInk
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
+
     val scheme = if (darkTheme) darkColorScheme(
         primary = accent,
         onPrimary = Color(0xFF0C0C10),

@@ -6,12 +6,15 @@ import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.exoplayer.ExoPlayer
 import com.alvand.player.MainActivity
+import com.alvand.player.R
 import com.alvand.player.player.widget.PlayerWidgetProvider
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -25,6 +28,7 @@ import com.google.common.util.concurrent.ListenableFuture
 class PlaybackService : MediaLibraryService() {
     private var session: MediaLibraryService.MediaLibrarySession? = null
     private var player: ExoPlayer? = null
+    private var consecutiveErrors = 0
 
     companion object {
         /** آی‌دی سشن صوتی پلیر — اکولایزر/تقویت صدا به آن وصل می‌شود */
@@ -37,10 +41,22 @@ class PlaybackService : MediaLibraryService() {
 
         /** روت کتابخانه برای Android Auto */
         const val ROOT_ID = "alvand-root"
+
+        /** سقف هر صفحهٔ browse تا از محدودیت Binder عبور نکنیم */
+        const val MAX_BROWSE_PAGE = 100
+
+        /** بعد از چند خطای پیاپی، دست از اسکیپ خودکار بردار */
+        const val MAX_CONSECUTIVE_ERRORS = 3
+
+        /** کانال اعلان پخش (نام نمایشی از strings) */
+        const val CHANNEL_ID = "alvand_playback"
     }
 
     private val widgetListener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) { pushWidget() }
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (isPlaying) consecutiveErrors = 0
+            pushWidget()
+        }
         override fun onMediaItemTransition(item: MediaItem?, reason: Int) { pushWidget() }
         override fun onPlaybackStateChanged(state: Int) {
             pushWidget()
@@ -58,11 +74,24 @@ class PlaybackService : MediaLibraryService() {
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
             Log.w("PlaybackService", "player error: ${error.errorCodeName}", error)
             pushWidget()
+            val p = player ?: return
+            if (consecutiveErrors < MAX_CONSECUTIVE_ERRORS && p.hasNextMediaItem()) {
+                consecutiveErrors++
+                p.seekToNextMediaItem()
+                p.prepare()
+                p.play()
+            }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
+        setMediaNotificationProvider(
+            DefaultMediaNotificationProvider.Builder(this)
+                .setChannelId(CHANNEL_ID)
+                .setChannelName(R.string.playback_channel)
+                .build()
+        )
         try {
             val exo = ExoPlayer.Builder(this)
                 .setAudioAttributes(
@@ -110,8 +139,8 @@ class PlaybackService : MediaLibraryService() {
             val root = MediaItem.Builder()
                 .setMediaId(ROOT_ID)
                 .setMediaMetadata(
-                    androidx.media3.common.MediaMetadata.Builder()
-                        .setTitle("Alvand Player")
+                    MediaMetadata.Builder()
+                        .setTitle(getString(R.string.app_name))
                         .setIsBrowsable(true)
                         .setIsPlayable(false)
                         .build()
@@ -129,9 +158,13 @@ class PlaybackService : MediaLibraryService() {
             params: MediaLibraryService.LibraryParams?
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
             val p = player
-            val items: List<MediaItem> = if (parentId == ROOT_ID && p != null && p.mediaItemCount > 0) {
+            val all: List<MediaItem> = if (parentId == ROOT_ID && p != null && p.mediaItemCount > 0) {
                 (0 until p.mediaItemCount).mapNotNull { runCatching { p.getMediaItemAt(it) }.getOrNull() }
             } else emptyList()
+            val size = pageSize.coerceIn(1, MAX_BROWSE_PAGE)
+            val from = (page * size).coerceAtMost(all.size)
+            val to = (from + size).coerceAtMost(all.size)
+            val items = if (from < to) all.subList(from, to) else emptyList()
             return Futures.immediateFuture(LibraryResult.ofItemList(items, params))
         }
 
@@ -217,7 +250,7 @@ class PlaybackService : MediaLibraryService() {
         runCatching {
             PlayerWidgetProvider.updateAll(
                 this,
-                meta?.title?.toString() ?: getString(com.alvand.player.R.string.widget_name),
+                meta?.title?.toString() ?: getString(R.string.widget_name),
                 meta?.artist?.toString() ?: "",
                 p.isPlaying
             )
@@ -231,9 +264,15 @@ class PlaybackService : MediaLibraryService() {
         player = null
         session = null
         audioSessionId = 0
+        runCatching { exo?.release() }
+        runCatching { s?.release() }
         runCatching {
-            exo?.release()
-            s?.release()
+            PlayerWidgetProvider.updateAll(
+                this,
+                getString(R.string.widget_name),
+                "",
+                false
+            )
         }
         super.onDestroy()
     }

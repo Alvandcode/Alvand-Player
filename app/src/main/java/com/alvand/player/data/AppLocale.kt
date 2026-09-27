@@ -31,11 +31,11 @@ object AppLocale {
     /** تگ زبان فعلی اپ، مثل fa یا en — چندلوکیله و منطقه را درست هندل می‌کند */
     fun currentTag(): String {
         val tags = AppCompatDelegate.getApplicationLocales().toLanguageTags().ifBlank { return "en" }
-        // اولویت اول کاربر، بعد بقیه
+        // اولویت اول کاربر، بعد بقیه — فقط زبان‌های واقعاً پشتیبانی‌شده پذیرفته می‌شوند
         for (raw in tags.split(",")) {
-            val n = normalize(raw.trim())
-            if (n in codeSet) return n
+            val base = raw.trim().lowercase().substringBefore("-").substringBefore("_")
+            if (base in codeSet) return base
         }
-        return normalize(tags.split(",").first())
+        return "en"
     }
 }

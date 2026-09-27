@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -73,7 +74,7 @@ fun AddToPlaylistDialog(vm: AppViewModel, song: Song, onDismiss: () -> Unit) {
                                     .padding(vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.QueueMusic, null, tint = pal.sub, modifier = Modifier.size(20.dp))
+                                Icon(Icons.AutoMirrored.Filled.QueueMusic, null, tint = pal.sub, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(10.dp))
                                 Text(pl.name, color = pal.ink, fontSize = 14.sp, modifier = Modifier.weight(1f))
                             }
@@ -128,7 +129,7 @@ fun PlaylistsTab(vm: AppViewModel) {
                         .padding(vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.QueueMusic, null, tint = pal.ink, modifier = Modifier.size(22.dp))
+                        Icon(Icons.AutoMirrored.Filled.QueueMusic, null, tint = pal.ink, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(10.dp))
                         Text(pl.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                         IconButton(onClick = { vm.playPlaylistSongs(pl.id) }, modifier = Modifier.size(32.dp)) {

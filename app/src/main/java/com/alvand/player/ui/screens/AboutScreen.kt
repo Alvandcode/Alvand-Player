@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,7 +51,7 @@ fun AboutScreen(vm: com.alvand.player.AppViewModel, onBack: () -> Unit) {
             .padding(top = 12.dp, start = 18.dp, end = 18.dp, bottom = 24.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = pal.ink) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = pal.ink) }
             Text(stringResource(R.string.about), color = pal.ink, fontWeight = FontWeight.Black, fontSize = 20.sp)
         }
         Spacer(Modifier.height(12.dp))
@@ -80,7 +81,7 @@ fun AboutScreen(vm: com.alvand.player.AppViewModel, onBack: () -> Unit) {
             Column(Modifier.padding(vertical = 6.dp)) {
                 AboutLink(Icons.Default.Code, "GitHub", URL_GITHUB, pal) { uri.openUri(URL_GITHUB) }
                 AboutLink(Icons.Default.Public, stringResource(R.string.link_website), URL_SITE, pal) { uri.openUri(URL_SITE) }
-                AboutLink(Icons.Default.Send, "Telegram", URL_TELEGRAM, pal) { uri.openUri(URL_TELEGRAM) }
+                AboutLink(Icons.AutoMirrored.Filled.Send, "Telegram", URL_TELEGRAM, pal) { uri.openUri(URL_TELEGRAM) }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -150,7 +151,7 @@ private fun AboutLink(
                     Text("\u2066$subtitle\u2069", color = pal.sub, fontSize = 11.sp, maxLines = 1)
                 }
             }
-            Icon(Icons.Default.OpenInNew, null, tint = pal.sub)
+            Icon(Icons.AutoMirrored.Filled.OpenInNew, null, tint = pal.sub)
         }
     }
 }

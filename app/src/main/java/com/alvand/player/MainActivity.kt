@@ -102,13 +102,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleIntent(intent)
     }
 
-    /** باز کردن لینک مستقیم shareشده از اپ‌های دیگر */
+    /** باز کردن لینک مستقیم shareشده از اپ‌های دیگر (فقط HTTPS) */
     private fun handleIntent(intent: Intent?) {
         val uri = intent?.data ?: (intent?.getStringExtra(Intent.EXTRA_TEXT)?.let {
-            Regex("https?://\\S+").find(it)?.value
+            Regex("https://\\S+").find(it)?.value
         }?.let { android.net.Uri.parse(it) })
         if (uri != null && intent?.action in listOf(Intent.ACTION_VIEW, Intent.ACTION_SEND)) {
             val url = uri.toString()

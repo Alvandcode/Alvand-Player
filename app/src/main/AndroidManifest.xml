@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
@@ -13,6 +12,19 @@
     <!-- ExoPlayer.setWakeMode(WAKE_MODE_LOCAL) در PlaybackService بدون این پرمیشن
          موقع پخش SecurityException می‌دهد و اپ روی thread اصلی کرش می‌کند -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <queries>
+        <package android:name="com.google.android.gms.car.application" />
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
+        <intent>
+            <action android:name="androidx.media3.session.MediaLibraryService" />
+        </intent>
+        <intent>
+            <action android:name="androidx.media3.session.MediaSessionService" />
+        </intent>
+    </queries>
 
     <application
         android:name=".AlvandApp"
@@ -34,14 +46,29 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- باز کردن لینک مستقیم صوتی از اپ‌های دیگر -->
+            <!-- باز کردن لینک مستقیم صوتی از اپ‌های دیگر (فقط HTTPS: ترافیک_cleartext مسدود است) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" />
                 <data android:scheme="https" />
                 <data android:mimeType="audio/*" />
+            </intent-filter>
+            <!-- لینک‌هایی که مرورگر بدون MIME-Type می‌فرستد -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="*" />
+                <data android:pathPattern=".*\\.(mp3|m4a|flac|ogg|oga|opus|wav|aac|wma|alac|aiff|aif|amr|mid|midi|m3u8|mpd)" />
+                <data android:pathPattern=".*\\.(mp3|m4a|flac|ogg|oga|opus|wav|aac|wma|alac|aiff|aif|amr|mid|midi|m3u8|mpd)(\\?.*)?" />
+            </intent-filter>
+            <!-- اشتراک‌گذاری متن حاوی لینک صوتی -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 
@@ -52,8 +79,18 @@
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaLibraryService" />
                 <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+
+        <!-- دکمه‌های رسانهٔ هدفون/ماشین/داشیارد روی API 24+ -->
+        <receiver
+            android:name="androidx.media3.session.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
 
         <!-- Android Auto: browse + voice actions -->
         <meta-data
@@ -72,15 +109,5 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/player_widget_info" />
         </receiver>
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
-        </provider>
     </application>
 </manifest>
