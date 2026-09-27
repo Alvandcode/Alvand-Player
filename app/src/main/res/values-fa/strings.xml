@@ -81,6 +81,12 @@
     <string name="theme_system">پیش‌فرض سیستم</string>
     <string name="theme_light">روشن</string>
     <string name="theme_dark">تیره</string>
+    <string name="theme_color">تم رنگی</string>
+    <string name="accent_mono">مینیمال</string>
+    <string name="accent_royal">سلطنتی</string>
+    <string name="accent_sunset">غروب</string>
+    <string name="accent_ocean">اقیانوس</string>
+
     <!-- بکگراند دلخواه -->
     <string name="background">بکگراند</string>
     <string name="background_desc">یک عکس زیر کادر پخش. فرم کادر با کاور یا بدون کاور یکی می‌ماند.</string>

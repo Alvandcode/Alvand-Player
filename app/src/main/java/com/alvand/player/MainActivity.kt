@@ -73,12 +73,13 @@ class MainActivity : AppCompatActivity() {
         }
         setContent {
             val mode by vm.themeMode.collectAsState()
+            val accentId by vm.accentTheme.collectAsState()
             val dark = when (mode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
                 else -> isSystemInDarkTheme()
             }
-            AlvandTheme(darkTheme = dark) {
+            AlvandTheme(darkTheme = dark, accentThemeId = accentId) {
                 AppNavHost(
                     vm = vm,
                     onPickFile = { pickAudio.launch("audio/*") },

@@ -30,6 +30,15 @@ object ThemeMode {
     const val DARK = 2
 }
 
+/** تم رنگی: ۰=مینیمال، ۱=سلطنتی، ۲=غروب، ۳=اقیانوس */
+object AccentThemeMode {
+    const val MONO = 0
+    const val ROYAL = 1
+    const val SUNSET = 2
+    const val OCEAN = 3
+    const val COUNT = 4
+}
+
 /**
  * تنظیمات ظاهری اپ (تم + بکگراند دلخواه) با DataStore — بین اجراها می‌ماند.
  */
@@ -40,6 +49,7 @@ class SettingsRepo @Inject constructor(
     private val store get() = context.settingsStore
 
     val themeMode: Flow<Int> = store.data.map { it[Keys.THEME] ?: ThemeMode.SYSTEM }
+    val accentTheme: Flow<Int> = store.data.map { it[Keys.ACCENT] ?: AccentThemeMode.MONO }
     val backgroundUri: Flow<String?> = store.data.map { it[Keys.BG] }
     val onboardingSeen: Flow<Boolean> = store.data.map { it[Keys.ONBOARDING] ?: false }
     val onlineLyricsEnabled: Flow<Boolean> =
@@ -54,6 +64,10 @@ class SettingsRepo @Inject constructor(
 
     suspend fun setThemeMode(mode: Int) {
         store.edit { it[Keys.THEME] = mode.coerceIn(0, 2) }
+    }
+
+    suspend fun setAccentTheme(id: Int) {
+        store.edit { it[Keys.ACCENT] = id.coerceIn(0, AccentThemeMode.COUNT - 1) }
     }
 
     suspend fun setBackground(uriString: String?) {
@@ -85,6 +99,7 @@ class SettingsRepo @Inject constructor(
 
     private object Keys {
         val THEME = intPreferencesKey("theme_mode")
+        val ACCENT = intPreferencesKey("accent_theme")
         val BG = stringPreferencesKey("background_uri")
         val ONBOARDING = booleanPreferencesKey("onboarding_seen")
         val ONLINE_LYRICS = booleanPreferencesKey("online_lyrics_enabled")

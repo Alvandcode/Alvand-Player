@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
+import com.alvand.player.data.AccentThemeMode
 import com.alvand.player.data.Artwork
 import com.alvand.player.data.Song
 
@@ -70,14 +71,19 @@ fun sanitizeAccent(raw: Color, dark: Boolean = false): Color {
 @Composable
 fun rememberDynamicAccent(song: Song?, dark: Boolean = false): State<DynamicAccent> {
     val ctx = LocalContext.current
-    // فالبک را با کلید dark نگه دار تا موقع سوییچ تم فلش نزند
-    val fallback = remember(dark) {
-        if (dark) DynamicAccent(AlvandLavender, ArtDark2, fromArtwork = false)
-        else DynamicAccent.Fallback
+    val accentTheme = LocalAccentTheme.current
+    // فالبک بر پایهٔ تم رنگی انتخابی، نه همیشه سیاه‌وسفید
+    val fallback = remember(dark, accentTheme) {
+        when {
+            accentTheme.isColored ->
+                DynamicAccent(accentTheme.accent(dark), accentTheme.deep(dark), fromArtwork = false)
+            dark -> DynamicAccent(AlvandLavender, ArtDark2, fromArtwork = false)
+            else -> DynamicAccent.Fallback
+        }
     }
     // state پایدار (نه ساخت State جدید در هر recompose که stability را می‌شکست)
     val holder = remember(dark) { mutableStateOf(fallback) }
-    LaunchedEffect(song?.id, dark) {
+    LaunchedEffect(song?.id, dark, accentTheme.id) {
         val id = song?.id
         if (song == null || id == null) {
             holder.value = fallback
@@ -121,10 +127,13 @@ fun DynamicAccent.animated(): DynamicAccent {
 fun AlvandTheme(
     dynamic: DynamicAccent? = null,
     darkTheme: Boolean = false,
+    accentThemeId: Int = AccentThemeMode.MONO,
     content: @Composable () -> Unit
 ) {
-    val pal = if (darkTheme) DarkPalette else LightPalette
-    val accent = dynamic?.accent ?: if (darkTheme) AlvandLavender else MonoInk
+    val accentTheme = remember(accentThemeId) { accentThemeAt(accentThemeId) }
+    val base = if (darkTheme) DarkPalette else LightPalette
+    val pal = base.tintedWith(accentTheme, darkTheme)
+    val accent = dynamic?.accent ?: accentTheme.accent(darkTheme)
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -162,7 +171,10 @@ fun AlvandTheme(
         onSurfaceVariant = pal.sub,
         outline = pal.line
     )
-    CompositionLocalProvider(LocalAP provides pal) {
+    CompositionLocalProvider(
+        LocalAP provides pal,
+        LocalAccentTheme provides accentTheme
+    ) {
         MaterialTheme(
             colorScheme = scheme,
             typography = MaterialTheme.typography,

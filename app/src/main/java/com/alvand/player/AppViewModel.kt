@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alvand.player.audio.AudioSettings
+import com.alvand.player.data.AccentThemeMode
 import com.alvand.player.data.AlbumGroup
 import com.alvand.player.data.ArtistGroup
 import com.alvand.player.data.CrashInfo
@@ -56,6 +57,9 @@ class AppViewModel @Inject constructor(
     /** حالت تم (۰=سیستم، ۱=روشن، ۲=تیره) و بکگراند دلخواه */
     val themeMode: StateFlow<Int> =
         settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+    /** تم رنگی (۰=مینیمال، ۱=سلطنتی، ۲=غروب، ۳=اقیانوس) */
+    val accentTheme: StateFlow<Int> =
+        settings.accentTheme.stateIn(viewModelScope, SharingStarted.Eagerly, AccentThemeMode.MONO)
     val backgroundUri: StateFlow<String?> =
         settings.backgroundUri.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val onboardingSeen: StateFlow<Boolean> =
@@ -71,6 +75,10 @@ class AppViewModel @Inject constructor(
 
     fun setThemeMode(mode: Int) {
         viewModelScope.launch { settings.setThemeMode(mode) }
+    }
+
+    fun setAccentTheme(id: Int) {
+        viewModelScope.launch { settings.setAccentTheme(id) }
     }
 
     fun setOnboardingSeen() {

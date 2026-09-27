@@ -81,6 +81,12 @@
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="theme_color">Color theme</string>
+    <string name="accent_mono">Minimal</string>
+    <string name="accent_royal">Royal</string>
+    <string name="accent_sunset">Sunset</string>
+    <string name="accent_ocean">Ocean</string>
+
     <!-- Custom background -->
     <string name="background">Background</string>
     <string name="background_desc">A photo behind the player panel. The panel keeps its shape, with or without cover art.</string>
