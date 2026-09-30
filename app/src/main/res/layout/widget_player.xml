@@ -16,7 +16,7 @@
         android:layout_height="match_parent"
         android:background="@drawable/widget_art_frame"
         android:contentDescription="@string/widget_cover"
-        android:scaleType="fitXY"
+        android:scaleType="centerCrop"
         android:src="@drawable/widget_art_placeholder_icon" />
 
     <LinearLayout
@@ -93,12 +93,13 @@
                 android:contentDescription="@null"
                 android:src="@drawable/widget_progress_dot" />
 
+            <!-- بدون style تا به تم لانچر وابسته نشود؛ progressDrawable صریح است -->
             <ProgressBar
                 android:id="@+id/widget_progress"
-                style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="0dp"
                 android:layout_height="6dp"
                 android:layout_weight="1"
+                android:indeterminate="false"
                 android:max="1000"
                 android:progress="0"
                 android:progressDrawable="@drawable/widget_progress" />
@@ -127,7 +128,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_repeat"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_widget_repeat" />
@@ -137,7 +138,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_prev"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_widget_prev" />
@@ -147,7 +148,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1.3"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_play"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_widget_play" />
@@ -157,7 +158,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_next"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_widget_next" />
@@ -167,7 +168,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_fav"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_widget_fav" />

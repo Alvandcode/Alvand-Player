@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -85,16 +87,18 @@ object Artwork {
     }
 
     /**
-     * کاور برای ویجت: برش مرکزی به نسبت ویجت + گردکردن گوشه‌های چپ.
+     * کاور برای ویجت: برش مرکزی به نسبت ویجت + گردکردن گوشه‌های بیرونی.
      * گوشه‌ها داخل خود بیت‌مپ گرد می‌شوند چون `clipToOutline` در XML فقط API 31+ است
-     * و ویجت روی API 23 به بالا اجرا می‌شود.
+     * و ویجت روی API 23 به بالا اجرا می‌شود. [roundStart] برای RTL گوشه‌ها را
+     * به سمت راست می‌برد تا با جای واقعی کاور در چیدمان آینه‌ای بخواند.
      */
     suspend fun widgetArt(
         uri: Uri?,
         ctx: Context,
         targetW: Int,
         targetH: Int,
-        cornerRadiusPx: Int
+        cornerRadiusPx: Int,
+        roundStart: Boolean = false
     ): Bitmap? {
         val decoded = loadForWidget(uri, ctx, maxSizePx = 512) ?: return null
         val w = targetW.coerceAtLeast(1)
@@ -104,29 +108,37 @@ object Artwork {
             val scale = maxOf(w.toFloat() / decoded.width, h.toFloat() / decoded.height)
             val srcW = (w / scale).toInt().coerceIn(1, decoded.width)
             val srcH = (h / scale).toInt().coerceIn(1, decoded.height)
-            val srcLeft = ((decoded.width - srcW) / 2).coerceAtLeast(0)
-            val srcTop = ((decoded.height - srcH) / 2).coerceAtLeast(0)
+            val srcLeft = ((decoded.width - srcW) / 2).coerceIn(0, decoded.width - srcW)
+            val srcTop = ((decoded.height - srcH) / 2).coerceIn(0, decoded.height - srcH)
             val cropped = Bitmap.createBitmap(decoded, srcLeft, srcTop, srcW, srcH)
+
+            // ماسک با addRoundRect و drawPath با پرچم ضدلبه‌دندانه ساخته می‌شود؛
+            // clipPath لبهٔ پله‌ای می‌داد
+            val r = cornerRadiusPx.toFloat().coerceAtMost(minOf(w, h) / 2f)
+            val radii = if (roundStart) {
+                // گوشه‌های سمت راست (چیدمان RTL)
+                floatArrayOf(0f, 0f, r, r, r, r, 0f, 0f)
+            } else {
+                // گوشه‌های سمت چپ (چیدمان LTR)
+                floatArrayOf(r, r, 0f, 0f, 0f, 0f, r, r)
+            }
+            val mask = Path().apply {
+                addRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()), radii, Path.Direction.CW)
+            }
 
             val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(out)
-            val path = Path().apply {
-                addRoundRect(
-                    RectF(0f, 0f, w.toFloat(), h.toFloat()),
-                    floatArrayOf(
-                        cornerRadiusPx.toFloat(), cornerRadiusPx.toFloat(),
-                        0f, 0f,
-                        0f, 0f,
-                        cornerRadiusPx.toFloat(), cornerRadiusPx.toFloat()
-                    ),
-                    Path.Direction.CW
-                )
-            }
-            canvas.clipPath(path)
+            canvas.drawPath(
+                mask,
+                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+            )
             canvas.drawBitmap(
-                cropped, null,
+                cropped,
+                null,
                 RectF(0f, 0f, w.toFloat(), h.toFloat()),
-                Paint(Paint.FILTER_BITMAP_FLAG)
+                Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
+                    xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+                }
             )
             if (cropped !== decoded) runCatching { cropped.recycle() }
             out

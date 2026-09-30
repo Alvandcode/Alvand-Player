@@ -24,7 +24,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -45,6 +48,14 @@ class PlaybackService : MediaLibraryService() {
      * فقط یک wrapper روی DataStore است و ساختن دستی‌اش بی‌خطر است.
      */
     private val settings: SettingsRepo by lazy { SettingsRepo(applicationContext) }
+
+    /**
+     * علاقه‌مندی‌ها یک‌بار جمع می‌شوند و در حافظه می‌مانند؛ pushWidget روی هر
+     * تغییر وضعیت پخش صدا زده می‌شود و نباید هر بار دیسک را بخواند.
+     */
+    private val likedIds: StateFlow<Set<Long>> by lazy {
+        settings.likedIds.stateIn(scope, SharingStarted.Eagerly, emptySet())
+    }
 
     companion object {
         /** آی‌دی سشن صوتی پلیر — اکولایزر/تقویت صدا به آن وصل می‌شود */
@@ -76,6 +87,7 @@ class PlaybackService : MediaLibraryService() {
             pushWidget()
         }
         override fun onMediaItemTransition(item: MediaItem?, reason: Int) { pushWidget() }
+        override fun onRepeatModeChanged(repeatMode: Int) { pushWidget() }
         override fun onPlaybackStateChanged(state: Int) {
             pushWidget()
             if (state == Player.STATE_IDLE || state == Player.STATE_ENDED) {
@@ -104,6 +116,11 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
+        // جریان علاقه‌مندی‌ها زنده بماند: هم push درست بعد از سردStart را ممکن
+        // می‌کند و هم با تغییر از داخل اپ، ویجت را تازه می‌کند
+        scope.launch {
+            likedIds.drop(1).collect { pushWidget() }
+        }
         setMediaNotificationProvider(
             DefaultMediaNotificationProvider.Builder(this)
                 .setChannelId(CHANNEL_ID)
@@ -200,6 +217,8 @@ class PlaybackService : MediaLibraryService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val superResult = super.onStartCommand(intent, flags, startId)
         val p = player
+        // مقدار علاقه‌مندی فقط وقتی لازم است که همین الان از ویجت عوض شده باشد
+        var favOverride: Boolean? = null
         when (intent?.action) {
             ACTION_WIDGET_TOGGLE -> {
                 if (p != null) {
@@ -252,14 +271,29 @@ class PlaybackService : MediaLibraryService() {
             ACTION_WIDGET_FAV -> {
                 val id = p?.let { currentSongId(it) }
                 if (id != null) {
-                    scope.launch { runCatching { settings.toggleLike(id) } }
+                    // نتیجهٔ واقعی را در همان push انتهای تابع نشان می‌دهیم چون
+                    // جریان DataStore یک لحظه دیرتر می‌رسد
+                    val next = id !in likedIds.value
+                    favOverride = next
+                    scope.launch {
+                        runCatching {
+                            settings.toggleLike(id)
+                            // بعد از نوشتن روی دیسک، با همان نتیجهٔ قطعی دوباره push
+                            // می‌کنیم تا قلب به حالت قبلی برنگردد
+                            pushWidget(favouriteOverride = next)
+                        }
+                    }
                 }
             }
         }
         if (intent?.action?.startsWith("com.alvand.player.WIDGET_") == true) {
-            pushWidget()
-            // ویجت foreground نمی‌خواهد — سرویس مدیا خودش مدیریت می‌کند
-            stopSelfResult(startId)
+            pushWidget(favouriteOverride = favOverride)
+            // توجه: اینجا نباید stopSelfResult(startId) صدا زد. PendingIntent ویجت
+            // همیشه یک startId تازه می‌سازد و stopSelfResult درست با همان شماره
+            // سرویس را می‌کشت؛ یعنی هر ضربهٔ دکمهٔ ویجت پخش را قطع می‌کرد.
+            // فقط وقتی صف خالی است و چیزی پخش نمی‌شود سرویس را می‌بندیم.
+            val q = player
+            if (q == null || q.mediaItemCount == 0) stopSelfResult(startId)
         }
         // برای اینتنت مدیا همان نتیجه سوپر، برای بقیه STICKY نیست تا بیهوده زنده نماند
         return if (intent?.action?.startsWith("com.alvand.player.WIDGET_") == true) START_NOT_STICKY
@@ -276,7 +310,11 @@ class PlaybackService : MediaLibraryService() {
         super.onTaskRemoved(rootIntent)
     }
 
-    private fun pushWidget() {
+    /**
+     * وضعیت ویجت را به‌روز می‌کند. [favouriteOverride] بعد از تغییر علاقه‌مندی
+     * از خود ویجت استفاده می‌شود چون جریان DataStore یک لحظه دیرتر می‌رسد.
+     */
+    private fun pushWidget(favouriteOverride: Boolean? = null) {
         val p = player ?: return
         val item = p.currentMediaItem
         val meta = item?.mediaMetadata
@@ -286,27 +324,24 @@ class PlaybackService : MediaLibraryService() {
         val artUri = item?.localConfiguration?.uri?.takeIf { isLocalAudioUri(it) }?.toString()
         val repeat = p.repeatMode
         val songId = currentSongId(p)
-        scope.launch {
-            // علاقه‌مندی در DataStore است؛ اگر خواندنش شکست خورد فرض می‌کنیم نیست
-            val fav = songId != null && runCatching { settings.likedIds.first() }
-                .getOrDefault(emptySet())
-                .contains(songId)
-            runCatching {
-                PlayerWidgetProvider.updateAll(
-                    this@PlaybackService,
-                    title,
-                    artist,
-                    p.isPlaying,
-                    artUri,
-                    p.currentPosition.coerceAtLeast(0L),
-                    duration,
-                    repeat,
-                    fav
-                )
-            }.onFailure { Log.w("PlaybackService", "widget push failed", it) }
-            if (p.isPlaying) PlayerWidgetProvider.startProgressTicker(this@PlaybackService, scope)
-            else PlayerWidgetProvider.stopProgressTicker()
-        }
+        val playing = p.isPlaying
+        val position = p.currentPosition.coerceAtLeast(0L)
+        val fav = favouriteOverride ?: (songId != null && songId in likedIds.value)
+        runCatching {
+            PlayerWidgetProvider.updateAll(
+                this,
+                title,
+                artist,
+                playing,
+                artUri,
+                position,
+                duration,
+                repeat,
+                fav
+            )
+        }.onFailure { Log.w("PlaybackService", "widget push failed", it) }
+        if (playing) PlayerWidgetProvider.startProgressTicker(this, scope)
+        else PlayerWidgetProvider.stopProgressTicker()
     }
 
     /** فقط طرح‌های محلی — استریم https نباید باعث باز شدن اتصال شبکه از مسیر ویجت شود */

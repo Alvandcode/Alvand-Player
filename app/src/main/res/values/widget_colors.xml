@@ -8,7 +8,7 @@
     <color name="widget_time">#FF8E8E93</color>
     <color name="widget_icon">#FF1C1C1E</color>
     <color name="widget_icon_active">#FF111114</color>
-    <color name="widget_icon_off">#FFC7C7CC</color>
+    <color name="widget_ripple">#1F000000</color>
     <color name="widget_brand_bg">#FFEDEDF0</color>
     <color name="widget_brand_fg">#FF6E6E73</color>
     <color name="widget_track">#1F000000</color>

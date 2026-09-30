@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- کاور خالی ویجت (چپ‌به‌راست): قاب تیره + نوتِ وسط‌چین -->
+<!-- کاور: نسخهٔ راست‌به‌چپ — گوشه‌های گرد روی سمت راست (سمت شروع در چیدمان آینه‌ای) -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <corners
-                android:bottomLeftRadius="18dp"
-                android:topLeftRadius="18dp" />
+                android:bottomRightRadius="18dp"
+                android:topRightRadius="18dp" />
             <solid android:color="@color/widget_art_placeholder" />
             <size
                 android:width="96dp"
                 android:height="96dp" />
         </shape>
     </item>
-    <item
-        android:drawable="@drawable/ic_widget_note"
-        android:gravity="center"
-        android:width="28dp"
-        android:height="28dp" />
 </layer-list>

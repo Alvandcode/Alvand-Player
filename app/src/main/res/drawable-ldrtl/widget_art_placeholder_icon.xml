@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- کاور خالی ویجت (چپ‌به‌راست): قاب تیره + نوتِ وسط‌چین -->
+<!-- کاور خالی ویجت — نسخهٔ راست‌به‌چپ: قاب با گوشه‌های راست + نوتِ وسط‌چین -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <corners
-                android:bottomLeftRadius="18dp"
-                android:topLeftRadius="18dp" />
+                android:bottomRightRadius="18dp"
+                android:topRightRadius="18dp" />
             <solid android:color="@color/widget_art_placeholder" />
             <size
                 android:width="96dp"
