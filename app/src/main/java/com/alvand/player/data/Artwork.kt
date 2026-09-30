@@ -3,7 +3,12 @@ package com.alvand.player.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.util.Log
 import android.util.LruCache
 import kotlinx.coroutines.Dispatchers
@@ -59,36 +64,97 @@ object Artwork {
             synchronized(negativeCache) { negativeCache[song.id] = System.currentTimeMillis() }
             return@withContext null
         }
-        val bmp: Bitmap? = try {
-            val mmr = MediaMetadataRetriever()
-            try {
-                mmr.setDataSource(ctx, song.uri)
-                val raw = mmr.embeddedPicture ?: return@withContext null.also {
-                    synchronized(negativeCache) { negativeCache[song.id] = System.currentTimeMillis() }
-                }
-                // دان‌سمپل: اول ابعاد، بعد نمونه مناسب تا OOM ندهد
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeByteArray(raw, 0, raw.size, bounds)
-                var sample = 1
-                val maxDim = maxOf(bounds.outWidth, bounds.outHeight)
-                while (maxDim / (sample * 2) >= maxSizePx && sample < 8) sample *= 2
-                val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-                BitmapFactory.decodeByteArray(raw, 0, raw.size, opts)
-            } finally {
-                runCatching { mmr.release() }
-            }
-        } catch (e: OutOfMemoryError) {
-            Log.w("Artwork", "OOM decoding cover", e)
-            null
-        } catch (e: Exception) {
-            Log.d("Artwork", "load failed", e)
-            null
-        }
+        val bmp: Bitmap? = decodeEmbedded(ctx, song.uri, maxSizePx)
         mutex.withLock {
             if (bmp != null) bitmapCache.put(song.id, bmp)
             else synchronized(negativeCache) { negativeCache[song.id] = System.currentTimeMillis() }
         }
         bmp
+    }
+
+    /**
+     * کاور امبدد یک URI خام — برای ویجت، که به‌جای Song فقط مسیر فایل را دارد.
+     * عمداً بدون کش و فقط برای طرح‌های محلی: برای https عمداً null می‌دهد تا
+     * باز کردن اتصال شبکه از مسیر ویجت ممکن نباشد.
+     */
+    suspend fun loadForWidget(uri: Uri?, ctx: Context, maxSizePx: Int = 200): Bitmap? {
+        if (uri == null) return null
+        val scheme = uri.scheme?.lowercase() ?: return null
+        if (scheme != "content" && scheme != "file" && scheme != "android.resource") return null
+        return withContext(Dispatchers.IO) { decodeEmbedded(ctx, uri, maxSizePx) }
+    }
+
+    /**
+     * کاور برای ویجت: برش مرکزی به نسبت ویجت + گردکردن گوشه‌های چپ.
+     * گوشه‌ها داخل خود بیت‌مپ گرد می‌شوند چون `clipToOutline` در XML فقط API 31+ است
+     * و ویجت روی API 23 به بالا اجرا می‌شود.
+     */
+    suspend fun widgetArt(
+        uri: Uri?,
+        ctx: Context,
+        targetW: Int,
+        targetH: Int,
+        cornerRadiusPx: Int
+    ): Bitmap? {
+        val decoded = loadForWidget(uri, ctx, maxSizePx = 512) ?: return null
+        val w = targetW.coerceAtLeast(1)
+        val h = targetH.coerceAtLeast(1)
+        return runCatching {
+            // برش مرکزی به نسبت هدف
+            val scale = maxOf(w.toFloat() / decoded.width, h.toFloat() / decoded.height)
+            val srcW = (w / scale).toInt().coerceIn(1, decoded.width)
+            val srcH = (h / scale).toInt().coerceIn(1, decoded.height)
+            val srcLeft = ((decoded.width - srcW) / 2).coerceAtLeast(0)
+            val srcTop = ((decoded.height - srcH) / 2).coerceAtLeast(0)
+            val cropped = Bitmap.createBitmap(decoded, srcLeft, srcTop, srcW, srcH)
+
+            val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(out)
+            val path = Path().apply {
+                addRoundRect(
+                    RectF(0f, 0f, w.toFloat(), h.toFloat()),
+                    floatArrayOf(
+                        cornerRadiusPx.toFloat(), cornerRadiusPx.toFloat(),
+                        0f, 0f,
+                        0f, 0f,
+                        cornerRadiusPx.toFloat(), cornerRadiusPx.toFloat()
+                    ),
+                    Path.Direction.CW
+                )
+            }
+            canvas.clipPath(path)
+            canvas.drawBitmap(
+                cropped, null,
+                RectF(0f, 0f, w.toFloat(), h.toFloat()),
+                Paint(Paint.FILTER_BITMAP_FLAG)
+            )
+            if (cropped !== decoded) runCatching { cropped.recycle() }
+            out
+        }.getOrNull()
+    }
+
+    /** استخراج و دان‌سمپل کاور امبدد؛ همهٔ حالت‌های خطا را به null تبدیل می‌کند */
+    private fun decodeEmbedded(ctx: Context, uri: Uri, maxSizePx: Int): Bitmap? = try {
+        val mmr = MediaMetadataRetriever()
+        try {
+            mmr.setDataSource(ctx, uri)
+            val raw = mmr.embeddedPicture ?: return null
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(raw, 0, raw.size, bounds)
+            var sample = 1
+            val maxDim = maxOf(bounds.outWidth, bounds.outHeight)
+            while (maxDim / (sample * 2) >= maxSizePx && sample < 8) sample *= 2
+            val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+            BitmapFactory.decodeByteArray(raw, 0, raw.size, opts)
+        } finally {
+            runCatching { mmr.release() }
+        }
+    } catch (e: OutOfMemoryError) {
+        Log.w("Artwork", "OOM decoding cover", e)
+        null
+    } catch (e: Exception) {
+        Log.d("Artwork", "load failed", e)
+        null
     }
 
     /** پالت رنگی کاور (null اگر کاوری نباشد) — از همان بیت‌مپ کش استفاده می‌کند، دوباره دیکد نمی‌کند */

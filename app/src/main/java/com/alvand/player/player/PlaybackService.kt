@@ -15,10 +15,17 @@ import androidx.media3.session.MediaSession
 import androidx.media3.exoplayer.ExoPlayer
 import com.alvand.player.MainActivity
 import com.alvand.player.R
+import com.alvand.player.data.SettingsRepo
 import com.alvand.player.player.widget.PlayerWidgetProvider
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * سرویس پس‌زمینه برای پخش + نوتیفیکیشن مدیا + ویجت هوم‌اسکرین + Android Auto.
@@ -30,6 +37,15 @@ class PlaybackService : MediaLibraryService() {
     private var player: ExoPlayer? = null
     private var consecutiveErrors = 0
 
+    /** برای تایمر نوار پیشرفت ویجت و خواندن وضعیت علاقه‌مندی */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    /**
+     * تنظیمات ساده و بدون وابستگی؛ سرویس با Hilt تزریق نمی‌شود ولی این پوشه
+     * فقط یک wrapper روی DataStore است و ساختن دستی‌اش بی‌خطر است.
+     */
+    private val settings: SettingsRepo by lazy { SettingsRepo(applicationContext) }
+
     companion object {
         /** آی‌دی سشن صوتی پلیر — اکولایزر/تقویت صدا به آن وصل می‌شود */
         @Volatile var audioSessionId: Int = 0
@@ -38,6 +54,8 @@ class PlaybackService : MediaLibraryService() {
         const val ACTION_WIDGET_TOGGLE = "com.alvand.player.WIDGET_TOGGLE"
         const val ACTION_WIDGET_NEXT = "com.alvand.player.WIDGET_NEXT"
         const val ACTION_WIDGET_PREV = "com.alvand.player.WIDGET_PREV"
+        const val ACTION_WIDGET_REPEAT = "com.alvand.player.WIDGET_REPEAT"
+        const val ACTION_WIDGET_FAV = "com.alvand.player.WIDGET_FAV"
 
         /** روت کتابخانه برای Android Auto */
         const val ROOT_ID = "alvand-root"
@@ -220,11 +238,25 @@ class PlaybackService : MediaLibraryService() {
                     }
                 }
             }
+            ACTION_WIDGET_REPEAT -> {
+                if (p != null) {
+                    runCatching {
+                        p.repeatMode = when (p.repeatMode) {
+                            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                            else -> Player.REPEAT_MODE_OFF
+                        }
+                    }
+                }
+            }
+            ACTION_WIDGET_FAV -> {
+                val id = p?.let { currentSongId(it) }
+                if (id != null) {
+                    scope.launch { runCatching { settings.toggleLike(id) } }
+                }
+            }
         }
-        if (intent?.action == ACTION_WIDGET_TOGGLE ||
-            intent?.action == ACTION_WIDGET_NEXT ||
-            intent?.action == ACTION_WIDGET_PREV
-        ) {
+        if (intent?.action?.startsWith("com.alvand.player.WIDGET_") == true) {
             pushWidget()
             // ویجت foreground نمی‌خواهد — سرویس مدیا خودش مدیریت می‌کند
             stopSelfResult(startId)
@@ -246,19 +278,50 @@ class PlaybackService : MediaLibraryService() {
 
     private fun pushWidget() {
         val p = player ?: return
-        val meta = p.currentMediaItem?.mediaMetadata
-        runCatching {
-            PlayerWidgetProvider.updateAll(
-                this,
-                meta?.title?.toString() ?: getString(R.string.widget_name),
-                meta?.artist?.toString() ?: "",
-                p.isPlaying
-            )
-        }.onFailure { Log.w("PlaybackService", "widget push failed", it) }
+        val item = p.currentMediaItem
+        val meta = item?.mediaMetadata
+        val title = meta?.title?.toString() ?: getString(R.string.widget_name)
+        val artist = meta?.artist?.toString() ?: ""
+        val duration = p.duration.takeIf { it != C.TIME_UNSET && it > 0L } ?: 0L
+        val artUri = item?.localConfiguration?.uri?.takeIf { isLocalAudioUri(it) }?.toString()
+        val repeat = p.repeatMode
+        val songId = currentSongId(p)
+        scope.launch {
+            // علاقه‌مندی در DataStore است؛ اگر خواندنش شکست خورد فرض می‌کنیم نیست
+            val fav = songId != null && runCatching { settings.likedIds.first() }
+                .getOrDefault(emptySet())
+                .contains(songId)
+            runCatching {
+                PlayerWidgetProvider.updateAll(
+                    this@PlaybackService,
+                    title,
+                    artist,
+                    p.isPlaying,
+                    artUri,
+                    p.currentPosition.coerceAtLeast(0L),
+                    duration,
+                    repeat,
+                    fav
+                )
+            }.onFailure { Log.w("PlaybackService", "widget push failed", it) }
+            if (p.isPlaying) PlayerWidgetProvider.startProgressTicker(this@PlaybackService, scope)
+            else PlayerWidgetProvider.stopProgressTicker()
+        }
     }
+
+    /** فقط طرح‌های محلی — استریم https نباید باعث باز شدن اتصال شبکه از مسیر ویجت شود */
+    private fun isLocalAudioUri(uri: android.net.Uri): Boolean = when (uri.scheme?.lowercase()) {
+        "content", "file", "android.resource" -> true
+        else -> false
+    }
+
+    /** شناسهٔ عددی آهنگ فعلی از mediaId (که همان شناسهٔ Song است) */
+    private fun currentSongId(p: ExoPlayer): Long? =
+        p.currentMediaItem?.mediaId?.toLongOrNull()
 
     override fun onDestroy() {
         runCatching { player?.removeListener(widgetListener) }
+        runCatching { PlayerWidgetProvider.stopProgressTicker() }
         val s = session
         val exo = player
         player = null
@@ -266,14 +329,21 @@ class PlaybackService : MediaLibraryService() {
         audioSessionId = 0
         runCatching { exo?.release() }
         runCatching { s?.release() }
+        // ویجت به حالت «آهنگی در حال پخش نیست» برگردد
         runCatching {
             PlayerWidgetProvider.updateAll(
                 this,
                 getString(R.string.widget_name),
                 "",
+                false,
+                null,
+                0L,
+                0L,
+                0,
                 false
             )
         }
+        runCatching { scope.cancel() }
         super.onDestroy()
     }
 }

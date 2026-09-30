@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نشان اپ در گوشهٔ ویجت: دایرهٔ پس‌زمینه + لوگوی الوند (خودبسنده، بدون app:tint) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/widget_brand_bg" />
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ic_widget_brand"
+        android:gravity="center" />
+</layer-list>

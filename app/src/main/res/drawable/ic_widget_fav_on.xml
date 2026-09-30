@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- آیکون «در علاقه‌مندی‌هاست» ویجت: قلب پر -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@color/widget_icon_active">
+    <path
+        android:pathData="M12,20.3 C12,20.3 3.6,15.6 3.6,9.9 C3.6,7.1 5.7,5 8.5,5 C10.2,5 11.4,6 12,6.8 C12.6,6 13.8,5 15.5,5 C18.3,5 20.4,7.1 20.4,9.9 C20.4,15.6 12,20.3 12,20.3 Z"
+        android:fillColor="@android:color/white" />
+</vector>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- قاب کاور: فقط گوشه‌های چپ گرد است تا لبهٔ داخلیِ کاور تیز بماند (مثل مرجع) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners
+        android:bottomLeftRadius="18dp"
+        android:topLeftRadius="18dp" />
+    <solid android:color="@color/widget_art_placeholder" />
+</shape>

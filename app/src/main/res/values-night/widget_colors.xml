@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رنگ‌های ویجت هوم‌اسکرین — نسخهٔ تیره؛ با values-night هم‌نام، خودکار اعمال می‌شود -->
+<resources>
+    <color name="widget_bg">#F217171D</color>
+    <color name="widget_stroke">#26FFFFFF</color>
+    <color name="widget_title">#FFF2F2F5</color>
+    <color name="widget_sub">#FFA9A9B3</color>
+    <color name="widget_time">#FF8A8A93</color>
+    <color name="widget_icon">#FFF2F2F5</color>
+    <color name="widget_icon_active">#FFFFFFFF</color>
+    <color name="widget_icon_off">#FF5A5A63</color>
+    <color name="widget_brand_bg">#26FFFFFF</color>
+    <color name="widget_brand_fg">#FFB4B4BE</color>
+    <color name="widget_track">#26FFFFFF</color>
+    <color name="widget_fill">#FFF2F2F5</color>
+    <color name="widget_art_placeholder">#FF0A0A0E</color>
+</resources>

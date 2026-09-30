@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نوت موسیقی برای پس‌زمینهٔ کاور خالی در ویجت -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#59FFFFFF">
+    <path
+        android:pathData="M9,17.5a2.6,2.6 0 1 0 0,-5.2V5l9,-1.8v7.9a2.6,2.6 0 1 0 0,3.6V8.4L11,9.6v7.9Z"
+        android:fillColor="@android:color/white" />
+</vector>

@@ -70,6 +70,11 @@
     <string name="widget_next">آهنگ بعدی</string>
     <string name="widget_play">پخش</string>
     <string name="widget_pause">مکث</string>
+    <string name="widget_repeat">تکرار</string>
+    <string name="widget_fav">افزودن به علاقه‌مندی‌ها</string>
+    <string name="widget_fav_on">حذف از علاقه‌مندی‌ها</string>
+    <string name="widget_cover">کاور آلبوم</string>
+    <string name="widget_time_zero">0:00</string>
     <string name="playback_channel">پخش</string>
     <!-- اسکنر کتابخانه -->
     <string name="scan_songs">اسکن آهنگ‌های گوشی</string>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نشان «A» الوند در اندازهٔ ویجت، تک‌رنگ و هم‌رنگ تم -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108"
+    android:tint="@color/widget_brand_fg">
+    <path
+        android:pathData="M30,80 L54,26 L78,80"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeColor="@android:color/white" />
+    <path
+        android:pathData="M27,68 Q54,50 83,61"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round"
+        android:strokeColor="@android:color/white" />
+    <path
+        android:pathData="M54,53 m-13,0 a13,13 0 1,1 26,0 a13,13 0 1,1 -26,0"
+        android:strokeWidth="6"
+        android:strokeColor="@android:color/white" />
+    <path
+        android:pathData="M50,59.5 L61.5,66 L50,72.5 Z"
+        android:fillColor="@android:color/white" />
+</vector>
