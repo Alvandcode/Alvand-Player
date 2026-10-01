@@ -41,6 +41,10 @@ interface LibraryDao {
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM playlist_songs WHERE playlistId = :pid")
     suspend fun nextPosition(pid: Long): Int
 
+    /** جابه‌جایی یک آهنگ در پلی‌لیست — شمارهٔ ترتیب را صریح می‌نویسیم */
+    @Query("UPDATE playlist_songs SET position = :position WHERE playlistId = :pid AND songId = :sid")
+    suspend fun setSongPosition(pid: Long, sid: Long, position: Int)
+
     // ---- History ----
     @Query("SELECT * FROM play_history ORDER BY playedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int = 50): Flow<List<PlayHistoryEntity>>

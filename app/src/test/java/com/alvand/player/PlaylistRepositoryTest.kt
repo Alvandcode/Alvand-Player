@@ -84,6 +84,30 @@ class PlaylistRepositoryTest {
         override suspend fun nextPosition(pid: Long): Int =
             (playlistSongs.value.filter { it.playlistId == pid }.maxOfOrNull { it.position } ?: -1) + 1
 
+        override suspend fun setSongPosition(pid: Long, sid: Long, position: Int) {
+            playlistSongs.value = playlistSongs.value.map {
+                if (it.playlistId == pid && it.songId == sid) it.copy(position = position) else it
+            }
+        }
+
+        /** کمک‌کار تست: شناسه‌ها به ترتیب فعلی پلی‌لیست */
+        fun order(pid: Long): List<Long> =
+            playlistSongs.value
+                .filter { it.playlistId == pid }
+                .sortedWith(compareBy({ it.position }, { it.addedAt }))
+                .map { it.songId }
+
+        /** کمک‌کار تست: شماره‌های ترتیب به ترتیب نمایش */
+        fun positions(pid: Long): List<Int> =
+            playlistSongs.value
+                .filter { it.playlistId == pid }
+                .sortedWith(compareBy({ it.position }, { it.addedAt }))
+                .map { it.position }
+
+        /** کمک‌کار تست: شمارهٔ ترتیب ذخیره‌شدهٔ یک آهنگ */
+        fun positionOf(pid: Long, songId: Long): Int =
+            playlistSongs.value.first { it.playlistId == pid && it.songId == songId }.position
+
         override fun observeRecent(limit: Int): Flow<List<PlayHistoryEntity>> =
             history.map { rows -> rows.sortedByDescending { it.playedAt }.take(limit) }
 
@@ -244,6 +268,95 @@ class PlaylistRepositoryTest {
         val cutoff = dao.prunedBefore.single()
         assertTrue(cutoff <= before - ninetyDays + 5000L)
         assertTrue(cutoff >= before - ninetyDays - 5000L)
+    }
+
+    @Test
+    fun `movePlaylistSong swaps two neighbours`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L, 3L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+
+        repo.movePlaylistSong(pid, fromIndex = 0, toIndex = 1)
+
+        assertEquals(listOf(2L, 1L, 3L), dao.order(pid))
+        assertEquals(listOf(0, 1, 2), dao.positions(pid))
+    }
+
+    @Test
+    fun `movePlaylistSong can push an item to the end and pull it back`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L, 3L, 4L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+
+        repo.movePlaylistSong(pid, fromIndex = 0, toIndex = 3)
+        assertEquals(listOf(2L, 3L, 4L, 1L), dao.order(pid))
+
+        repo.movePlaylistSong(pid, fromIndex = 3, toIndex = 0)
+        assertEquals(listOf(1L, 2L, 3L, 4L), dao.order(pid))
+    }
+
+    @Test
+    fun `movePlaylistSong keeps positions contiguous with no gaps or duplicates`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L, 3L, 4L, 5L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+
+        repo.movePlaylistSong(pid, 4, 0)
+        repo.movePlaylistSong(pid, 0, 2)
+        repo.movePlaylistSong(pid, 3, 4)
+
+        val pos = dao.positions(pid)
+        assertEquals("positions must be 0..n-1 with no repeats", (0..4).toList(), pos.sorted())
+        assertEquals(5, pos.toSet().size)
+    }
+
+    @Test
+    fun `movePlaylistSong ignores out of range indices`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+        val before = dao.order(pid)
+
+        repo.movePlaylistSong(pid, fromIndex = 0, toIndex = 9)
+        repo.movePlaylistSong(pid, fromIndex = -1, toIndex = 0)
+        repo.movePlaylistSong(pid, fromIndex = 5, toIndex = 0)
+
+        assertEquals(before, dao.order(pid))
+    }
+
+    @Test
+    fun `movePlaylistSong with the same index is a no-op`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+        val before = dao.order(pid)
+        repo.movePlaylistSong(pid, 1, 1)
+        assertEquals(before, dao.order(pid))
+    }
+
+    @Test
+    fun `reorder ignores a list that does not match the stored playlist`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L, 3L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+        val before = dao.order(pid)
+
+        // طول متفاوت: مثل وقتی که همزمان آهنگی از جای دیگری حذف شده
+        repo.reorderPlaylistSongs(pid, listOf(3L, 1L))
+        // اعضای متفاوت: مثل وقتی که کاربر روی پلی‌لیست دیگری کار می‌کند
+        repo.reorderPlaylistSongs(pid, listOf(9L, 8L, 7L))
+
+        assertEquals(before, dao.order(pid))
+    }
+
+    @Test
+    fun `a removed song does not leave the order in a broken state`() = runTest {
+        val pid = repo.createPlaylist("Mix")
+        listOf(1L, 2L, 3L).forEach { repo.addToPlaylist(pid, song(id = it)) }
+        repo.movePlaylistSong(pid, 0, 2)
+        assertEquals(listOf(2L, 3L, 1L), dao.order(pid))
+
+        repo.removeFromPlaylist(pid, 2L)
+
+        assertEquals(listOf(3L, 1L), dao.order(pid))
+        // ردیف‌های باقی‌مانده ترتیب یکتا و بدون فاصله نگه می‌دارند
+        val pos = dao.positions(pid)
+        assertEquals("no duplicate positions", pos.size, pos.toSet().size)
+        assertTrue("positions ascend in display order", pos == pos.sorted())
     }
 
     @Test

@@ -182,18 +182,26 @@ class AppViewModel @Inject constructor(
     fun removeFromPlaylist(pid: Long, songId: Long) {
         viewModelScope.launch { runCatching { playlists.removeFromPlaylist(pid, songId) } }
     }
-    fun playPlaylistSongs(pid: Long, onDone: (Boolean) -> Unit = {}) {
+    fun playPlaylistSongs(pid: Long, startIndex: Int = 0, onDone: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val entities = runCatching {
                 playlists.observePlaylistSongs(pid).first()
             }.getOrNull() ?: emptyList()
             val songsToPlay = entities.map { playlists.entityToSong(it) }
-            if (songsToPlay.isNotEmpty()) {
-                manager.setQueue(songsToPlay, 0, true)
+            val index = startIndex.coerceIn(0, (songsToPlay.size - 1).coerceAtLeast(0))
+            if (songsToPlay.isNotEmpty() && startIndex in songsToPlay.indices) {
+                manager.setQueue(songsToPlay, index, true)
                 onDone(true)
             } else {
                 onDone(false)
             }
+        }
+    }
+
+    /** جابه‌جایی یک آهنگ در پلی‌لیست (بالا/پایین) */
+    fun movePlaylistSong(pid: Long, fromIndex: Int, toIndex: Int) {
+        viewModelScope.launch {
+            runCatching { playlists.movePlaylistSong(pid, fromIndex, toIndex) }
         }
     }
 

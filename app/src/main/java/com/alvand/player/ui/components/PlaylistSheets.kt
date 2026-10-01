@@ -121,6 +121,8 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
     val ctx = LocalContext.current
     var showCreate by remember { mutableStateOf(false) }
     var confirmDeleteId by remember { mutableStateOf<Long?>(null) }
+    // ترتیب خوش‌بینانه پس از جابه‌جایی؛ با تغییر محتوای پلی‌لیست بی‌اثر می‌شود
+    var localOrder by remember { mutableStateOf<List<Long>?>(null) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
         // عنوان تب در نوار تب‌های شیت کتابخانه است، پس اینجا فقط کنش‌ها
@@ -139,7 +141,11 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
                 val expanded = selectedId == pl.id
                 Column(
                     Modifier.fillMaxWidth()
-                        .clickable { vm.selectPlaylist(if (expanded) null else pl.id) }
+                        .clickable {
+                            // باز کردن پلی‌لیست دیگر یعنی ترتیب قبلی دیگر ربطی ندارد
+                            localOrder = null
+                            vm.selectPlaylist(if (expanded) null else pl.id)
+                        }
                         .padding(vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -172,22 +178,78 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
                         if (selectedSongs.isEmpty()) {
                             Text("— 0", color = pal.sub, fontSize = 12.sp, modifier = Modifier.padding(start = 32.dp, top = 4.dp))
                         } else {
+                            // ترتیب خوش‌بینانه: تا وقتی جریان دیتابیس به ترتیب جدید
+                            // نرسیده، همان چیزی را نشان می‌دهیم که کاربر جابه‌جا کرده
+                            val flowIds = selectedSongs.map { it.songId }
+                            val shownIds = localOrder
+                                ?.takeIf { it.toSet() == flowIds.toSet() }
+                                ?: flowIds
+                            val rows = shownIds.mapNotNull { id ->
+                                selectedSongs.firstOrNull { it.songId == id }
+                            }
+
+                            fun move(from: Int, to: Int) {
+                                if (to !in shownIds.indices) return
+                                localOrder = shownIds.toMutableList().apply { add(to, removeAt(from)) }
+                                vm.movePlaylistSong(pl.id, from, to)
+                            }
+
                             Column(
                                 Modifier.padding(start = 32.dp, top = 4.dp)
                                     // ارتفاع محدود: یک پلی‌لیست بلند نباید از شیت بیرون بزند
                                     .heightIn(max = 240.dp)
                                     .verticalScroll(rememberScrollState())
                             ) {
-                                Text(stringResource(R.string.songs_n, selectedSongs.size), color = pal.sub, fontSize = 12.sp)
+                                Text(stringResource(R.string.songs_n, rows.size), color = pal.sub, fontSize = 12.sp)
                                 Spacer(Modifier.height(4.dp))
-                                selectedSongs.take(50).forEach { e ->
+                                rows.forEachIndexed { index, e ->
                                     Row(
-                                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        Modifier.fillMaxWidth()
+                                            .clickable {
+                                                // تپ روی آهنگ: پخش پلی‌لیست از همین‌جا
+                                                onRequestNotificationPermission()
+                                                vm.playPlaylistSongs(pl.id, index) { ok ->
+                                                    if (!ok) {
+                                                        Toast.makeText(
+                                                            ctx,
+                                                            ctx.getString(R.string.playlist_empty),
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                                }
+                                            }
+                                            .padding(vertical = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(e.title, color = pal.ink, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                                        // بالا/پایین: در RTL هم معنی خودش را نگه می‌دارد
+                                        IconButton(
+                                            onClick = { move(index, index - 1) },
+                                            enabled = index > 0,
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.KeyboardArrowUp,
+                                                contentDescription = stringResource(R.string.move_up),
+                                                tint = if (index > 0) pal.sub else pal.line,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { move(index, index + 1) },
+                                            enabled = index < rows.size - 1,
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.KeyboardArrowDown,
+                                                contentDescription = stringResource(R.string.move_down),
+                                                tint = if (index < rows.size - 1) pal.sub else pal.line,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                         IconButton(
                                             onClick = {
+                                                localOrder = null
                                                 vm.removeFromPlaylist(pl.id, e.songId)
                                             },
                                             modifier = Modifier.size(28.dp)

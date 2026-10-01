@@ -6,6 +6,7 @@ import com.alvand.player.data.local.PlayHistoryEntity
 import com.alvand.player.data.local.PlaylistEntity
 import com.alvand.player.data.local.PlaylistSongEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,6 +59,33 @@ class PlaylistRepository @Inject constructor(
 
     suspend fun removeFromPlaylist(pid: Long, songId: Long) =
         dao.removeFromPlaylist(pid, songId)
+
+    /**
+     * نوشتن ترتیب جدید پلی‌لیست.
+     *
+     * اگر فهرست ارسالی با محتوای فعلی دیتابیس هم‌خوان نباشد (کاربر همزمان
+     * آهنگی اضافه یا حذف کرده) هیچ کاری نمی‌کنیم تا ترتیب خراب نشود.
+     */
+    suspend fun reorderPlaylistSongs(pid: Long, orderedSongIds: List<Long>) {
+        val current = dao.observePlaylistSongs(pid).first()
+        if (current.size != orderedSongIds.size) return
+        if (current.map { it.songId }.toSet() != orderedSongIds.toSet()) return
+        val currentPositions = current.associate { it.songId to it.position }
+        orderedSongIds.forEachIndexed { index, songId ->
+            if (currentPositions[songId] != index) dao.setSongPosition(pid, songId, index)
+        }
+    }
+
+    /** جابه‌جایی یک آهنگ از جایی به جای دیگر؛ مرزها در خود DAO خوانده می‌شود */
+    suspend fun movePlaylistSong(pid: Long, fromIndex: Int, toIndex: Int) {
+        if (fromIndex == toIndex) return
+        val order = dao.observePlaylistSongs(pid).first().map { it.songId }
+        if (fromIndex !in order.indices || toIndex !in order.indices) return
+        val moved = order.toMutableList().apply {
+            add(toIndex, removeAt(fromIndex))
+        }
+        reorderPlaylistSongs(pid, moved)
+    }
 
     suspend fun recordPlay(song: Song) {
         val prev = dao.historyFor(song.id)

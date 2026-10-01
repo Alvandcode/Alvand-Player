@@ -7,8 +7,8 @@ plugins {
 }
 
 // تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
-val appVersionName = "1.7.1"
-val appVersionCode = 18
+val appVersionName = "1.7.2"
+val appVersionCode = 19
 
 base {
     // خروجی‌ها: AlvandPlayer-v1.3.0-debug.apk و AlvandPlayer-v1.3.0-release.aab

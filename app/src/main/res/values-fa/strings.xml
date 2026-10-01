@@ -121,7 +121,8 @@
     <string name="add_to_playlist">افزودن به پلی‌لیست</string>
     <string name="added_to_playlist">اضافه شد ✓</string>
     <string name="already_in_playlist">قبلاً در پلی‌لیست هست</string>
-    <string name="playlist_empty">این پلی‌لیست خالی است</string>    <string name="song_gone">آن فایل دیگر روی دستگاه نیست</string>
+    <string name="playlist_empty">این پلی‌لیست خالی است</string>
+    <string name="move_up">بالا ببر</string>    <string name="move_down">پایین ببر</string>    <string name="song_gone">آن فایل دیگر روی دستگاه نیست</string>
     <string name="delete_playlist">پلی‌لیست حذف شود؟</string>
     <string name="delete">حذف</string>
     <string name="no_playlists">هنوز پلی‌لیستی نداری — اولی را بساز.</string>
