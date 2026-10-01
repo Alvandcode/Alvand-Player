@@ -92,9 +92,9 @@ class PlayerWidgetProvider : AppWidgetProvider() {
         private const val REQ_FAV = 106
         private const val PREFS = "alvand_widget"
         private const val PROGRESS_MAX = 1000
-        private const val ART_WIDTH_DP = 96
+        private const val ART_WIDTH_DP = 56
         private const val CORNER_DP = 18
-        private const val DEFAULT_HEIGHT_DP = 96
+        private const val DEFAULT_HEIGHT_DP = 100
         /** ۳۶۰×۳۶۰ پیکسل ≈ ۵۱۸KB — زیر سقف Binder با حاشیهٔ کافی */
         private const val MAX_ART_PIXELS = 360 * 360
         private const val ART_CACHE_BYTES = 2 * 1024 * 1024
@@ -339,9 +339,11 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             runCatching {
                 views.setProgressBar(R.id.widget_progress, progress, PROGRESS_MAX, false)
             }
+            // نقطه فقط وقتی معنا دارد که خطی وجود داشته باشد؛ در مدت نامعلوم
+            // یک نقطهٔ تنها وسط پنل معلق می‌افتاد
             views.setViewVisibility(
                 R.id.widget_seek_dot,
-                if (progress <= 1) View.VISIBLE else View.INVISIBLE
+                if (dur > 0L && progress <= 1) View.VISIBLE else View.INVISIBLE
             )
 
             // کاور: برش‌خورده به ارتفاع واقعی ویجت، با گوشهٔ گرد سمتِ شروع

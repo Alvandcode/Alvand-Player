@@ -8,13 +8,13 @@
                 android:topRightRadius="18dp" />
             <solid android:color="@color/widget_art_placeholder" />
             <size
-                android:width="96dp"
-                android:height="96dp" />
+                android:width="56dp"
+                android:height="56dp" />
         </shape>
     </item>
     <item
         android:drawable="@drawable/ic_widget_note"
         android:gravity="center"
-        android:width="28dp"
-        android:height="28dp" />
+        android:width="20dp"
+        android:height="20dp" />
 </layer-list>
