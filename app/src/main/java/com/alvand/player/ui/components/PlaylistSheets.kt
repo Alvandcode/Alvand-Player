@@ -1,10 +1,13 @@
 package com.alvand.player.ui.components
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -12,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,6 +60,7 @@ fun AddToPlaylistDialog(vm: AppViewModel, song: Song, onDismiss: () -> Unit) {
     val playlists by vm.playlistList.collectAsState()
     var showCreate by remember { mutableStateOf(false) }
     val pal = LocalAP.current
+    val ctx = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_to_playlist), fontSize = 16.sp) },
@@ -69,7 +74,18 @@ fun AddToPlaylistDialog(vm: AppViewModel, song: Song, onDismiss: () -> Unit) {
                             Row(
                                 Modifier.fillMaxWidth()
                                     .clickable {
-                                        vm.addToPlaylist(pl.id, song) { onDismiss() }
+                                        // بازخورد صریح: آهنگ تکراری بی‌صدا رد نشود
+                                        vm.addToPlaylist(pl.id, song) { added ->
+                                            Toast.makeText(
+                                                ctx,
+                                                ctx.getString(
+                                                    if (added) R.string.added_to_playlist
+                                                    else R.string.already_in_playlist
+                                                ),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            if (added) onDismiss()
+                                        }
                                     }
                                     .padding(vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -97,21 +113,19 @@ fun AddToPlaylistDialog(vm: AppViewModel, song: Song, onDismiss: () -> Unit) {
 
 /** تب پلی‌لیست‌ها + اخیراً پخش‌شده — داخل شیت کتابخانه */
 @Composable
-fun PlaylistsTab(vm: AppViewModel) {
+fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit = {}) {
     val playlists by vm.playlistList.collectAsState()
     val selectedId by vm.selectedPlaylistId.collectAsState()
     val selectedSongs by vm.selectedPlaylistSongs.collectAsState()
     val pal = LocalAP.current
+    val ctx = LocalContext.current
     var showCreate by remember { mutableStateOf(false) }
     var confirmDeleteId by remember { mutableStateOf<Long?>(null) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+        // عنوان تب در نوار تب‌های شیت کتابخانه است، پس اینجا فقط کنش‌ها
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                stringResource(R.string.tab_playlists),
-                color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(Modifier.weight(1f))
             TextButton(onClick = { showCreate = true }) {
                 Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(2.dp))
@@ -132,7 +146,22 @@ fun PlaylistsTab(vm: AppViewModel) {
                         Icon(Icons.AutoMirrored.Filled.QueueMusic, null, tint = pal.ink, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(10.dp))
                         Text(pl.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                        IconButton(onClick = { vm.playPlaylistSongs(pl.id) }, modifier = Modifier.size(32.dp)) {
+                        IconButton(
+                            onClick = {
+                                // مثل ردیف‌های صف، اجازهٔ اعلان هم لازم است
+                                onRequestNotificationPermission()
+                                vm.playPlaylistSongs(pl.id) { ok ->
+                                    if (!ok) {
+                                        Toast.makeText(
+                                            ctx,
+                                            ctx.getString(R.string.playlist_empty),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(Icons.Default.PlayArrow, null, tint = pal.sub, modifier = Modifier.size(18.dp))
                         }
                         IconButton(onClick = { confirmDeleteId = pl.id }, modifier = Modifier.size(32.dp)) {
@@ -143,7 +172,12 @@ fun PlaylistsTab(vm: AppViewModel) {
                         if (selectedSongs.isEmpty()) {
                             Text("— 0", color = pal.sub, fontSize = 12.sp, modifier = Modifier.padding(start = 32.dp, top = 4.dp))
                         } else {
-                            Column(Modifier.padding(start = 32.dp, top = 4.dp)) {
+                            Column(
+                                Modifier.padding(start = 32.dp, top = 4.dp)
+                                    // ارتفاع محدود: یک پلی‌لیست بلند نباید از شیت بیرون بزند
+                                    .heightIn(max = 240.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
                                 Text(stringResource(R.string.songs_n, selectedSongs.size), color = pal.sub, fontSize = 12.sp)
                                 Spacer(Modifier.height(4.dp))
                                 selectedSongs.take(50).forEach { e ->
@@ -187,16 +221,14 @@ fun PlaylistsTab(vm: AppViewModel) {
 
 /** تب اخیراً پخش‌شده */
 @Composable
-fun RecentTab(vm: AppViewModel) {
+fun RecentTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit = {}) {
     val recent by vm.recentHistory.collectAsState()
     val pal = LocalAP.current
+    val ctx = LocalContext.current
     Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+        // عنوان تب در نوار تب‌های شیت کتابخانه است، پس اینجا فقط کنش‌ها
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                stringResource(R.string.tab_recent),
-                color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(Modifier.weight(1f))
             if (recent.isNotEmpty()) {
                 TextButton(onClick = { vm.clearHistory() }) {
                     Text(stringResource(R.string.clear_history), fontSize = 12.sp)
@@ -206,18 +238,34 @@ fun RecentTab(vm: AppViewModel) {
         if (recent.isEmpty()) {
             Text(stringResource(R.string.no_history), color = pal.sub, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
         } else {
-            recent.take(30).forEach { h ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.History, null, tint = pal.sub, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(h.title, color = pal.ink, fontSize = 13.5.sp, maxLines = 1)
-                        Text(h.artist, color = pal.sub, fontSize = 12.sp, maxLines = 1)
+            // ارتفاع محدود تا تاریخچهٔ بلند از شیت بیرون نزند
+            Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
+                recent.take(30).forEach { h ->
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clickable {
+                                // اگر فایل آهنگ هنوز در کتابخانه نباشد، بی‌صدا رد می‌شود
+                                if (vm.playHistorySong(h.songId)) {
+                                    onRequestNotificationPermission()
+                                } else {
+                                    Toast.makeText(
+                                        ctx,
+                                        ctx.getString(R.string.song_gone),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                            .padding(vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.History, null, tint = pal.sub, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(h.title, color = pal.ink, fontSize = 13.5.sp, maxLines = 1)
+                            Text(h.artist, color = pal.sub, fontSize = 12.sp, maxLines = 1)
+                        }
+                        Text("×${h.playCount}", color = pal.sub, fontSize = 11.sp)
                     }
-                    Text("×${h.playCount}", color = pal.sub, fontSize = 11.sp)
                 }
             }
         }

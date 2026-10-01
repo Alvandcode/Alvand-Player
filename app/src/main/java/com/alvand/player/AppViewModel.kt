@@ -182,14 +182,29 @@ class AppViewModel @Inject constructor(
     fun removeFromPlaylist(pid: Long, songId: Long) {
         viewModelScope.launch { runCatching { playlists.removeFromPlaylist(pid, songId) } }
     }
-    fun playPlaylistSongs(pid: Long) {
+    fun playPlaylistSongs(pid: Long, onDone: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val entities = runCatching {
                 playlists.observePlaylistSongs(pid).first()
             }.getOrNull() ?: emptyList()
             val songsToPlay = entities.map { playlists.entityToSong(it) }
-            if (songsToPlay.isNotEmpty()) manager.setQueue(songsToPlay, 0, true)
+            if (songsToPlay.isNotEmpty()) {
+                manager.setQueue(songsToPlay, 0, true)
+                onDone(true)
+            } else {
+                onDone(false)
+            }
         }
+    }
+
+    /**
+     * پخش یک آهنگ از تاریخچه. تاریخچه فقط شناسه/عنوان/خواننده نگه می‌دارد، پس
+     * آهنگ باید در کتابخانهٔ فعلی پیدا شود؛ اگر فایلش پاک شده بی‌صدا رد می‌شود.
+     */
+    fun playHistorySong(songId: Long): Boolean {
+        val song = _songs.value.firstOrNull { it.id == songId } ?: return false
+        manager.setQueue(listOf(song), 0, true)
+        return true
     }
     fun clearHistory() {
         viewModelScope.launch { runCatching { playlists.clearHistory() } }

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,9 +30,56 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
 import com.alvand.player.R
+import com.alvand.player.data.Song
 import com.alvand.player.ui.components.*
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.launch
+
+/** شناسهٔ تب‌های شیت کتابخانه */
+const val TAB_SONGS = 0
+const val TAB_PLAYLISTS = 1
+const val TAB_RECENT = 2
+
+/**
+ * نوار تب کتابخانه (آهنگ‌ها / پلی‌لیست‌ها / اخیر) با زیرخط accent،
+ * هم‌خوان با ظاهر مینیمال اپ؛ مثل بقیهٔ UI از پالت استفاده می‌کند نه رنگ‌های M3.
+ */
+@Composable
+fun LibraryTabs(current: Int, accent: androidx.compose.ui.graphics.Color, onSelect: (Int) -> Unit) {
+    val pal = LocalAP.current
+    val items = listOf(
+        TAB_SONGS to stringResource(R.string.tab_songs),
+        TAB_PLAYLISTS to stringResource(R.string.tab_playlists),
+        TAB_RECENT to stringResource(R.string.tab_recent)
+    )
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 22.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
+        items.forEach { (id, label) ->
+            val active = current == id
+            Column(
+                Modifier.clickable { onSelect(id) }.padding(vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    label,
+                    color = if (active) pal.ink else pal.sub,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 14.sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Box(
+                    Modifier
+                        .height(2.dp)
+                        .width(if (active) 22.dp else 0.dp)
+                        .clip(CircleShape)
+                        .background(accent)
+                )
+            }
+        }
+    }
+}
 
 /** صفحه اصلی Mono+Aura: کاور سینمایی + بک‌گراند بلر + کنترل‌های تمیز */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +95,8 @@ fun PlayerScreen(
 ) {
     val state by vm.playerState.collectAsState()
     val songs by vm.songs.collectAsState()
+    val playlists by vm.playlistList.collectAsState()
+    val recent by vm.recentHistory.collectAsState()
     val audioPermissionGranted by vm.audioPermissionGranted.collectAsState()
     val isScanning by vm.isScanning.collectAsState()
     val bgUri by vm.backgroundUri.collectAsState()
@@ -57,6 +107,9 @@ fun PlayerScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showLyricsFull by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
+    // تب کتابخانه: آهنگ‌ها / پلی‌لیست‌ها / اخیراً پخش‌شده
+    var libraryTab by rememberSaveable { mutableStateOf(TAB_SONGS) }
+    var songToAdd by remember { mutableStateOf<Song?>(null) }
     val current = state.current
     val dur = state.durationMs.coerceAtLeast(1L)
     val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
@@ -101,6 +154,9 @@ fun PlayerScreen(
     )
     if (showLyricsFull) LyricsSheet(vm, onDismiss = { showLyricsFull = false })
     if (showSleep) SleepTimerDialog(vm, onDismiss = { showSleep = false })
+    songToAdd?.let { song ->
+        AddToPlaylistDialog(vm, song, onDismiss = { songToAdd = null })
+    }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -128,11 +184,21 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "${stringResource(R.string.playlist)} (${songs.size})",
+                    // هر تب شمارندهٔ خودش را می‌گیرد تا ارتفاع شیت ثابت بماند
+                    when (libraryTab) {
+                        TAB_PLAYLISTS -> "${stringResource(R.string.tab_playlists)} (${playlists.size})"
+                        TAB_RECENT -> "${stringResource(R.string.tab_recent)} (${recent.size})"
+                        else -> "${stringResource(R.string.playlist)} (${songs.size})"
+                    },
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                     modifier = Modifier.weight(1f)
                 )
             }
+            LibraryTabs(current = libraryTab, accent = dyn.accent, onSelect = { libraryTab = it })
+            when (libraryTab) {
+                TAB_PLAYLISTS -> PlaylistsTab(vm, onRequestNotificationPermission)
+                TAB_RECENT -> RecentTab(vm, onRequestNotificationPermission)
+                else -> {
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
                 if (songs.isEmpty()) {
                     item {
@@ -194,6 +260,18 @@ fun PlayerScreen(
                             Spacer(Modifier.width(10.dp))
                         }
                         Text(fmtTime(d), color = pal.sub, fontSize = 12.5.sp)
+                        // افزودن همین آهنگ به پلی‌لیست، بدون رفتن به منو
+                        IconButton(
+                            onClick = { songToAdd = s },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.PlaylistAdd,
+                                contentDescription = stringResource(R.string.add_to_playlist),
+                                tint = pal.sub,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
                     }
                 }
                 item { LyricsPreviewCard(vm) { showLyricsFull = true } }
@@ -211,6 +289,8 @@ fun PlayerScreen(
                         accent = dyn.accent,
                         modifier = Modifier.padding(top = 6.dp, bottom = 28.dp)
                     )
+                }
+            }
                 }
             }
         }

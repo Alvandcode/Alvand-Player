@@ -114,13 +114,14 @@
     <string name="tab_albums">آلبوم‌ها</string>
     <string name="tab_artists">خواننده‌ها</string>
     <string name="tab_playlists">پلی‌لیست‌ها</string>
-    <string name="tab_recent">اخیراً</string>
+    <string name="tab_recent">تاریخچه</string>
     <string name="new_playlist">پلی‌لیست جدید</string>
     <string name="playlist_name_hint">نام پلی‌لیست</string>
     <string name="create">ساخت</string>
     <string name="add_to_playlist">افزودن به پلی‌لیست</string>
     <string name="added_to_playlist">اضافه شد ✓</string>
     <string name="already_in_playlist">قبلاً در پلی‌لیست هست</string>
+    <string name="playlist_empty">این پلی‌لیست خالی است</string>    <string name="song_gone">آن فایل دیگر روی دستگاه نیست</string>
     <string name="delete_playlist">پلی‌لیست حذف شود؟</string>
     <string name="delete">حذف</string>
     <string name="no_playlists">هنوز پلی‌لیستی نداری — اولی را بساز.</string>

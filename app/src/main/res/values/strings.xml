@@ -119,13 +119,14 @@
     <string name="tab_albums">Albums</string>
     <string name="tab_artists">Artists</string>
     <string name="tab_playlists">Playlists</string>
-    <string name="tab_recent">Recent</string>
+    <string name="tab_recent">History</string>
     <string name="new_playlist">New playlist</string>
     <string name="playlist_name_hint">Playlist name</string>
     <string name="create">Create</string>
     <string name="add_to_playlist">Add to playlist</string>
     <string name="added_to_playlist">Added ✓</string>
     <string name="already_in_playlist">Already in playlist</string>
+    <string name="playlist_empty">This playlist is empty</string>    <string name="song_gone">That file is no longer on the device</string>
     <string name="delete_playlist">Delete playlist?</string>
     <string name="delete">Delete</string>
     <string name="no_playlists">No playlists yet — create your first one.</string>
