@@ -30,6 +30,7 @@
     <string name="manual_hint">ست دستی متن / LRC</string>
     <string name="save_lyrics">ذخیره متن</string>
     <string name="eq_title">اکولایزر</string>
+    <string name="eq_reset">بازنشانی</string>
     <string name="bass_boost">تقویت باس</string>
     <string name="volume_boost">تقویت صدا: %1$d دسی‌بل</string>
     <string name="denoise">حذف نویز</string>

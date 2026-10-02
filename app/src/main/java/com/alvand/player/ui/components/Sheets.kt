@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
 import com.alvand.player.R
+import com.alvand.player.audio.AudioSettings
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.flow.map
 
@@ -159,15 +160,46 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
             }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(vm.manager.eqManager.presets.take(8).withIndex().toList()) { (i, p) ->
-                    FilterChip(
-                        selected = eq.preset == i,
-                        onClick = { vm.updateAudio(eq.copy(preset = i)) },
-                        label = { Text(p, fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = pal.ink, selectedLabelColor = pal.bg
+            // ردیف پریست‌ها + دکمهٔ ریست تا کاربر بتواند هر تنظیمی را به حالت پیش‌فرض برگرداند
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                LazyRow(
+                    Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(vm.manager.eqManager.presets.take(8).withIndex().toList()) { (i, p) ->
+                        FilterChip(
+                            selected = eq.preset == i,
+                            onClick = { vm.updateAudio(eq.copy(preset = i)) },
+                            label = { Text(p, fontSize = 12.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = pal.ink, selectedLabelColor = pal.bg
+                            )
                         )
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                val isDefault = eq == AudioSettings()
+                // ریست باید واقعاً همه‌چیز را برگرداند، ولی وقتی همه‌چیز پیش‌فرض
+                // است دکمه غیرفعاله تا بی‌فایده نزنی
+                TextButton(
+                    onClick = { vm.updateAudio(AudioSettings()) },
+                    enabled = !isDefault,
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh, null,
+                        tint = if (isDefault) pal.line else pal.ink,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.eq_reset),
+                        color = if (isDefault) pal.line else pal.ink,
+                        fontSize = 12.sp
                     )
                 }
             }

@@ -92,9 +92,9 @@ class PlayerWidgetProvider : AppWidgetProvider() {
         private const val REQ_FAV = 106
         private const val PREFS = "alvand_widget"
         private const val PROGRESS_MAX = 1000
-        private const val ART_WIDTH_DP = 56
+        private const val ART_WIDTH_DP = 52
         private const val CORNER_DP = 18
-        private const val DEFAULT_HEIGHT_DP = 100
+        private const val DEFAULT_HEIGHT_DP = 68
         /** ۳۶۰×۳۶۰ پیکسل ≈ ۵۱۸KB — زیر سقف Binder با حاشیهٔ کافی */
         private const val MAX_ART_PIXELS = 360 * 360
         private const val ART_CACHE_BYTES = 2 * 1024 * 1024
@@ -371,7 +371,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
                 // بیت‌مپ از قبل دقیقاً هم‌اندازهٔ قاب برش خورده، پس centerCrop بی‌اعوجاج است
                 views.setImageViewBitmap(R.id.widget_art, bitmap)
             } else {
-                views.setImageViewResource(R.id.widget_art, R.drawable.widget_art_placeholder_icon)
+                views.setImageViewResource(R.id.widget_art, R.drawable.widget_art_note)
             }
 
             // پخش/توقف

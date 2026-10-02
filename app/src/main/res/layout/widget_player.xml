@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ویجت هوم‌اسکرین الوند — کارت فشرده:
-  کاور باریک در یک سر کارت + عنوان/خواننده، نوار پیشرفت و ۵ کنترل.
+  ویجت هوم‌اسکرین الوند — کارت کوتاه (۲ خانه در افق، ۱ ردیف ارتفاع):
+  کاور باریک در یک سر کارت + عنوان/خواننده، خط پیشرفت و ۵ کنترل.
   عمداً بدون هیچ نماد یا لوگوی اضافه؛ فقط کاور و متن.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -10,15 +10,18 @@
     android:background="@drawable/widget_bg"
     android:orientation="horizontal">
 
-    <!-- کاور: گوشهٔ شروع گرد؛ گوشه‌ها داخل خودِ بیت‌مپ ساخته می‌شوند -->
+    <!--
+      کاور: پس‌زمینهٔ تیره با گوشهٔ گرد پرکننده است و src فقط محتوای داخل آن.
+      fitCenter تا نه کاور واقعی کشیده شود و نه نوتِ جای‌خالی بزرگ و بریده.
+    -->
     <ImageView
         android:id="@+id/widget_art"
-        android:layout_width="56dp"
+        android:layout_width="52dp"
         android:layout_height="match_parent"
         android:background="@drawable/widget_art_frame"
         android:contentDescription="@string/widget_cover"
-        android:scaleType="centerCrop"
-        android:src="@drawable/widget_art_placeholder_icon" />
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_art_note" />
 
     <LinearLayout
         android:id="@+id/widget_panel"
@@ -26,10 +29,10 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:paddingStart="9dp"
-        android:paddingTop="7dp"
-        android:paddingEnd="7dp"
-        android:paddingBottom="4dp">
+        android:paddingStart="8dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="5dp"
+        android:paddingBottom="3dp">
 
         <!-- عنوان + خواننده -->
         <TextView
@@ -40,7 +43,7 @@
             android:maxLines="1"
             android:text="@string/widget_name"
             android:textColor="@color/widget_title"
-            android:textSize="13sp"
+            android:textSize="12.5sp"
             android:textStyle="bold" />
 
         <TextView
@@ -49,18 +52,17 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="@string/widget_desc"
+            android:text=""
             android:textColor="@color/widget_sub"
-            android:textSize="11sp" />
+            android:textSize="10.5sp" />
 
-        <!-- این ردیف فضای خالی را می‌گیرد تا نوار و کنترل‌ها پایین بچسبند.
-             نه Spacer و نه View در RemoteViews مجاز نیستند، پس وزن می‌دهیم. -->
+        <!-- خط پیشرفت + زمان سپری‌شده -->
         <LinearLayout
             android:id="@+id/widget_seek_zone"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="bottom"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <!-- نقطهٔ ابتدای خط؛ در RemoteViews ساده‌تر از clip است -->
@@ -71,12 +73,12 @@
                 android:contentDescription="@null"
                 android:src="@drawable/widget_progress_dot" />
 
-            <!-- استایل پلتفرمی، نه attr تم: ویججت را لانچر inflate می‌کند -->
+            <!-- استایل پلتفرمی، نه attr تم: ویجت را لانچر inflate می‌کند -->
             <ProgressBar
                 android:id="@+id/widget_progress"
                 style="@android:style/Widget.ProgressBar.Horizontal"
                 android:layout_width="0dp"
-                android:layout_height="5dp"
+                android:layout_height="4dp"
                 android:layout_weight="1"
                 android:indeterminate="false"
                 android:max="1000"
@@ -87,72 +89,73 @@
                 android:id="@+id/widget_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
+                android:layout_marginStart="4dp"
                 android:text="@string/widget_time_zero"
                 android:textColor="@color/widget_time"
-                android:textSize="10sp" />
+                android:textSize="9.5sp" />
         </LinearLayout>
 
         <!-- کنترل‌ها: تکرار، قبلی، پخش، بعدی، علاقه‌مندی -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="1dp"
+            android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <ImageButton
                 android:id="@+id/widget_repeat"
                 android:layout_width="0dp"
-                android:layout_height="34dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_repeat"
-                android:padding="7dp"
+                android:padding="5dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_widget_repeat" />
 
             <ImageButton
                 android:id="@+id/widget_prev"
                 android:layout_width="0dp"
-                android:layout_height="34dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_prev"
-                android:padding="6dp"
+                android:padding="4dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_widget_prev" />
 
             <ImageButton
                 android:id="@+id/widget_toggle"
                 android:layout_width="0dp"
-                android:layout_height="34dp"
-                android:layout_weight="1.2"
+                android:layout_height="match_parent"
+                android:layout_weight="1.25"
                 android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_play"
-                android:padding="4dp"
+                android:padding="2dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_widget_play" />
 
             <ImageButton
                 android:id="@+id/widget_next"
                 android:layout_width="0dp"
-                android:layout_height="34dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_next"
-                android:padding="6dp"
+                android:padding="4dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_widget_next" />
 
             <ImageButton
                 android:id="@+id/widget_fav"
                 android:layout_width="0dp"
-                android:layout_height="34dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/widget_btn_bg"
                 android:contentDescription="@string/widget_fav"
-                android:padding="7dp"
+                android:padding="5dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_widget_fav" />
         </LinearLayout>

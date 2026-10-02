@@ -8,8 +8,8 @@
                 android:topRightRadius="18dp" />
             <solid android:color="@color/widget_art_placeholder" />
             <size
-                android:width="56dp"
-                android:height="56dp" />
+                android:width="52dp"
+                android:height="52dp" />
         </shape>
     </item>
 </layer-list>

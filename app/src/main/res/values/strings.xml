@@ -30,6 +30,7 @@
     <string name="manual_hint">Set lyrics manually / LRC</string>
     <string name="save_lyrics">Save lyrics</string>
     <string name="eq_title">Equalizer</string>
+    <string name="eq_reset">Reset</string>
     <string name="bass_boost">Bass Boost</string>
     <string name="volume_boost">Volume Boost: %1$d dB</string>
     <string name="denoise">Denoise</string>
