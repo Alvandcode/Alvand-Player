@@ -314,8 +314,8 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                     if (lyrics.lines.isNotEmpty()) listState.animateScrollToItem(activeIdx + 1)
                 }
                 LazyColumn(
-                    state = listState,
                     Modifier.heightIn(max = 340.dp),
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item { Spacer(Modifier.height(150.dp)) }

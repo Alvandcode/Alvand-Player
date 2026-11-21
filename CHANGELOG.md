@@ -2,6 +2,19 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.6] — 2026-11-21
+
+### Fixed — رفع‌شده
+- 🌍 **پوشش کامل ترجمه**: ۹۹ رشته جاافتاده در هر ۱۵ زبان ترجمه شد (۱٬۴۸۵ رشته) —
+  منو، تایمر خواب، تم، اسکن، پلی‌لیست‌ها، تاریخچه، گزارش کرش و ویجت.
+  پوشش از ~۲۹٪ به ۱۰۰٪ رسید؛ دیگر هیچ زبانی به انگلیسی فالبک نمی‌شود.
+  🌍 **Full translation coverage**: the 99 strings missing from each of the 15
+  non-English/Persian locales are now translated (1,485 strings) — menu, sleep
+  timer, theme, scanning, playlists, history, crash report and widget.
+  Coverage went from ~29% to 100%; no locale falls back to English anymore.
+- 🔧 **فیکس کامپایل v1.7.5**: آرگومان Modifier در LazyColumn ترتیب درست گرفت.
+  🔧 **v1.7.5 compile fix**: Modifier argument ordering in LazyColumn.
+
 ## [1.7.5] — 2026-11-21
 
 ### Fixed — رفع‌شده
