@@ -10,7 +10,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.alvand.player.AppViewModel
-import com.alvand.player.MainActivity
 import com.alvand.player.ui.screens.AboutScreen
 import com.alvand.player.ui.screens.PlayerScreen
 import com.alvand.player.ui.screens.WelcomeScreen
@@ -42,19 +41,6 @@ fun AppNavHost(
                     if (target == Routes.PLAYER) popUpTo(Routes.PLAYER) { inclusive = false }
                 }
             }
-        }
-    }
-    // سازگاری با navTarget قدیمی استاتیک (اگر جایی هنوز ست می‌کند)
-    @Suppress("DEPRECATION")
-    val legacyTarget by MainActivity.navTarget
-    LaunchedEffect(legacyTarget) {
-        val t = legacyTarget
-        if (t != null) {
-            runCatching {
-                navController.navigate(t) { launchSingleTop = true }
-            }
-            @Suppress("DEPRECATION")
-            MainActivity.navTarget.value = null
         }
     }
     val onboardingSeen by vm.onboardingSeen.collectAsState()

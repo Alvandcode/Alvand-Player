@@ -14,14 +14,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import com.alvand.player.data.Song
 import com.alvand.player.data.ThemeMode
 import com.alvand.player.ui.navigation.AppNavHost
 import com.alvand.player.ui.navigation.Routes
 import com.alvand.player.ui.theme.AlvandTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -34,8 +32,6 @@ class MainActivity : AppCompatActivity() {
             val name = uri.lastPathSegment?.substringAfterLast('/') ?: "Local audio"
             vm.playUri(uri, name)
             vm.navigateTo(Routes.PLAYER)
-            @Suppress("DEPRECATION")
-            navTarget.value = Routes.PLAYER
         }
     }
     private val audioPermissionRequest =
@@ -59,12 +55,6 @@ class MainActivity : AppCompatActivity() {
                 vm.setBackground(uri.toString())
             }
         }
-
-    companion object {
-        /** @deprecated به‌جای آن از AppViewModel.navEvents استفاده کن؛ برای سازگاری نگه داشته شده */
-        @Deprecated("Use AppViewModel.navEvents")
-        var navTarget = mutableStateOf<String?>(null)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,10 +80,6 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
-        // پل سازگاری: ایونت‌های جدید را به navTarget قدیمی هم بده تا کد قدیمی نشکند
-        lifecycleScope.launch {
-            vm.navEvents.collect { navTarget.value = it }
-        }
     }
 
     override fun onResume() {
@@ -118,8 +104,6 @@ class MainActivity : AppCompatActivity() {
                 requestNotificationPermission()
                 if (vm.playDirectLink(url)) {
                     vm.navigateTo(Routes.PLAYER)
-                    @Suppress("DEPRECATION")
-                    navTarget.value = Routes.PLAYER
                 }
             }
         }

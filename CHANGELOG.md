@@ -2,6 +2,28 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.7] — 2026-11-21
+
+### Removed — کد مرده
+- 🧹 **ریورب بی‌مصرف**: `reverbPreset` و کل machinery `PresetReverb` حذف شد —
+  هیچ UI‌ای برای تغییرش وجود نداشت و همیشه خاموش بود.
+  🧹 **Dead reverb removed**: `reverbPreset` and the whole `PresetReverb`
+  machinery dropped — no UI exposed it and it was always off.
+- 🧹 **`readEmbedded` مرده**: تابعی که همیشه `null` برمی‌گرداند (MediaMetadataRetriever
+  متن USLT نمی‌دهد) حذف شد.
+  🧹 **Dead `readEmbedded`**: the stub that always returned `null` is gone.
+- 🧹 **پل ناوبری قدیمی**: `navTarget` استاتیکِ deprecated در MainActivity به‌همراه
+  دوطرفه‌پلش در AppNavHost حذف شد؛ ناوبری فقط از `AppViewModel.navEvents` می‌گذرد.
+  🧹 **Legacy nav bridge**: the deprecated static `navTarget` and its two-way
+  bridge are removed; navigation flows only through `AppViewModel.navEvents`.
+- 📦 **ProGuard سبک شد**: keep سراسریِ `com.alvand.player.**`، `androidx.compose.**`،
+  `androidx.datastore.**`، `coil.**`، `okhttp3/okio.**`، `dagger.hilt.**` و
+  `androidx.palette.**` حذف شد — consumer rules خود کتابخانه‌ها کافی‌اند.
+  حاصل: minification واقعی و APK کوچک‌تر؛ به‌علاوه `LineNumberTable` برای
+  خوانایی گزارش کرش درون‌اپ حفظ شد.
+  📦 **Slimmer ProGuard**: blanket keeps dropped in favor of each library's
+  consumer rules — real minification, smaller APK, crash traces stay readable.
+
 ## [1.7.6] — 2026-11-21
 
 ### Fixed — رفع‌شده

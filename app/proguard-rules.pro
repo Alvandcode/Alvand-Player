@@ -1,34 +1,20 @@
--keep class androidx.media3.** { *; }
--dontwarn androidx.media3.**
-# Hilt / Dagger (KSP) — نقطه ورود و ماژول‌ها باید بمانند
--keep class dagger.hilt.** { *; }
--keep class javax.inject.** { *; }
+# ─── Alvand Player — قواعد R8 سبک‌شده ───
+# کتابخانه‌های زیر (media3/coil/okhttp/hilt/room/datastore/compose) هرکدام
+# consumer rules خودشان را داخل AAR حمل می‌کنند؛ keep سراسری فقط APK را
+# باد می‌کرد و مزیت minification را صفر می‌کرد. فقط موارد واقعاً لازم مانده.
+
+# خوانایی stack trace در گزارش کرش درون‌اپ (CrashDialog/CrashLog)
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# نقطه ورود Hilt (consumer rules Hilt بقیه را هندل می‌کند)
 -keep class com.alvand.player.AlvandApp { *; }
--keep class com.alvand.player.** { *; }
--keepclasseswithmembernames class * {
-    @dagger.hilt.android.HiltAndroidApp *;
-}
--keepclasseswithmembernames class * {
-    @dagger.hilt.android.AndroidEntryPoint *;
-}
-# Coil / OkHttp — رفلکشن decoder و platform
--keep class coil.** { *; }
--dontwarn coil.**
--keep class okhttp3.** { *; }
--keep class okio.** { *; }
--dontwarn okhttp3.**
--dontwarn okio.**
-# DataStore / Proto
--keep class androidx.datastore.** { *; }
--dontwarn androidx.datastore.**
-# Palette / Compose — انیمیشن و Canvas نباید strip شود
--keep class androidx.palette.graphics.** { *; }
--keep class androidx.compose.** { *; }
-# مدل‌های اپ (Gson/Moshi نداریم ولی برای R8-minified crashes)
--keep class com.alvand.player.data.** { *; }
--keep class com.alvand.player.audio.** { *; }
--keep class com.alvand.player.lyrics.** { *; }
-# Room — DAO و Entity نباید strip شوند
+
+# Room — نگهداری سبک برای DB و Entity ها
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
 -dontwarn androidx.room.**
+
+# نویزهای شناخته‌شده وابسته به نسخه
+-dontwarn okhttp3.**
+-dontwarn okio.**

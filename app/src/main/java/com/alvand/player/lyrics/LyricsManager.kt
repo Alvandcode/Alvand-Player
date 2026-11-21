@@ -1,7 +1,6 @@
 package com.alvand.player.lyrics
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Log
 import com.alvand.player.data.Song
@@ -63,26 +62,6 @@ object LyricsManager {
 
     fun shouldFetchOnline(hasLocalLyrics: Boolean, onlineEnabled: Boolean): Boolean =
         !hasLocalLyrics && onlineEnabled
-
-    /** ۱) لیریک امبدد داخل تگ فایل — با بستن امن retriever */
-    suspend fun readEmbedded(song: Song, context: Context): LyricsResult? =
-        withContext(Dispatchers.IO) {
-            val mmr = MediaMetadataRetriever()
-            try {
-                if (song.isRemote) mmr.setDataSource(song.uri.toString(), HashMap())
-                else mmr.setDataSource(context, song.uri)
-                // MediaMetadataRetriever متن USLT را نمی‌دهد؛ فقط برای سازگاری آینده نگه داشته شده
-                null
-            } catch (e: Exception) {
-                Log.d("Lyrics", "embedded read failed", e)
-                null
-            } catch (e: OutOfMemoryError) {
-                Log.w("Lyrics", "embedded OOM", e)
-                null
-            } finally {
-                runCatching { mmr.release() }
-            }
-        }
 
     /** تلاش کامل: کش اپ + ID3 USLT + فایل lrc هم‌نام — بدون نیاز به اینترنت */
     suspend fun loadLocal(song: Song, context: Context): LyricsResult =

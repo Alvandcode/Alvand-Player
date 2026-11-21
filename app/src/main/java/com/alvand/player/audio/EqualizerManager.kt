@@ -3,7 +3,6 @@ package com.alvand.player.audio
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
-import android.media.audiofx.PresetReverb
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +19,7 @@ data class AudioSettings(
     val bassStrength: Int = 500, // 0..1000
     val volumeBoostDb: Int = 0, // 0..10 dB تقویت صدا
     val noiseReduction: Boolean = false,
-    val noiseLevel: Int = 50, // 0..100 شدت حذف نویز
-    val reverbPreset: Int = 0 // 0=off
+    val noiseLevel: Int = 50 // 0..100 شدت حذف نویز
 )
 
 /**
@@ -37,7 +35,6 @@ class EqualizerManager @Inject constructor() {
     private var eq: Equalizer? = null
     private var bass: BassBoost? = null
     private var loud: LoudnessEnhancer? = null
-    private var reverb: PresetReverb? = null
     private var sessionId: Int = 0
 
     private val _settings = MutableStateFlow(AudioSettings())
@@ -69,7 +66,6 @@ class EqualizerManager @Inject constructor() {
         val oldEq = eq
         val oldBass = bass
         val oldLoud = loud
-        val oldReverb = reverb
         var newEq: Equalizer? = null
         try {
             newEq = Equalizer(0, audioSessionId).apply { enabled = s.eqEnabled }
@@ -90,7 +86,6 @@ class EqualizerManager @Inject constructor() {
         runCatching { oldEq?.release() }
         runCatching { oldBass?.release() }
         runCatching { oldLoud?.release() }
-        runCatching { oldReverb?.release() }
         eq = newEq
         bass = runCatching {
             BassBoost(0, audioSessionId).apply {
@@ -102,19 +97,6 @@ class EqualizerManager @Inject constructor() {
             LoudnessEnhancer(audioSessionId).apply {
                 enabled = s.volumeBoostDb.coerceIn(0, 10) > 0
                 setTargetGain((s.volumeBoostDb.coerceIn(0, 10) * 100).coerceIn(0, 1000))
-            }
-        }.getOrNull()
-        reverb = runCatching {
-            PresetReverb(0, audioSessionId).apply {
-                val validPresets = setOf(
-                    PresetReverb.PRESET_NONE, PresetReverb.PRESET_SMALLROOM,
-                    PresetReverb.PRESET_MEDIUMROOM, PresetReverb.PRESET_LARGEROOM,
-                    PresetReverb.PRESET_MEDIUMHALL, PresetReverb.PRESET_LARGEHALL,
-                    PresetReverb.PRESET_PLATE
-                )
-                val p = s.reverbPreset.toShort()
-                enabled = s.reverbPreset > 0 && p in validPresets.map { it.toShort() }
-                if (enabled) preset = p
             }
         }.getOrNull()
         applyAll(s)
@@ -243,12 +225,10 @@ class EqualizerManager @Inject constructor() {
         runCatching { eq?.enabled = false }
         runCatching { bass?.enabled = false }
         runCatching { loud?.enabled = false }
-        runCatching { reverb?.enabled = false }
         runCatching { eq?.release() }
         runCatching { bass?.release() }
         runCatching { loud?.release() }
-        runCatching { reverb?.release() }
-        eq = null; bass = null; loud = null; reverb = null
+        eq = null; bass = null; loud = null
         sessionId = 0
     }
 }
