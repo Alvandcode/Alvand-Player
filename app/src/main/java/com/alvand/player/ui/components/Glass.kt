@@ -157,13 +157,19 @@ fun ControlsRow(
     val sub = if (big) 30.dp else 26.dp
     // حالت خاموش: طوسی خوانا (نه نیمه‌محو نامرئی) — کنتراست WCAG
     val offTint = pal.sub
+    // دسترس‌پذیری: TalkBack باید بداند هر دکمه چه می‌کند
+    val shuffleDesc = stringResource(com.alvand.player.R.string.shuffle)
+    val prevDesc = stringResource(com.alvand.player.R.string.widget_prev)
+    val nextDesc = stringResource(com.alvand.player.R.string.widget_next)
+    val toggleDesc = stringResource(if (playing) com.alvand.player.R.string.widget_pause else com.alvand.player.R.string.widget_play)
+    val repeatDesc = stringResource(com.alvand.player.R.string.repeat)
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onShuffle, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.Shuffle, null, tint = if (shuffle) pal.ink else offTint, modifier = Modifier.size(sub))
+            Icon(Icons.Default.Shuffle, shuffleDesc, tint = if (shuffle) pal.ink else offTint, modifier = Modifier.size(sub))
         }
         IconButton(onClick = onPrev, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.SkipPrevious, null, tint = pal.ink, modifier = Modifier.size(34.dp))
+            Icon(Icons.Default.SkipPrevious, prevDesc, tint = pal.ink, modifier = Modifier.size(34.dp))
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             FilledIconButton(
@@ -174,17 +180,17 @@ fun ControlsRow(
             ) {
                 Icon(
                     if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    null, modifier = Modifier.size(main * 0.45f)
+                    toggleDesc, modifier = Modifier.size(main * 0.45f)
                 )
             }
         }
         IconButton(onClick = onNext, modifier = Modifier.weight(1f)) {
-            Icon(Icons.Default.SkipNext, null, tint = pal.ink, modifier = Modifier.size(34.dp))
+            Icon(Icons.Default.SkipNext, nextDesc, tint = pal.ink, modifier = Modifier.size(34.dp))
         }
         IconButton(onClick = onRepeat, modifier = Modifier.weight(1f)) {
             Icon(
                 if (repeatMode == 2) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                null, tint = if (repeatMode == 0) offTint else pal.ink,
+                repeatDesc, tint = if (repeatMode == 0) offTint else pal.ink,
                 modifier = Modifier.size(sub)
             )
         }

@@ -450,12 +450,12 @@ fun PlayerScreen(
                             }
                         }
                     }
-                    // فضای دسته پایینی
-                    Spacer(Modifier.height(84.dp))
+                    // فضای دسته پایینی (اینست نوار ناوبری هم رزرو می‌شود)
+                    Spacer(Modifier.height(84.dp).navigationBarsPadding())
                 }
                 // دسته پایینی با لیبل قابل‌کشف — تپ لیست را بالا می‌آورد
                 Box(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding(),
                     contentAlignment = Alignment.BottomCenter
                 ) {
                     BottomArcHandle(

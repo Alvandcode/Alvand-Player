@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
@@ -58,6 +59,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // edge-to-edge تمیز: بدون اسکریم منسوخ windowTranslucentStatus؛
+        // اینست‌ها خود صفحات با statusBars/navigationBars/safeDrawing هندل می‌کنند
+        enableEdgeToEdge()
         if (savedInstanceState == null) {
             handleIntent(intent)
         }

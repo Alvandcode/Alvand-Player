@@ -1,8 +1,8 @@
 <resources>
     <!-- AppCompatActivity حتماً تم AppCompat می‌خواهد؛ تم framework باعث کرش لحظه باز شدن بود -->
+    <!-- windowTranslucentStatus حذف شد (منسوخ + اسکریم گرادیانی)؛ edge-to-edge از کد با enableEdgeToEdge() فعال می‌شود -->
     <style name="Theme.AlvandPlayer" parent="Theme.AppCompat.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowTranslucentStatus">true</item>
     </style>
 </resources>

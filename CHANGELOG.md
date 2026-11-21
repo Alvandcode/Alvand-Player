@@ -2,6 +2,22 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.8] — 2026-11-21
+
+### Fixed — رفع‌شده
+- 🖥️ **edge-to-edge تمیز**: پرچم منسوخ `windowTranslucentStatus` (که اسکریم
+  گرادیانی سیستم را روی بالای صفحه می‌گذاشت) حذف شد؛ به‌جایش `enableEdgeToEdge()`
+  در اکتیویتی فعال شد. نوار پایین پلیر حالا اینست نوار ناوبری را رعایت می‌کند و
+  روی اندروید ۱۵+ که edge-to-edge اجباری است یکسان می‌نشیند.
+  🖥️ **Clean edge-to-edge**: dropped the deprecated `windowTranslucentStatus`
+  (which drew the system gradient scrim) in favor of `enableEdgeToEdge()`;
+  the bottom handle now respects the navigation-bar inset and renders
+  consistently on Android 15+ where edge-to-edge is enforced.
+- ♿ **TalkBack کنترل‌های پخش**: دکمه‌های شافل/قبلی/پخش‌توقف/بعدی/تکرار حالا
+  contentDescription ترجمه‌شده دارند و در TalkBack نام‌گذاری می‌شوند.
+  ♿ **Playback controls a11y**: shuffle/previous/play-pause/next/repeat now
+  announce properly with localized labels.
+
 ## [1.7.7] — 2026-11-21
 
 ### Removed — کد مرده
