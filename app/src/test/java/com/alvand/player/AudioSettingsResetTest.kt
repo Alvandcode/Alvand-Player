@@ -23,7 +23,6 @@ class AudioSettingsResetTest {
         assertEquals(500, defaults.bassStrength)
         assertEquals(50, defaults.noiseLevel)
         assertEquals(false, defaults.noiseReduction)
-        assertEquals(0, defaults.reverbPreset)
     }
 
     @Test
@@ -35,8 +34,7 @@ class AudioSettingsResetTest {
             bassStrength = 1000,
             volumeBoostDb = 10,
             noiseReduction = true,
-            noiseLevel = 100,
-            reverbPreset = 3
+            noiseLevel = 100
         )
         assertNotEquals(defaults, messedUp)
 
@@ -48,8 +46,7 @@ class AudioSettingsResetTest {
             bassStrength = defaults.bassStrength,
             volumeBoostDb = defaults.volumeBoostDb,
             noiseReduction = defaults.noiseReduction,
-            noiseLevel = defaults.noiseLevel,
-            reverbPreset = defaults.reverbPreset
+            noiseLevel = defaults.noiseLevel
         )
         assertEquals(defaults, afterReset)
     }
