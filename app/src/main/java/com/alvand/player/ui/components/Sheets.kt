@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
@@ -207,7 +210,12 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             val mgr = vm.manager.eqManager
             repeat(mgr.bandCount) { i ->
                 val hz = mgr.bandFreqHz(i)
-                val label = if (hz in 1..999) "${hz}Hz" else "${hz / 1000}k"
+                val label = when {
+                    hz <= 0 -> ""
+                    hz < 1000 -> "${hz}Hz"
+                    hz % 1000 == 0 -> "${hz / 1000}k"
+                    else -> String.format(java.util.Locale.US, "%.1fk", hz / 1000f)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(label, color = pal.sub, fontSize = 11.sp, modifier = Modifier.width(44.dp))
                     Slider(
@@ -298,25 +306,36 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             if (lyrics.lines.isEmpty() && !loading) {
                 Text(stringResource(R.string.no_lyrics), color = pal.sub, fontSize = 13.sp)
             } else {
-                LazyColumn(Modifier.heightIn(max = 340.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(lyrics.lines.withIndex().toList()) { (i, l) ->
-                                    val active = i == activeIdx
-                                    Text(
-                                        l.text,
-                                        color = if (active) pal.ink else pal.sub.copy(alpha = 0.6f),
-                                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = if (active) 16.sp else 14.sp,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 1,
-                                        modifier = Modifier.fillMaxWidth()
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .padding(4.dp)
-                                            .then(if (active) Modifier.basicMarquee(
-                                                iterations = Int.MAX_VALUE,
-                                                spacing = MarqueeSpacing(16.dp)
-                                            ) else Modifier)
-                                    )
-                                }
+                // اسکرول خودکار به خط فعال: خط فعلی وسط کادر می‌ماند و کاربر
+                // لازم نیست دنبالش اسکرول کند. اسپیسر بالا/پایین ارتفاع نصف کادر را
+                // جبران می‌کند تا اسکرول‌تُ‌آیتِم واقعاً وسط‌چین شود.
+                val listState = rememberLazyListState()
+                LaunchedEffect(activeIdx, lyrics.lines.size) {
+                    if (lyrics.lines.isNotEmpty()) listState.animateScrollToItem(activeIdx + 1)
+                }
+                LazyColumn(
+                    state = listState,
+                    Modifier.heightIn(max = 340.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item { Spacer(Modifier.height(150.dp)) }
+                    itemsIndexed(lyrics.lines) { i, l ->
+                        val active = i == activeIdx
+                        Text(
+                            l.text,
+                            color = if (active) pal.ink else pal.sub.copy(alpha = 0.75f),
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = if (active) 16.sp else 14.sp,
+                            textAlign = TextAlign.Center,
+                            // لیریک برای خواندن است؛ دو خط پیچش می‌خورد نه marquee تک‌خطی
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .padding(4.dp)
+                        )
+                    }
+                    item { Spacer(Modifier.height(150.dp)) }
                 }
             }
             Spacer(Modifier.height(8.dp))

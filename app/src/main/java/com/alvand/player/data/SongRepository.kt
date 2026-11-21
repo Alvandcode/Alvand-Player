@@ -75,15 +75,17 @@ class SongRepository @Inject constructor(
         songs
     }
 
-    /** آهنگ‌های نمونه برای اولین اجرا (فقط وقتی هیچ لوکال/ریموت نیست) */
+    /** آهنگ‌های نمونه برای اولین اجرا (فقط وقتی هیچ لوکال/ریموت نیست).
+     *  نام‌های خنثی: این فایل‌ها تولیدی SoundHelix هستند نه آثار واقعی هنرمندان؛
+     *  نام‌های واقعی هم کاربر را گمراه می‌کرد و هم جستجوی لیریک نتیجه غلط می‌گرفت. */
     fun demoPlaylist(): List<Song> = listOf(
-        Song(-1, "Night Changes", "One Direction", "Dreamy Night",
+        Song(-1, "Demo Track 1", "SoundHelix", "Dreamy Night",
             Uri.parse("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"), 266000, true, "audio/mpeg"),
-        Song(-2, "Yellow", "Coldplay", "Dreamy Night",
+        Song(-2, "Demo Track 2", "SoundHelix", "Dreamy Night",
             Uri.parse("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"), 266000, true, "audio/mpeg"),
-        Song(-3, "Photograph", "Ed Sheeran", "Dreamy Night",
+        Song(-3, "Demo Track 3", "SoundHelix", "Dreamy Night",
             Uri.parse("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"), 269000, true, "audio/mpeg"),
-        Song(-4, "Until I Found You", "Stephen Sanchez", "Dreamy Night",
+        Song(-4, "Demo Track 4", "SoundHelix", "Dreamy Night",
             Uri.parse("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"), 178000, true, "audio/mpeg")
     )
 }

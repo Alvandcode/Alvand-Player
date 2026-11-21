@@ -2,6 +2,25 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.5] — 2026-11-21
+
+### Fixed — رفع‌شده
+- 🎤 **اسکرول خودکار لیریک**: در شیت لیریک کامل، خط فعال حالا وسط کادر می‌ماند و با
+  هر تغییر مصرع نرم اسکرول می‌شود — دیگر لازم نیست خودتان دنبال خط فعلی بروید؛
+  خطوط ۲ خطی می‌پیچند (به‌جای marquee تک‌خطی) و کنتراست خطوط غیرفعال بالاتر رفت.
+  🎤 **Lyrics auto-scroll**: the active line now stays centered and follows the
+  song smoothly in the full lyrics sheet — no more manual scrolling; lines wrap
+  to 2 rows instead of single-line marquee, inactive-line contrast is raised.
+- 🎚️ **لیبل باندهای اکولایزر با اعشار**: باند ۳۶۰۰ هرتز قبلاً «3k» نشان داده می‌شد؛
+  حالا کیلوهرتز با یک رقم اعشار است (3.6k) و باندهای ردیف کیلوهرتز کامل هم سالم‌اند.
+  🎚️ **Fractional EQ labels**: the 3600 Hz band used to display «3k»; kHz labels
+  now show one decimal (3.6k).
+- 🎭 **نام‌های خنثی برای پلی‌لیست دمو**: آهنگ‌های نمونه (تولیدی SoundHelix) قبلاً با
+  نام و اسم هنرمندان واقعی نشان داده می‌شدند؛ هم کاربر را گمراه می‌کرد و هم
+  جستجوی لیریک آنلاین نتیجه‌ی غلط می‌گرفت. حالا «Demo Track 1…4» هستند.
+  🎭 **Neutral demo playlist names**: sample tracks (generated audio) no longer
+  masquerade as real artists' songs.
+
 ## [1.7.4] — 2026-10-01
 
 ### Fixed — ارتفاع ویجت
