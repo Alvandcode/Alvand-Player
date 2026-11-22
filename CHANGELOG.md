@@ -2,6 +2,14 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.8.1] — 2026-11-22
+
+### Fixed — رفع‌شده
+- 🐛 فیکس کامپایل: escape شدن نقل‌قول و `+` اضافی در regex پاکسازی انتهای URL
+  (بیلد تگ v1.8.0 با همین خطا شکست خورده بود).
+  🐛 Compile fix: properly escape the quote and stray `+` in the
+  trailing-punctuation URL regex (the v1.8.0 tag build failed on this).
+
 ## [1.8.0] — 2026-11-21
 
 ### Fixed — رفع‌شده
