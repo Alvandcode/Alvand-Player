@@ -28,6 +28,11 @@ class AppLocaleTest {
     fun `normalize falls back to en`() {
         assertEquals("en", AppLocale.normalize("xx"))
         assertEquals("en", AppLocale.normalize(""))
-        assertEquals("en", AppLocale.normalize("zh-Hans-CN"))
+    }
+
+    @Test
+    fun `normalize maps supported region tags`() {
+        assertEquals("zh", AppLocale.normalize("zh-Hans-CN"))
+        assertEquals("pt", AppLocale.normalize("pt-BR"))
     }
 }
