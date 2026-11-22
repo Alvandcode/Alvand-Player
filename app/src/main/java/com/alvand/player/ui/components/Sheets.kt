@@ -246,8 +246,8 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 onValueChangeFinished = { vm.updateAudio(eq.copy(bassStrength = bassDraft.roundToInt())) },
                 valueRange = 0f..1000f,
                 colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
-            Text(stringResource(R.string.volume_boost, volDraft.roundToInt()), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             var volDraft by remember(eq.volumeBoostDb) { mutableStateOf(eq.volumeBoostDb.toFloat()) }
+            Text(stringResource(R.string.volume_boost, volDraft.roundToInt()), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Slider(volDraft, { volDraft = it },
                 onValueChangeFinished = { vm.updateAudio(eq.copy(volumeBoostDb = volDraft.roundToInt())) },
                 valueRange = 0f..10f, steps = 9,
