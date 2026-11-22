@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">کوئی نہیں</string>
     <string name="play_count">%1$d بار چلا</string>
     <string name="sort_shortest">سب سے چھوٹا</string>
+    <string name="rename_playlist">پلے لسٹ کا نام تبدیل کریں</string>
+    <string name="save">محفوظ کریں</string>
+    <string name="play_next">اگلا چلائیں</string>
+    <string name="add_to_queue">قطار میں شامل کریں</string>
 </resources>

@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">कोई नहीं</string>
     <string name="play_count">%1$d बार चला</string>
     <string name="sort_shortest">सबसे छोटे</string>
+    <string name="rename_playlist">प्लेलिस्ट का नाम बदलें</string>
+    <string name="save">सहेजें</string>
+    <string name="play_next">अगला चलाएँ</string>
+    <string name="add_to_queue">कतार में जोड़ें</string>
 </resources>

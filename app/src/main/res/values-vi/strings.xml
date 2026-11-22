@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">Không</string>
     <string name="play_count">Đã phát %1$d lần</string>
     <string name="sort_shortest">Ngắn nhất</string>
+    <string name="rename_playlist">Đổi tên danh sách phát</string>
+    <string name="save">Lưu</string>
+    <string name="play_next">Phát tiếp theo</string>
+    <string name="add_to_queue">Thêm vào hàng đợi</string>
 </resources>

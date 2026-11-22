@@ -145,4 +145,8 @@
     <string name="lyrics_source_none">Keine</string>
     <string name="play_count">%1$d-mal gespielt</string>
     <string name="sort_shortest">Kürzeste</string>
+    <string name="rename_playlist">Wiedergabeliste umbenennen</string>
+    <string name="save">Speichern</string>
+    <string name="play_next">Als Nächstes abspielen</string>
+    <string name="add_to_queue">Zur Warteschlange hinzufügen</string>
 </resources>

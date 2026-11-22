@@ -2,11 +2,8 @@ package com.alvand.player.player
 
 import android.content.ComponentName
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import java.io.File
-import org.json.JSONArray
-import org.json.JSONObject
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -155,7 +152,7 @@ class MusicPlayerManager @Inject constructor(
                     // صف خالی است، همان آهنگ/جای قبلی برمی‌گردد (بدون autoplay)
                     if (c.mediaItemCount == 0 && pendingQueue == null) {
                         loadPersistedQueue()?.let { (songs, idx) ->
-                            val pos = runCatching { posFile.readText().trim().toLongOrNull() }.getOrNull() ?: 0L
+                            val pos = QueueStore.loadPosition(queueDir)
                             applyQueue(songs, idx, autoplay = false)
                             runCatching { c.seekTo(pos.coerceAtLeast(0L)) }
                             push()
@@ -220,6 +217,34 @@ class MusicPlayerManager @Inject constructor(
         applyQueue(songs, startIndex, autoplay)
     }
 
+    /** افزودن آهنگ‌ها به صف: playNext = بلافاصله بعد از آهنگ فعلی، وگرنه انتهای صف */
+    fun addSongsToQueue(songs: List<Song>, playNext: Boolean) {
+        val c = controller ?: return
+        if (released || songs.isEmpty()) return
+        val insertAt = if (playNext) (c.currentMediaItemIndex + 1).coerceAtLeast(0) else c.mediaItemCount
+        runCatching { c.addMediaItems(insertAt, songs.map { toMediaItem(it) }) }
+            .onFailure { Log.w("Player", "addMediaItems failed", it); return }
+        // صف UI هم باید هم‌قدم باشد تا current lookup با mediaId درست بماند
+        val q = _ui.value.queue.toMutableList()
+        q.addAll(insertAt.coerceAtMost(q.size), songs)
+        _ui.value = _ui.value.copy(queue = q)
+        push()
+        persistQueue(q, c.currentMediaItemIndex)
+    }
+
+    private fun toMediaItem(s: Song): MediaItem =
+        MediaItem.Builder()
+            .setUri(s.uri)
+            .setMediaId(s.id.toString())
+            .setMimeType(s.mimeHint)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(s.title).setArtist(s.artist).setAlbumTitle(s.album)
+                    .setIsPlayable(true).setIsBrowsable(false)
+                    .setDurationMs(if (s.durationMs > 0) s.durationMs else null)
+                    .build()
+            ).build()
+
     private fun applyQueue(songs: List<Song>, startIndex: Int, autoplay: Boolean) {
         val c = controller ?: return
         if (released) return
@@ -230,19 +255,7 @@ class MusicPlayerManager @Inject constructor(
             clearPersisted()
             return
         }
-        val items = songs.map { s ->
-            MediaItem.Builder()
-                .setUri(s.uri)
-                .setMediaId(s.id.toString())
-                .setMimeType(s.mimeHint)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(s.title).setArtist(s.artist).setAlbumTitle(s.album)
-                        .setIsPlayable(true).setIsBrowsable(false)
-                        .setDurationMs(if (s.durationMs > 0) s.durationMs else null)
-                        .build()
-                ).build()
-        }
+        val items = songs.map { toMediaItem(it) }
         runCatching {
             c.setMediaItems(items, startIndex.coerceIn(items.indices), C.TIME_UNSET)
             c.prepare()
@@ -444,72 +457,22 @@ class MusicPlayerManager @Inject constructor(
         )
     }
 
-    // ---- پایدارسازی صف پخش بین اجراها ----
-    // دو فایل کوچک: last_queue.json (صف + ایندکس) و last_pos.json (موقعیت)
-    // تا بعد از ری‌استارت سرویس/اپ، صف با همان آهنگ و جای آن برگردد (بدون autoplay)
-    private val queueFile: File get() = File(app.filesDir, "last_queue.json")
-    private val posFile: File get() = File(app.filesDir, "last_pos.json")
+    // ---- پایدارسازی صف پخش بین اجراها (منطق در QueueStore، تست‌پذیر) ----
+    private val queueDir: File get() = app.filesDir
 
     private fun persistQueue(songs: List<Song>, index: Int) {
-        scope.launch(Dispatchers.IO) {
-            runCatching {
-                val arr = JSONArray()
-                songs.forEach { s ->
-                    arr.put(
-                        JSONObject()
-                            .put("id", s.id)
-                            .put("title", s.title)
-                            .put("artist", s.artist)
-                            .put("album", s.album)
-                            .put("uri", s.uri.toString())
-                            .put("durationMs", s.durationMs)
-                            .put("isRemote", s.isRemote)
-                            .putOpt("mimeHint", s.mimeHint)
-                    )
-                }
-                val f = queueFile
-                f.parentFile?.mkdirs()
-                f.writeText(JSONObject().put("index", index).put("songs", arr).toString())
-            }
-        }
+        scope.launch(Dispatchers.IO) { QueueStore.save(queueDir, songs, index) }
     }
 
     private fun persistPosition(positionMs: Long) {
-        scope.launch(Dispatchers.IO) {
-            runCatching { posFile.writeText(positionMs.toString()) }
-        }
+        scope.launch(Dispatchers.IO) { QueueStore.savePosition(queueDir, positionMs) }
     }
 
     private fun clearPersisted() {
-        scope.launch(Dispatchers.IO) {
-            runCatching { queueFile.delete(); posFile.delete() }
-        }
+        scope.launch(Dispatchers.IO) { QueueStore.clear(queueDir) }
     }
 
-    private fun loadPersistedQueue(): Pair<List<Song>, Int>? {
-        val f = queueFile
-        if (!f.isFile) return null
-        return runCatching {
-            val obj = JSONObject(f.readText())
-            val arr = obj.getJSONArray("songs")
-            val songs = ArrayList<Song>(arr.length())
-            for (i in 0 until arr.length()) {
-                val o = arr.getJSONObject(i)
-                songs += Song(
-                    id = o.getLong("id"),
-                    title = o.optString("title"),
-                    artist = o.optString("artist"),
-                    album = o.optString("album"),
-                    uri = Uri.parse(o.getString("uri")),
-                    durationMs = o.optLong("durationMs"),
-                    isRemote = o.optBoolean("isRemote"),
-                    mimeHint = o.optString("mimeHint").takeIf { it.isNotEmpty() }
-                )
-            }
-            if (songs.isEmpty()) null
-            else songs to obj.optInt("index", 0).coerceIn(0, songs.size - 1)
-        }.getOrNull()
-    }
+    private fun loadPersistedQueue(): Pair<List<Song>, Int>? = QueueStore.load(queueDir)
 
     fun release() {
         if (released) return

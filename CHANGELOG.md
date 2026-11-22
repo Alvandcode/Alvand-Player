@@ -2,6 +2,38 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.9.0] — 2026-11-22
+
+### Added — افزوده‌شده
+- 💿 **تب‌های آلبوم و خواننده در شیت کتابخانه**: گروه‌بندی‌هایی که از قبل محاسبه
+  و تست می‌شدند حالا UI دارند — آلبوم با کاور/خواننده/تعداد، خواننده با شمار
+  آلبوم‌ها؛ لمس آهنگ، همان آلبوم/خواننده را از همان‌جا پخش می‌کند.
+  💿 **Album & artist tabs**: the previously UI-less groupings now render in
+  the library sheet; tapping a song plays that album/artist from that point.
+- ⏭️ **منوی طولانی‌فشار آهنگ**: پخش بعدی، افزودن به صف، افزودن به پلی‌لیست و
+  لایک/حذف لایک — درست داخل لیست، بدون رفتن به منو.
+  ⏭️ **Song long-press menu**: play next, add to queue, add to playlist and
+  like — right in the list.
+- ✏️ **تغییر نام پلی‌لیست**: طولانی‌فشار روی پلی‌لیست → تغییر نام یا حذف.
+  ✏️ **Playlist rename**: long-press a playlist for rename/delete.
+- 🚗 **Android Auto کامل‌تر**: مرور پلی‌لیست‌ها (به‌علاوه گرهٔ صف فعلی) و
+  رزولوشن آهنگ‌های درخواستی دستیار صوتی از MediaStore با mediaId.
+  🚗 **Better Android Auto**: browse playlists (plus the current-queue node)
+  and resolve assistant media requests by mediaId from MediaStore.
+
+### Improved — بهبود
+- 🖼️ کاور امبدد آهنگ‌های استریم https یک‌بار از خود استریم خوانده و کَش می‌شود
+  (پس‌زمینه/تم داینامیک برای لینک‌های مستقیم هم زنده می‌شود؛ منفی‌کش ۱۰ دقیقه‌ای
+  مانع باز شدن شبکهٔ مکرر است).
+  🖼️ Embedded artwork for https streams is read once and cached, so dynamic
+  theming works for direct links too.
+- 📚 سقف اسکن کتابخانه ۸۰۰۰ ← ۱۲۰۰۰ آهنگ.
+  📚 Library scan cap raised 8000 → 12000.
+
+### Tests — تست
+- ✅ `QueueStoreTest`: رفت‌وبرگشت صف روی دیسک، کلمپ ایندکس، فایل خراب/ناموجود.
+  ✅ `QueueStoreTest`: disk round-trip, index clamping, corrupt/missing files.
+
 ## [1.8.2] — 2026-11-22
 
 ### Added — افزوده‌شده

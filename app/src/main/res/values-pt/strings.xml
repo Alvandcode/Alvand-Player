@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">Nenhum</string>
     <string name="play_count">%1$d reproduções</string>
     <string name="sort_shortest">Mais curtas</string>
+    <string name="rename_playlist">Renomear playlist</string>
+    <string name="save">Guardar</string>
+    <string name="play_next">Reproduzir a seguir</string>
+    <string name="add_to_queue">Adicionar à fila</string>
 </resources>

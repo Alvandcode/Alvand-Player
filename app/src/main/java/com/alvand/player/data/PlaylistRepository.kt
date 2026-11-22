@@ -33,6 +33,11 @@ class PlaylistRepository @Inject constructor(
 
     suspend fun deletePlaylist(id: Long) = dao.deletePlaylist(id)
 
+    /** تغییر نام پلی‌لیست — ورودی از UI پاک می‌شود */
+    suspend fun renamePlaylist(id: Long, name: String) {
+        dao.renamePlaylist(id, name.trim().take(60))
+    }
+
     /** اضافه به پلی‌لیست بدون تکرار؛ position خودکار */
     suspend fun addToPlaylist(pid: Long, song: Song): Boolean {
         if (dao.countInPlaylist(pid, song.id) > 0) return false

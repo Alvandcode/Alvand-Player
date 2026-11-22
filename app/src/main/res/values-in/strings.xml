@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">Tidak ada</string>
     <string name="play_count">%1$d kali diputar</string>
     <string name="sort_shortest">Terpendek</string>
+    <string name="rename_playlist">Ganti nama playlist</string>
+    <string name="save">Simpan</string>
+    <string name="play_next">Putar berikutnya</string>
+    <string name="add_to_queue">Tambahkan ke antrean</string>
 </resources>

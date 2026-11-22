@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">无</string>
     <string name="play_count">播放 %1$d 次</string>
     <string name="sort_shortest">最短</string>
+    <string name="rename_playlist">重命名播放列表</string>
+    <string name="save">保存</string>
+    <string name="play_next">下一首播放</string>
+    <string name="add_to_queue">添加到队列</string>
 </resources>

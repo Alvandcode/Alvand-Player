@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">لا يوجد</string>
     <string name="play_count">%1$d مرات التشغيل</string>
     <string name="sort_shortest">الأقصر</string>
+    <string name="rename_playlist">إعادة تسمية قائمة التشغيل</string>
+    <string name="save">حفظ</string>
+    <string name="play_next">تشغيل التالي</string>
+    <string name="add_to_queue">إضافة إلى قائمة الانتظار</string>
 </resources>

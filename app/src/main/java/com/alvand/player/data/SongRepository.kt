@@ -18,7 +18,7 @@ class SongRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    suspend fun loadLocalSongs(limit: Int = 8000): List<Song> = withContext(Dispatchers.IO) {
+    suspend fun loadLocalSongs(limit: Int = 12000): List<Song> = withContext(Dispatchers.IO) {
         val songs = ArrayList<Song>(1024)
         val collection = if (Build.VERSION.SDK_INT >= 29) {
             MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)

@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">Yok</string>
     <string name="play_count">%1$d kez çalındı</string>
     <string name="sort_shortest">En kısa</string>
+    <string name="rename_playlist">Çalma listesini yeniden adlandır</string>
+    <string name="save">Kaydet</string>
+    <string name="play_next">Sıradaki çal</string>
+    <string name="add_to_queue">Sıraya ekle</string>
 </resources>

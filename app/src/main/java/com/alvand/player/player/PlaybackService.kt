@@ -27,6 +27,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -50,6 +51,20 @@ class PlaybackService : MediaLibraryService() {
     private val settings: SettingsRepo by lazy { SettingsRepo(applicationContext) }
 
     /**
+     * DAO برای مرور پلی‌لیست‌ها در Android Auto. اتصال دوم به همان فایل alvand.db
+     * بی‌خطر است (SQLite چند-کانکشن)؛ اگر خطا خورد، Auto فقط صف فعلی را می‌بیند.
+     */
+    private val libraryDao by lazy {
+        runCatching {
+            androidx.room.Room.databaseBuilder(
+                applicationContext,
+                com.alvand.player.data.local.AlvandDatabase::class.java,
+                "alvand.db"
+            ).build().libraryDao()
+        }.getOrNull()
+    }
+
+    /**
      * علاقه‌مندی‌ها یک‌بار جمع می‌شوند و در حافظه می‌مانند؛ pushWidget روی هر
      * تغییر وضعیت پخش صدا زده می‌شود و نباید هر بار دیسک را بخواند.
      */
@@ -70,6 +85,12 @@ class PlaybackService : MediaLibraryService() {
 
         /** روت کتابخانه برای Android Auto */
         const val ROOT_ID = "alvand-root"
+
+        /** پیشوند mediaId پلی‌لیست در مرور Auto */
+        const val PLAYLIST_PREFIX = "pl:"
+
+        /** mediaId گرهٔ صف فعلی در مرور Auto */
+        const val QUEUE_ID = "queue"
 
         /** سقف هر صفحهٔ browse تا از محدودیت Binder عبور نکنیم */
         const val MAX_BROWSE_PAGE = 100
@@ -164,7 +185,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
 
-    /** کتابخانه حداقلی برای Android Auto: root = صف فعلی (فاز بعد: پلی‌لیست‌ها/آلبوم‌ها) */
+    /** کتابخانه برای Android Auto: root = پلی‌لیست‌ها + صف فعلی */
     private val libraryCallback = object : MediaLibraryService.MediaLibrarySession.Callback {
         override fun onGetLibraryRoot(
             session: MediaLibraryService.MediaLibrarySession,
@@ -192,15 +213,84 @@ class PlaybackService : MediaLibraryService() {
             pageSize: Int,
             params: MediaLibraryService.LibraryParams?
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            val p = player
-            val all: List<MediaItem> = if (parentId == ROOT_ID && p != null && p.mediaItemCount > 0) {
-                (0 until p.mediaItemCount).mapNotNull { runCatching { p.getMediaItemAt(it) }.getOrNull() }
-            } else emptyList()
             val size = pageSize.coerceIn(1, MAX_BROWSE_PAGE)
-            val from = (page * size).coerceAtMost(all.size)
-            val to = (from + size).coerceAtMost(all.size)
-            val items = if (from < to) all.subList(from, to) else emptyList()
-            return Futures.immediateFuture(LibraryResult.ofItemList(items, params))
+            val future = com.google.common.util.concurrent.SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
+            scope.launch(Dispatchers.IO) {
+                val all: List<MediaItem> = runCatching {
+                    when {
+                        // روت: پلی‌لیست‌ها + گرهٔ صف فعلی
+                        parentId == ROOT_ID -> {
+                            val nodes = ArrayList<MediaItem>()
+                            libraryDao?.let { dao ->
+                                val pls = kotlinx.coroutines.runBlocking {
+                                    dao.observePlaylists().first()
+                                }
+                                pls.forEach { pl ->
+                                    nodes += MediaItem.Builder()
+                                        .setMediaId("$PLAYLIST_PREFIX${pl.id}")
+                                        .setMediaMetadata(
+                                            MediaMetadata.Builder()
+                                                .setTitle(pl.name)
+                                                .setIsBrowsable(true)
+                                                .setIsPlayable(false)
+                                                .build()
+                                        ).build()
+                                }
+                            }
+                            nodes += MediaItem.Builder()
+                                .setMediaId(QUEUE_ID)
+                                .setMediaMetadata(
+                                    MediaMetadata.Builder()
+                                        .setTitle(getString(R.string.playlist))
+                                        .setIsBrowsable(true)
+                                        .setIsPlayable(false)
+                                        .build()
+                                ).build()
+                            nodes
+                        }
+                        // صف فعلی پلیر
+                        parentId == QUEUE_ID -> {
+                            val p = player
+                            if (p != null && p.mediaItemCount > 0)
+                                (0 until p.mediaItemCount).mapNotNull { runCatching { p.getMediaItemAt(it) }.getOrNull() }
+                            else emptyList()
+                        }
+                        // آهنگ‌های یک پلی‌لیست
+                        parentId.startsWith(PLAYLIST_PREFIX) -> {
+                            val pid = parentId.removePrefix(PLAYLIST_PREFIX).toLongOrNull()
+                            val dao = libraryDao
+                            if (pid != null && dao != null) {
+                                val rows = kotlinx.coroutines.runBlocking {
+                                    dao.observePlaylistSongs(pid).first()
+                                }
+                                rows.mapNotNull { e ->
+                                    val uri = runCatching { android.net.Uri.parse(e.uri) }.getOrNull()
+                                        ?: return@mapNotNull null
+                                    MediaItem.Builder()
+                                        .setUri(uri)
+                                        .setMediaId(e.songId.toString())
+                                        .setMediaMetadata(
+                                            MediaMetadata.Builder()
+                                                .setTitle(e.title)
+                                                .setArtist(e.artist)
+                                                .setAlbumTitle(e.album)
+                                                .setDurationMs(if (e.durationMs > 0) e.durationMs else null)
+                                                .setIsPlayable(true)
+                                                .setIsBrowsable(false)
+                                                .build()
+                                        ).build()
+                                }
+                            } else emptyList()
+                        }
+                        else -> emptyList()
+                    }
+                }.getOrDefault(emptyList())
+                val from = (page * size).coerceAtMost(all.size)
+                val to = (from + size).coerceAtMost(all.size)
+                val items = if (from < to) all.subList(from, to) else emptyList()
+                future.set(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
+            }
+            return future
         }
 
         override fun onAddMediaItems(
@@ -208,9 +298,54 @@ class PlaybackService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             mediaItems: List<MediaItem>
         ): ListenableFuture<List<MediaItem>> {
-            // درخواست صوتی Auto/Assistant را همان‌طور که هست قبول کن (رزولوشن URI در MusicPlayerManager)
-            return Futures.immediateFuture(mediaItems)
+            // آیتم‌های بدون URI (درخواست دستیار) را از MediaStore با mediaId رزولو کن
+            val future = com.google.common.util.concurrent.SettableFuture.create<List<MediaItem>>()
+            scope.launch(Dispatchers.IO) {
+                val resolved = mediaItems.map { item ->
+                    if (item.localConfiguration?.uri != null) item
+                    else item.mediaId?.toLongOrNull()?.let { resolveLocalSong(it, item) } ?: item
+                }.filter { it.localConfiguration?.uri != null }
+                future.set(resolved)
+            }
+            return future
         }
+    }
+
+    /** آهنگ با id MediaStore را برای دستیار صوتی رزولو می‌کند */
+    private fun resolveLocalSong(id: Long, template: MediaItem): MediaItem? {
+        val collection = if (android.os.Build.VERSION.SDK_INT >= 29)
+            android.provider.MediaStore.Audio.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL)
+        else android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        return runCatching {
+            contentResolver.query(
+                collection,
+                arrayOf(
+                    android.provider.MediaStore.Audio.Media._ID,
+                    android.provider.MediaStore.Audio.Media.TITLE,
+                    android.provider.MediaStore.Audio.Media.ARTIST,
+                    android.provider.MediaStore.Audio.Media.ALBUM,
+                    android.provider.MediaStore.Audio.Media.DURATION
+                ),
+                "${android.provider.MediaStore.Audio.Media._ID} = ?",
+                arrayOf(id.toString()),
+                null
+            )?.use { c ->
+                if (!c.moveToFirst()) return null
+                val uri = android.content.ContentUris.withAppendedId(collection, id)
+                MediaItem.Builder()
+                    .setUri(uri)
+                    .setMediaId(id.toString())
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(c.getString(1) ?: "")
+                            .setArtist(c.getString(2) ?: "")
+                            .setAlbumTitle(c.getString(3) ?: "")
+                            .setDurationMs(c.getLong(4).takeIf { it > 0 })
+                            .setIsPlayable(true)
+                            .build()
+                    ).build()
+            }
+        }.getOrNull()
     }
 
     /** اکشن‌های ویجت (بدون باز کردن اپ) */

@@ -62,9 +62,14 @@ object Artwork {
         }
         if (isNegativeCached(song.id)) return@withContext null
         if (song.isRemote) {
-            // استریم: فعلاً کاور ریموت نداریم (Coil در UI لود می‌کند) — منفی‌کش تا تکرار نشود
-            synchronized(negativeCache) { negativeCache[song.id] = System.currentTimeMillis() }
-            return@withContext null
+            // استریم https: کاور امبدد را یک‌بار از خود استریم می‌خوانیم (ID3/APIC)
+            // با منفی‌کش ۱۰ دقیقه‌ای که لینک‌های بدون کاور هر بار شبکه باز نکنند
+            val bmp = decodeRemote(song.uri, maxSizePx)
+            mutex.withLock {
+                if (bmp != null) bitmapCache.put(song.id, bmp)
+                else synchronized(negativeCache) { negativeCache[song.id] = System.currentTimeMillis() }
+            }
+            return@withContext bmp
         }
         val bmp: Bitmap? = decodeEmbedded(ctx, song.uri, maxSizePx)
         mutex.withLock {
@@ -72,6 +77,30 @@ object Artwork {
             else synchronized(negativeCache) { negativeCache[song.id] = System.currentTimeMillis() }
         }
         bmp
+    }
+
+    /** کاور امبدد از استریم https — فقط برای https (محدودیت منفی‌کش مانع اسپم شبکه می‌شود) */
+    private fun decodeRemote(uri: Uri, maxSizePx: Int): Bitmap? = runCatching {
+        val scheme = uri.scheme?.lowercase() ?: return null
+        if (scheme != "https") return null
+        val mmr = MediaMetadataRetriever()
+        try {
+            mmr.setDataSource(uri.toString(), HashMap())
+            val data = mmr.embeddedPicture ?: return null
+            decodeDownsampled(data, maxSizePx)
+        } finally {
+            runCatching { mmr.release() }
+        }
+    }.getOrNull()
+
+    /** دیکد بایت‌ها با دان‌سمپل تا بیت‌مپ بزرگ روی حافظه ننشیند */
+    private fun decodeDownsampled(data: ByteArray, maxSizePx: Int): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(data, 0, data.size, bounds)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= maxSizePx && bounds.outHeight / (sample * 2) >= maxSizePx) sample *= 2
+        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+        return BitmapFactory.decodeByteArray(data, 0, data.size, opts)
     }
 
     /**

@@ -3,6 +3,8 @@ package com.alvand.player.ui.screens
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -40,6 +42,145 @@ import kotlinx.coroutines.launch
 const val TAB_SONGS = 0
 const val TAB_PLAYLISTS = 1
 const val TAB_RECENT = 2
+const val TAB_ALBUMS = 3
+const val TAB_ARTISTS = 4
+
+/** تب آلبوم‌ها: گروه‌بندی از متادیتای MediaStore؛ لمس گروه → باز شدن؛ لمس آهنگ → پخش آلبوم از همان‌جا */
+@Composable
+fun AlbumsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit = {}) {
+    val groups by vm.albumGroups.collectAsState()
+    val pal = LocalAP.current
+    var expanded by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+        if (groups.isEmpty()) {
+            Text(stringResource(R.string.no_music), color = pal.sub, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
+        } else {
+            Column(Modifier.heightIn(max = 340.dp).verticalScroll(rememberScrollState())) {
+                groups.forEach { g ->
+                    val open = expanded == g.name
+                    Column(
+                        Modifier.fillMaxWidth()
+                            .clickable { expanded = if (open) null else g.name }
+                            .padding(vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ArtImage(g.artworkSong, Modifier.size(44.dp), RoundedCornerShape(12.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(g.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)
+                                Text(
+                                    "${g.artist.takeIf { it.isNotBlank() } ?: "—"} • ${stringResource(R.string.songs_n, g.songs.size)}",
+                                    color = pal.sub, fontSize = 12.sp, maxLines = 1
+                                )
+                            }
+                            Icon(
+                                if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                null, tint = pal.sub, modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        if (open) {
+                            Column(
+                                Modifier.padding(start = 54.dp, top = 4.dp)
+                                    .heightIn(max = 240.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                g.songs.forEachIndexed { i, s ->
+                                    Row(
+                                        Modifier.fillMaxWidth()
+                                            .clickable {
+                                                onRequestNotificationPermission()
+                                                vm.playList(g.songs, i)
+                                            }
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(s.title, color = pal.ink, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                                        Text(fmtTime(s.durationMs), color = pal.sub, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = pal.track.copy(alpha = 0.5f))
+                }
+            }
+        }
+    }
+}
+
+/** تب خواننده‌ها: همان الگوی آلبوم‌ها */
+@Composable
+fun ArtistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit = {}) {
+    val groups by vm.artistGroups.collectAsState()
+    val pal = LocalAP.current
+    var expanded by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+        if (groups.isEmpty()) {
+            Text(stringResource(R.string.no_music), color = pal.sub, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
+        } else {
+            Column(Modifier.heightIn(max = 340.dp).verticalScroll(rememberScrollState())) {
+                groups.forEach { g ->
+                    val open = expanded == g.name
+                    Column(
+                        Modifier.fillMaxWidth()
+                            .clickable { expanded = if (open) null else g.name }
+                            .padding(vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(44.dp).clip(CircleShape).background(pal.glass),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    g.name.take(1).uppercase(),
+                                    color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(g.name, color = pal.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)
+                                Text(
+                                    "${stringResource(R.string.tab_albums)}: ${g.albums} • ${stringResource(R.string.songs_n, g.songs.size)}",
+                                    color = pal.sub, fontSize = 12.sp, maxLines = 1
+                                )
+                            }
+                            Icon(
+                                if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                null, tint = pal.sub, modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        if (open) {
+                            Column(
+                                Modifier.padding(start = 54.dp, top = 4.dp)
+                                    .heightIn(max = 240.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                g.songs.forEachIndexed { i, s ->
+                                    Row(
+                                        Modifier.fillMaxWidth()
+                                            .clickable {
+                                                onRequestNotificationPermission()
+                                                vm.playList(g.songs, i)
+                                            }
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(s.title, color = pal.ink, fontSize = 13.sp, maxLines = 1)
+                                            Text(s.album.takeIf { it.isNotBlank() } ?: "—", color = pal.sub, fontSize = 11.sp, maxLines = 1)
+                                        }
+                                        Text(fmtTime(s.durationMs), color = pal.sub, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = pal.track.copy(alpha = 0.5f))
+                }
+            }
+        }
+    }
+}
 
 /**
  * نوار تب کتابخانه (آهنگ‌ها / پلی‌لیست‌ها / اخیر) با زیرخط accent،
@@ -51,10 +192,15 @@ fun LibraryTabs(current: Int, accent: androidx.compose.ui.graphics.Color, onSele
     val items = listOf(
         TAB_SONGS to stringResource(R.string.tab_songs),
         TAB_PLAYLISTS to stringResource(R.string.tab_playlists),
-        TAB_RECENT to stringResource(R.string.tab_recent)
+        TAB_RECENT to stringResource(R.string.tab_recent),
+        TAB_ALBUMS to stringResource(R.string.tab_albums),
+        TAB_ARTISTS to stringResource(R.string.tab_artists)
     )
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 22.dp),
+        Modifier.fillMaxWidth()
+            // پنج تب ممکن است روی صفحهٔ کوچک جا نشود
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 22.dp),
         horizontalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         items.forEach { (id, label) ->
@@ -83,7 +229,7 @@ fun LibraryTabs(current: Int, accent: androidx.compose.ui.graphics.Color, onSele
 }
 
 /** صفحه اصلی Mono+Aura: کاور سینمایی + بک‌گراند بلر + کنترل‌های تمیز */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PlayerScreen(
     vm: AppViewModel,
@@ -120,6 +266,10 @@ fun PlayerScreen(
     val filteredSongs by vm.filteredSongs.collectAsState()
     val isFiltering = searchQuery.isNotBlank() || favoritesOnly
     val shownSongs = filteredSongs
+    val albumGroups by vm.albumGroups.collectAsState()
+    val artistGroups by vm.artistGroups.collectAsState()
+    // آهنگ انتخاب‌شده برای منوی طولانی‌فشار
+    var menuSong by remember { mutableStateOf<Song?>(null) }
     val current = state.current
     val dur = state.durationMs.coerceAtLeast(1L)
     val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
@@ -199,6 +349,8 @@ fun PlayerScreen(
                     when (libraryTab) {
                         TAB_PLAYLISTS -> "${stringResource(R.string.tab_playlists)} (${playlists.size})"
                         TAB_RECENT -> "${stringResource(R.string.tab_recent)} (${recent.size})"
+                        TAB_ALBUMS -> "${stringResource(R.string.tab_albums)} (${albumGroups.size})"
+                        TAB_ARTISTS -> "${stringResource(R.string.tab_artists)} (${artistGroups.size})"
                         else -> "${stringResource(R.string.playlist)} (${shownSongs.size})"
                     },
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
@@ -209,6 +361,8 @@ fun PlayerScreen(
             when (libraryTab) {
                 TAB_PLAYLISTS -> PlaylistsTab(vm, onRequestNotificationPermission)
                 TAB_RECENT -> RecentTab(vm, onRequestNotificationPermission)
+                TAB_ALBUMS -> AlbumsTab(vm, onRequestNotificationPermission)
+                TAB_ARTISTS -> ArtistsTab(vm, onRequestNotificationPermission)
                 else -> {
             // نوار ابزار کتابخانه: جستجو / فقط علاقه‌مندی‌ها / مرتب‌سازی
             val sortOptions = listOf(
@@ -314,10 +468,13 @@ fun PlayerScreen(
                             .padding(horizontal = 14.dp, vertical = 3.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (active) pal.glass else androidx.compose.ui.graphics.Color.Transparent)
-                            .clickable {
-                                onRequestNotificationPermission()
-                                vm.playList(shownSongs, i)
-                            }
+                            .combinedClickable(
+                                onClick = {
+                                    onRequestNotificationPermission()
+                                    vm.playList(shownSongs, i)
+                                },
+                                onLongClick = { menuSong = s }
+                            )
                             .padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -347,6 +504,39 @@ fun PlayerScreen(
                         if (s.id in liked) {
                             Icon(Icons.Default.Favorite, null, tint = dyn.accent, modifier = Modifier.size(13.dp))
                             Spacer(Modifier.width(5.dp))
+                        }
+                        // منوی طولانی‌فشار: پخش بعدی / افزودن به صف / پلی‌لیست / لایک
+                        DropdownMenu(expanded = menuSong == s, onDismissRequest = { menuSong = null }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.play_next), fontSize = 13.sp, color = pal.ink) },
+                                leadingIcon = { Icon(Icons.Default.SkipNext, null, tint = pal.sub, modifier = Modifier.size(18.dp)) },
+                                onClick = { vm.playNext(listOf(s)); menuSong = null }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_to_queue), fontSize = 13.sp, color = pal.ink) },
+                                leadingIcon = { Icon(Icons.Default.Queue, null, tint = pal.sub, modifier = Modifier.size(18.dp)) },
+                                onClick = { vm.addToQueue(listOf(s)); menuSong = null }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_to_playlist), fontSize = 13.sp, color = pal.ink) },
+                                leadingIcon = { Icon(Icons.Default.PlaylistAdd, null, tint = pal.sub, modifier = Modifier.size(18.dp)) },
+                                onClick = { songToAdd = s; menuSong = null }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(if (s.id in liked) R.string.unlike else R.string.like),
+                                        fontSize = 13.sp, color = pal.ink
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        if (s.id in liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        null, tint = pal.sub, modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = { vm.toggleLike(s.id); menuSong = null }
+                            )
                         }
                         // افزودن همین آهنگ به پلی‌لیست، بدون رفتن به منو
                         IconButton(

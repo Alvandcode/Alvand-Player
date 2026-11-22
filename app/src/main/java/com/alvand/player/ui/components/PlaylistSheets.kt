@@ -1,7 +1,9 @@
 package com.alvand.player.ui.components
 
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +26,31 @@ import com.alvand.player.AppViewModel
 import com.alvand.player.R
 import com.alvand.player.data.Song
 import com.alvand.player.ui.theme.LocalAP
+
+/** دیالوگ تغییر نام پلی‌لیست */
+@Composable
+fun RenamePlaylistDialog(initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rename_playlist)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = name.isNotBlank(),
+                onClick = { if (name.isNotBlank()) onConfirm(name.trim()) }
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } }
+    )
+}
 
 /** دیالوگ ساخت پلی‌لیست جدید */
 @Composable
@@ -113,6 +140,7 @@ fun AddToPlaylistDialog(vm: AppViewModel, song: Song, onDismiss: () -> Unit) {
 
 /** تب پلی‌لیست‌ها + اخیراً پخش‌شده — داخل شیت کتابخانه */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit = {}) {
     val playlists by vm.playlistList.collectAsState()
     val selectedId by vm.selectedPlaylistId.collectAsState()
@@ -121,6 +149,7 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
     val ctx = LocalContext.current
     var showCreate by remember { mutableStateOf(false) }
     var confirmDeleteId by remember { mutableStateOf<Long?>(null) }
+    var renameTarget by remember { mutableStateOf<PlaylistEntity?>(null) }
     // ترتیب خوش‌بینانه پس از جابه‌جایی؛ با تغییر محتوای پلی‌لیست بی‌اثر می‌شود
     var localOrder by remember { mutableStateOf<List<Long>?>(null) }
 
@@ -141,11 +170,15 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
                 val expanded = selectedId == pl.id
                 Column(
                     Modifier.fillMaxWidth()
-                        .clickable {
-                            // باز کردن پلی‌لیست دیگر یعنی ترتیب قبلی دیگر ربطی ندارد
-                            localOrder = null
-                            vm.selectPlaylist(if (expanded) null else pl.id)
-                        }
+                        .combinedClickable(
+                            onClick = {
+                                // باز کردن پلی‌لیست دیگر یعنی ترتیب قبلی دیگر ربطی ندارد
+                                localOrder = null
+                                vm.selectPlaylist(if (expanded) null else pl.id)
+                            },
+                            // طولانی‌فشار → تغییر نام / حذف
+                            onLongClick = { renameTarget = pl }
+                        )
                         .padding(vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -267,6 +300,13 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
         }
     }
     if (showCreate) CreatePlaylistDialog(vm, onDismiss = { showCreate = false })
+    renameTarget?.let { pl ->
+        RenamePlaylistDialog(
+            initial = pl.name,
+            onConfirm = { newName -> vm.renamePlaylist(pl.id, newName); renameTarget = null },
+            onDismiss = { renameTarget = null }
+        )
+    }
     confirmDeleteId?.let { pid ->
         AlertDialog(
             onDismissRequest = { confirmDeleteId = null },

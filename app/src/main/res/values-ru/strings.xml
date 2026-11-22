@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">Нет</string>
     <string name="play_count">Проиграно: %1$d</string>
     <string name="sort_shortest">Самые короткие</string>
+    <string name="rename_playlist">Переименовать плейлист</string>
+    <string name="save">Сохранить</string>
+    <string name="play_next">Играть следующим</string>
+    <string name="add_to_queue">В очередь</string>
 </resources>

@@ -176,6 +176,9 @@ class AppViewModel @Inject constructor(
             if (_selectedPlaylistId.value == id) _selectedPlaylistId.value = null
         }
     }
+    fun renamePlaylist(id: Long, name: String) {
+        viewModelScope.launch { runCatching { playlists.renamePlaylist(id, name) } }
+    }
     fun addToPlaylist(pid: Long, song: Song, onDone: (Boolean) -> Unit = {}) {
         viewModelScope.launch { onDone(runCatching { playlists.addToPlaylist(pid, song) }.getOrDefault(false)) }
     }
@@ -384,6 +387,12 @@ class AppViewModel @Inject constructor(
     }
 
     fun playList(list: List<Song>, index: Int) = manager.setQueue(list.ifEmpty { _songs.value }, index)
+
+    /** پخش بلافاصله بعد از آهنگ فعلی */
+    fun playNext(songs: List<Song>) = manager.addSongsToQueue(songs, playNext = true)
+
+    /** افزودن به انتهای صف */
+    fun addToQueue(songs: List<Song>) = manager.addSongsToQueue(songs, playNext = false)
 
     fun playDirectLink(url: String): Boolean {
         val ok = manager.playDirectLink(url)

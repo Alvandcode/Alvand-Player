@@ -151,4 +151,8 @@
     <string name="lyrics_source_none">ندارد</string>
     <string name="play_count">%1$d بار پخش</string>
     <string name="sort_shortest">کوتاه‌ترین</string>
+    <string name="rename_playlist">تغییر نام پلی‌لیست</string>
+    <string name="save">ذخیره</string>
+    <string name="play_next">پخش بعدی</string>
+    <string name="add_to_queue">افزودن به صف</string>
 </resources>

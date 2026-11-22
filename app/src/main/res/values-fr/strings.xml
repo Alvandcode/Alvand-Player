@@ -144,4 +144,8 @@
     <string name="lyrics_source_none">Aucune</string>
     <string name="play_count">%1$d lectures</string>
     <string name="sort_shortest">Les plus courtes</string>
+    <string name="rename_playlist">Renommer la playlist</string>
+    <string name="save">Enregistrer</string>
+    <string name="play_next">Lire ensuite</string>
+    <string name="add_to_queue">Ajouter à la file</string>
 </resources>
