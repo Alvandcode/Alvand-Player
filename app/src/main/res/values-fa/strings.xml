@@ -144,4 +144,11 @@
     <string name="unknown_artist">هنرمند نامشخص</string>
     <string name="unknown_title">عنوان نامشخص</string>
     <string name="sleep_chip_fmt">☾ %1$s</string>
+    <string name="sort">مرتب‌سازی</string>
+    <string name="lyrics_source_local">روی فایل</string>
+    <string name="lyrics_source_manual">دستی</string>
+    <string name="lyrics_source_online">آنلاین</string>
+    <string name="lyrics_source_none">ندارد</string>
+    <string name="play_count">%1$d بار پخش</string>
+    <string name="sort_shortest">کوتاه‌ترین</string>
 </resources>

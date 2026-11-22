@@ -31,6 +31,7 @@ import com.alvand.player.R
 import com.alvand.player.audio.AudioSettings
 import com.alvand.player.ui.theme.*
 import kotlinx.coroutines.flow.map
+import kotlin.math.roundToInt
 
 /** منوی اصلی (≡): همه امکانات اضافی اینجاست */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -208,6 +209,11 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
             }
             Spacer(Modifier.height(8.dp))
             val mgr = vm.manager.eqManager
+            // درگ روی اسلایدرها فقط حالت محلی را عوض می‌کند؛ افکت صوتی (binder)
+            // فقط در پایان درگ یک‌بار کامیت می‌شود تا صد تنظیم در ثانیه نفرستیم
+            var bandsDraft by remember(eq.bandLevels) {
+                mutableStateOf(eq.bandLevels.toMutableList())
+            }
             repeat(mgr.bandCount) { i ->
                 val hz = mgr.bandFreqHz(i)
                 val label = when {
@@ -219,11 +225,14 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(label, color = pal.sub, fontSize = 11.sp, modifier = Modifier.width(44.dp))
                     Slider(
-                        value = (eq.bandLevels.getOrNull(i) ?: 0).toFloat(),
-                        onValueChange = {
-                            val lv = MutableList(mgr.bandCount) { k -> eq.bandLevels.getOrNull(k) ?: 0 }
-                            lv[i] = it.toInt()
-                            vm.updateAudio(eq.copy(preset = -1, bandLevels = lv))
+                        value = (bandsDraft.getOrNull(i) ?: 0).toFloat(),
+                        onValueChange = { v ->
+                            bandsDraft = bandsDraft.toMutableList().apply {
+                                if (i < size) this[i] = v.roundToInt()
+                            }
+                        },
+                        onValueChangeFinished = {
+                            vm.updateAudio(eq.copy(preset = -1, bandLevels = bandsDraft.toList()))
                         },
                         valueRange = mgr.bandRange.first.toFloat()..mgr.bandRange.last.toFloat(),
                         colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track),
@@ -232,11 +241,15 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 }
             }
             Text(stringResource(R.string.bass_boost), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Slider(eq.bassStrength.toFloat(), { vm.updateAudio(eq.copy(bassStrength = it.toInt())) },
+            var bassDraft by remember(eq.bassStrength) { mutableStateOf(eq.bassStrength.toFloat()) }
+            Slider(bassDraft, { bassDraft = it },
+                onValueChangeFinished = { vm.updateAudio(eq.copy(bassStrength = bassDraft.roundToInt())) },
                 valueRange = 0f..1000f,
                 colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
-            Text(stringResource(R.string.volume_boost, eq.volumeBoostDb), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Slider(eq.volumeBoostDb.toFloat(), { vm.updateAudio(eq.copy(volumeBoostDb = it.toInt())) },
+            Text(stringResource(R.string.volume_boost, volDraft.roundToInt()), color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            var volDraft by remember(eq.volumeBoostDb) { mutableStateOf(eq.volumeBoostDb.toFloat()) }
+            Slider(volDraft, { volDraft = it },
+                onValueChangeFinished = { vm.updateAudio(eq.copy(volumeBoostDb = volDraft.roundToInt())) },
                 valueRange = 0f..10f, steps = 9,
                 colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -244,8 +257,10 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 Switch(checked = eq.noiseReduction, onCheckedChange = { vm.updateAudio(eq.copy(noiseReduction = it)) })
             }
             if (eq.noiseReduction) {
-                Text(stringResource(R.string.denoise_level, eq.noiseLevel), color = pal.sub, fontSize = 12.sp)
-                Slider(eq.noiseLevel.toFloat(), { vm.updateAudio(eq.copy(noiseLevel = it.toInt())) },
+                var noiseDraft by remember(eq.noiseLevel) { mutableStateOf(eq.noiseLevel.toFloat()) }
+                Text(stringResource(R.string.denoise_level, noiseDraft.roundToInt()), color = pal.sub, fontSize = 12.sp)
+                Slider(noiseDraft, { noiseDraft = it },
+                    onValueChangeFinished = { vm.updateAudio(eq.copy(noiseLevel = noiseDraft.roundToInt())) },
                     valueRange = 0f..100f,
                     colors = SliderDefaults.colors(thumbColor = pal.ink, activeTrackColor = pal.ink, inactiveTrackColor = pal.track))
                 Text(stringResource(R.string.denoise_desc), color = pal.sub, fontSize = 11.sp)
@@ -253,6 +268,17 @@ fun EqSheet(vm: AppViewModel, onDismiss: () -> Unit) {
         }
     }
 }
+
+/** نمایش ترجمه‌شدهٔ سورس لیریک به‌جای کد خام داخلی (lrc-file و امثال آن) */
+@Composable
+fun lyricsSourceLabel(source: String): String = stringResource(
+    when (source) {
+        "manual" -> R.string.lyrics_source_manual
+        "online" -> R.string.lyrics_source_online
+        "lrc-file", "embedded", "lyrics-cache" -> R.string.lyrics_source_local
+        else -> R.string.lyrics_source_none
+    }
+)
 
 /** شیت لیریک (سیاه‌سفید) */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -285,7 +311,7 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = pal.sheet) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 36.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("${stringResource(R.string.tab_lyrics)} • ${lyrics.source}",
+                Text("${stringResource(R.string.tab_lyrics)} • ${lyricsSourceLabel(lyrics.source)}",
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 TextButton(onClick = { vm.refreshLyricsOnline() }) { Text(stringResource(R.string.get_lyrics)) }
             }
@@ -311,7 +337,12 @@ fun LyricsSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                 // جبران می‌کند تا اسکرول‌تُ‌آیتِم واقعاً وسط‌چین شود.
                 val listState = rememberLazyListState()
                 LaunchedEffect(activeIdx, lyrics.lines.size) {
-                    if (lyrics.lines.isNotEmpty()) listState.animateScrollToItem(activeIdx + 1)
+                    if (lyrics.lines.isNotEmpty()) {
+                        // اگر کاربر همین حالا خودش اسکرول می‌کند، او را نکش
+                        if (!listState.isScrollInProgress) {
+                            listState.animateScrollToItem(activeIdx + 1)
+                        }
+                    }
                 }
                 LazyColumn(
                     Modifier.heightIn(max = 340.dp),
@@ -406,7 +437,7 @@ fun LyricsPreviewCard(vm: AppViewModel, onOpenFull: () -> Unit) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "${stringResource(R.string.tab_lyrics)} • ${lyrics.source}",
+                    "${stringResource(R.string.tab_lyrics)} • ${lyricsSourceLabel(lyrics.source)}",
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp,
                     modifier = Modifier.weight(1f)
                 )

@@ -84,8 +84,8 @@ class MusicPlayerManager @Inject constructor(
         }
         override fun onIsPlayingChanged(v: Boolean) {
             if (v && _ui.value.error != null) _ui.value = _ui.value.copy(error = null)
+            if (v) startProgress() // حلقهٔ پیشرفت فقط در حال پخش فعال بماند
             push()
-            // وقتی پاز شد، حلقه پیشرفت را نگه دار ولی کم‌مصرف (push بعدی خودش آپدیت می‌کند)
         }
         override fun onMediaItemTransition(item: MediaItem?, r: Int) { push() }
         override fun onPositionDiscontinuity(oldPos: Player.PositionInfo, newPos: Player.PositionInfo, reason: Int) { push() }
@@ -380,6 +380,9 @@ class MusicPlayerManager @Inject constructor(
             while (true) {
                 runCatching { push() }.onFailure { Log.w("Player", "push failed", it) }
                 delay(500)
+                // پاز/توقف → حلقه تمام؛ با شروع دوبارهٔ پخش از onIsPlayingChanged روشن می‌شود
+                val c = controller
+                if (c == null || !c.isPlaying) break
             }
         }
     }

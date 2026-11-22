@@ -327,7 +327,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             )
             views.setTextViewText(
                 R.id.widget_time,
-                formatTime(s.positionMs, s.durationMs)
+                formatTime(s.positionMs, s.durationMs, contextLocale(raw))
             )
 
             // نوار پیشرفت: درصد بر مبنای مدت؛ اگر مدت نامعلوم است صفر
@@ -337,7 +337,9 @@ class PlayerWidgetProvider : AppWidgetProvider() {
                 ((pos * PROGRESS_MAX) / dur).toInt().coerceIn(0, PROGRESS_MAX)
             } else 0
             runCatching {
-                views.setProgressBar(R.id.widget_progress, progress, PROGRESS_MAX, false)
+                // امضای API: setProgressBar(viewId, max, progress, indeterminate) —
+                // ترتیب قبلی معکوس بود و نوار همیشه پر دیده می‌شد
+                views.setProgressBar(R.id.widget_progress, PROGRESS_MAX, progress, false)
             }
             // نقطه فقط وقتی معنا دارد که خطی وجود داشته باشد؛ در مدت نامعلوم
             // یک نقطهٔ تنها وسط پنل معلق می‌افتاد
@@ -443,6 +445,11 @@ class PlayerWidgetProvider : AppWidgetProvider() {
         }
 
         /** زبان اپ را برای رشته‌هایی که خودمان ست می‌کنیم اعمال می‌کند */
+        /** لوکال مسیل (getLocales از API 24؛ روی ۲۳ فالبک به locale منسوخ) */
+        private fun contextLocale(raw: Context): java.util.Locale =
+            if (Build.VERSION.SDK_INT >= 24) raw.resources.configuration.locales[0]
+            else @Suppress("DEPRECATION") raw.resources.configuration.locale
+
         private fun localizedContext(raw: Context): Context = runCatching {
             val tag = AppLocale.currentTag()
             val locale = Locale.forLanguageTag(tag)
@@ -452,7 +459,7 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             raw.createConfigurationContext(cfg)
         }.getOrDefault(raw)
 
-        private fun formatTime(positionMs: Long, durationMs: Long): String {
+        private fun formatTime(positionMs: Long, durationMs: Long, locale: java.util.Locale): String {
             val ms = positionMs.coerceIn(
                 0L,
                 if (durationMs > 0L) durationMs else Long.MAX_VALUE
@@ -461,7 +468,8 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             val h = totalSec / 3600
             val m = (totalSec % 3600) / 60
             val s = totalSec % 60
-            return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+            return if (h > 0) String.format(locale, "%d:%02d:%02d", h, m, s)
+            else String.format(locale, "%d:%02d", m, s)
         }
 
         /**

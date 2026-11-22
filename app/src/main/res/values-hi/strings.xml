@@ -137,4 +137,11 @@
     <string name="widget_prev">पिछला गाना</string>
     <string name="widget_repeat">दोहराएँ</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">क्रमबद्ध करें</string>
+    <string name="lyrics_source_local">फ़ाइल में</string>
+    <string name="lyrics_source_manual">मैनुअल</string>
+    <string name="lyrics_source_online">ऑनलाइन</string>
+    <string name="lyrics_source_none">कोई नहीं</string>
+    <string name="play_count">%1$d बार चला</string>
+    <string name="sort_shortest">सबसे छोटे</string>
 </resources>

@@ -137,4 +137,11 @@
     <string name="widget_prev">前の曲</string>
     <string name="widget_repeat">リピート</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">並べ替え</string>
+    <string name="lyrics_source_local">ファイル内</string>
+    <string name="lyrics_source_manual">手動</string>
+    <string name="lyrics_source_online">オンライン</string>
+    <string name="lyrics_source_none">なし</string>
+    <string name="play_count">%1$d回再生</string>
+    <string name="sort_shortest">最短</string>
 </resources>

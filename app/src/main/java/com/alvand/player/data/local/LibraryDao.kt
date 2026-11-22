@@ -22,9 +22,6 @@ interface LibraryDao {
     @Query("DELETE FROM playlists WHERE id = :id")
     suspend fun deletePlaylist(id: Long)
 
-    @Query("UPDATE playlists SET name = :name WHERE id = :id")
-    suspend fun renamePlaylist(id: Long, name: String)
-
     // ---- Songs in playlist ----
     @Query("SELECT * FROM playlist_songs WHERE playlistId = :pid ORDER BY position ASC, addedAt ASC")
     fun observePlaylistSongs(pid: Long): Flow<List<PlaylistSongEntity>>

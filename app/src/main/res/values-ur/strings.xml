@@ -137,4 +137,11 @@
     <string name="widget_prev">پچھلا گانا</string>
     <string name="widget_repeat">دہرائیں</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">ترتیب دیں</string>
+    <string name="lyrics_source_local">فائل میں</string>
+    <string name="lyrics_source_manual">دستی</string>
+    <string name="lyrics_source_online">آن لائن</string>
+    <string name="lyrics_source_none">کوئی نہیں</string>
+    <string name="play_count">%1$d بار چلا</string>
+    <string name="sort_shortest">سب سے چھوٹا</string>
 </resources>

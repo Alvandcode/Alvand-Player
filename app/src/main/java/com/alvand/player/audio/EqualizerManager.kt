@@ -4,9 +4,14 @@ import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
 import android.util.Log
+import com.alvand.player.data.SettingsRepo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,7 +35,25 @@ data class AudioSettings(
  * ترکیب برش Hiss/Hum با EQ پیاده شده است.
  */
 @Singleton
-class EqualizerManager @Inject constructor() {
+class EqualizerManager @Inject constructor(
+    private val settingsRepo: SettingsRepo
+) {
+
+    /** ذخیره/بارگذاری ناهمگام تنظیمات — هیچ‌وقت Main را بلاک نمی‌کند */
+    private val persistScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    init {
+        // تنظیمات ذخیره‌شدهٔ اجرای قبل را قبل از اولین attach به‌روز می‌کند؛
+        // اگر افکت از قبل وصل است، همان تنظیمات را هم روی سشن اعمال کن
+        persistScope.launch {
+            runCatching {
+                settingsRepo.audioSettings.first()?.let { saved ->
+                    _settings.value = saved
+                    if (isAttached()) applyAll(saved)
+                }
+            }
+        }
+    }
 
     private var eq: Equalizer? = null
     private var bass: BassBoost? = null
@@ -113,6 +136,8 @@ class EqualizerManager @Inject constructor() {
 
     fun applyAll(s: AudioSettings) {
         _settings.value = s
+        // پایدارسازی: هر تغییر واقعی (پس از commit اسلایدر) روی دیسک می‌نشیند
+        persistScope.launch { runCatching { settingsRepo.setAudioSettings(s) } }
         val e = eq
         // خرابی EQ نباید bass/loud را از کار بیندازد — هر کدام try جدا
         if (e != null) {
@@ -230,5 +255,7 @@ class EqualizerManager @Inject constructor() {
         runCatching { loud?.release() }
         eq = null; bass = null; loud = null
         sessionId = 0
+        // persistScope را کسل نمی‌کنیم: مسیل عصر پروسه زنده است و release
+        // ممکن است وسط اجرای اپ (نشدن اتصال EQ) صدا زده شود
     }
 }

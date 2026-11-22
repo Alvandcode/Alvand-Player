@@ -8,9 +8,25 @@ object AppLocale {
 
     data class Lang(val code: String, val nativeName: String)
 
+    /** هم‌خوان با res/values-* و locales_config و resourceConfigurations در build.gradle */
     val all = listOf(
         Lang("en", "English"),
-        Lang("fa", "فارسی")
+        Lang("fa", "فارسی"),
+        Lang("ar", "العربية"),
+        Lang("de", "Deutsch"),
+        Lang("es", "Español"),
+        Lang("fr", "Français"),
+        Lang("hi", "हिन्दी"),
+        Lang("in", "Bahasa Indonesia"),
+        Lang("it", "Italiano"),
+        Lang("ja", "日本語"),
+        Lang("ko", "한국어"),
+        Lang("pt", "Português"),
+        Lang("ru", "Русский"),
+        Lang("tr", "Türkçe"),
+        Lang("ur", "اردو"),
+        Lang("vi", "Tiếng Việt"),
+        Lang("zh", "中文")
     )
 
     private val codeSet = all.map { it.code }.toSet()

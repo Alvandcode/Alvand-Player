@@ -7,11 +7,11 @@ plugins {
 }
 
 // تک‌منبع نام و ورژن — در اسم فایل خروجی هم استفاده می‌شود
-val appVersionName = "1.7.8"
-val appVersionCode = 25
+val appVersionName = "1.8.0"
+val appVersionCode = 26
 
 base {
-    // خروجی‌ها: AlvandPlayer-v1.3.0-debug.apk و AlvandPlayer-v1.3.0-release.aab
+    // خروجی‌ها: AlvandPlayer-v1.7.8-debug.apk و AlvandPlayer-v1.7.8-release.aab
     archivesName.set("AlvandPlayer-v$appVersionName")
 }
 
@@ -36,7 +36,10 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         vectorDrawables { useSupportLibrary = true }
-        resourceConfigurations += listOf("en", "fa")
+        resourceConfigurations += listOf(
+            "en", "fa", "ar", "de", "es", "fr", "hi", "in", "it",
+            "ja", "ko", "pt", "ru", "tr", "ur", "vi", "zh"
+        )
     }
     signingConfigs {
         // کانفیگ «alvand»: کی‌استور فقط از مسیر امن خارج از ریپو یا env می‌آید.

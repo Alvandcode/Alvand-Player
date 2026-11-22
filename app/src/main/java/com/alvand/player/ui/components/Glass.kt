@@ -8,7 +8,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -27,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -43,11 +41,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -195,75 +191,6 @@ fun ControlsRow(
             )
         }
     }
-    }
-}
-
-/** پنل آرت سینمایی Mono+Aura:
- *  مربع مدرن 28dp + سایه نرم + اسکریم گرادیانی پایین برای خوانایی متن
- *  (جایگزین فرم U قبلی که روی صفحه‌های مختلف می‌شکست) */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun ArtPanel(
-    song: Song?,
-    modifier: Modifier = Modifier,
-    glow: Color = MonoInk
-) {
-    val artShape = RoundedCornerShape(28.dp)
-    Box(
-        modifier
-            .clip(artShape)
-            .background(Brush.linearGradient(listOf(ArtDark1, ArtDark2)))
-    ) {
-        ArtImage(
-            song, Modifier.fillMaxSize(),
-            RoundedCornerShape(0.dp)
-        )
-        // اسکریم پایین برای خوانایی تایتل روی هر کاوری (روشن/تیره)
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color.Transparent,
-                        Color.Transparent,
-                        Color.Black.copy(alpha = 0.18f),
-                        Color.Black.copy(alpha = 0.68f)
-                    )
-                )
-            )
-        )
-        // بوردر شیشه‌ای ظریف (نه هاله رنگی تند)
-        Box(
-            Modifier.fillMaxSize()
-                .border(
-                    1.dp,
-                    Color.White.copy(alpha = 0.22f),
-                    artShape
-                )
-        )
-        // متن داخل کادر با فاصله امن از لبه‌ها
-        Column(
-            Modifier.fillMaxSize().padding(bottom = 20.dp, start = 22.dp, end = 22.dp),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                song?.title ?: "Alvand Player", color = Color.White,
-                fontWeight = FontWeight.ExtraBold, fontSize = 22.sp,
-                letterSpacing = 0.2.sp,
-                maxLines = 1, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-                    .clipToBounds()
-                    .basicMarquee(iterations = Int.MAX_VALUE, spacing = MarqueeSpacing(24.dp))
-            )
-            Spacer(Modifier.height(3.dp))
-            Text(
-                song?.artist?.takeIf { it.isNotBlank() } ?: "—",
-                color = Color.White.copy(0.78f),
-                fontSize = 13.sp, letterSpacing = 0.4.sp,
-                maxLines = 1, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
     }
 }
 
@@ -450,49 +377,6 @@ fun ProgressArc(
                 drawCircle(progColor, radius = 11.dp.toPx(), center = kc, style = Stroke(3.dp.toPx()))
                 drawCircle(progColor, radius = 3.5.dp.toPx(), center = kc)
             }
-        }
-    }
-}
-
-/**
- * نور ملایم متحرک زیر کادر و کنار دکمه‌ها — یک هاله که آرام چپ‌به‌راست می‌لغزد
- * تا صفحه از خشکی دربیاید. خیلی کم‌رنگ است و روی تم روشن/تیره جواب می‌دهد.
- */
-@Composable
-fun MovingGlow(
-    accent: Color,
-    modifier: Modifier = Modifier,
-    alpha: Float = 0.35f,
-    enabled: Boolean = true
-) {
-    if (!enabled) {
-        // حالت ثابت بدون InfiniteTransition تا در بک‌گراند/شیت بسته CPU نسوزد
-        Box(modifier.background(accent.copy(alpha = alpha * 0.35f)))
-        return
-    }
-    BoxWithConstraints(modifier) {
-        val density = LocalDensity.current
-        val wPx = with(density) { maxWidth.toPx() }.coerceAtLeast(1f)
-        val hPx = with(density) { maxHeight.toPx() }.coerceAtLeast(1f)
-        val inf = rememberInfiniteTransition(label = "glow")
-        val off by inf.animateFloat(
-            0f, 1f,
-            infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
-            label = "glowOff"
-        )
-        val cx = wPx * off
-        Canvas(Modifier.fillMaxSize().blur(14.dp)) {
-            drawRect(
-                Brush.radialGradient(
-                    colors = listOf(
-                        accent.copy(alpha = alpha),
-                        accent.copy(alpha = alpha * 0.35f),
-                        Color.Transparent
-                    ),
-                    center = Offset(cx, hPx / 2f),
-                    radius = wPx * 0.38f
-                )
-            )
         }
     }
 }

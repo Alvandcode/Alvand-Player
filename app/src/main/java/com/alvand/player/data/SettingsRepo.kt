@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.alvand.player.audio.AudioSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -62,6 +63,24 @@ class SettingsRepo @Inject constructor(
     /** حالت سورت کتابخانه (LibrarySort.*) */
     val librarySort: Flow<Int> = store.data.map { it[Keys.SORT] ?: LibrarySort.DEFAULT }
 
+    /**
+     * تنظیمات صوتی (EQ/بس/تقویت/حذف نویز) — بین اجراها می‌ماند.
+     * null یعنی هنوز هیچ تنظیمی ذخیره نشده (اولین اجرا).
+     */
+    val audioSettings: Flow<AudioSettings?> = store.data.map { p ->
+        if (p[Keys.EQ_ENABLED] == null) null
+        else AudioSettings(
+            eqEnabled = p[Keys.EQ_ENABLED] ?: true,
+            preset = p[Keys.EQ_PRESET] ?: 0,
+            bandLevels = p[Keys.EQ_BANDS]?.split(",")?.mapNotNull { it.toIntOrNull() }
+                ?: listOf(0, 0, 0, 0, 0),
+            bassStrength = p[Keys.EQ_BASS] ?: 500,
+            volumeBoostDb = p[Keys.EQ_BOOST] ?: 0,
+            noiseReduction = p[Keys.EQ_DENOISE] ?: false,
+            noiseLevel = p[Keys.EQ_NOISE] ?: 50
+        )
+    }
+
     suspend fun setThemeMode(mode: Int) {
         store.edit { it[Keys.THEME] = mode.coerceIn(0, 2) }
     }
@@ -97,6 +116,18 @@ class SettingsRepo @Inject constructor(
         store.edit { it[Keys.SORT] = mode.coerceIn(0, 4) }
     }
 
+    suspend fun setAudioSettings(s: AudioSettings) {
+        store.edit { p ->
+            p[Keys.EQ_ENABLED] = s.eqEnabled
+            p[Keys.EQ_PRESET] = s.preset
+            p[Keys.EQ_BANDS] = s.bandLevels.joinToString(",")
+            p[Keys.EQ_BASS] = s.bassStrength
+            p[Keys.EQ_BOOST] = s.volumeBoostDb
+            p[Keys.EQ_DENOISE] = s.noiseReduction
+            p[Keys.EQ_NOISE] = s.noiseLevel
+        }
+    }
+
     private object Keys {
         val THEME = intPreferencesKey("theme_mode")
         val ACCENT = intPreferencesKey("accent_theme")
@@ -105,5 +136,12 @@ class SettingsRepo @Inject constructor(
         val ONLINE_LYRICS = booleanPreferencesKey("online_lyrics_enabled")
         val LIKED = stringSetPreferencesKey("liked_ids")
         val SORT = intPreferencesKey("library_sort")
+        val EQ_ENABLED = booleanPreferencesKey("eq_enabled")
+        val EQ_PRESET = intPreferencesKey("eq_preset")
+        val EQ_BANDS = stringPreferencesKey("eq_band_levels")
+        val EQ_BASS = intPreferencesKey("eq_bass_strength")
+        val EQ_BOOST = intPreferencesKey("eq_volume_boost")
+        val EQ_DENOISE = booleanPreferencesKey("eq_denoise")
+        val EQ_NOISE = intPreferencesKey("eq_noise_level")
     }
 }

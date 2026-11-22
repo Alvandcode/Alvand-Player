@@ -176,7 +176,7 @@ fun PlaylistsTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit =
                     }
                     if (expanded) {
                         if (selectedSongs.isEmpty()) {
-                            Text("— 0", color = pal.sub, fontSize = 12.sp, modifier = Modifier.padding(start = 32.dp, top = 4.dp))
+                            Text(stringResource(R.string.songs_n, 0), color = pal.sub, fontSize = 12.sp, modifier = Modifier.padding(start = 32.dp, top = 4.dp))
                         } else {
                             // ترتیب خوش‌بینانه: تا وقتی جریان دیتابیس به ترتیب جدید
                             // نرسیده، همان چیزی را نشان می‌دهیم که کاربر جابه‌جا کرده
@@ -326,7 +326,7 @@ fun RecentTab(vm: AppViewModel, onRequestNotificationPermission: () -> Unit = {}
                             Text(h.title, color = pal.ink, fontSize = 13.5.sp, maxLines = 1)
                             Text(h.artist, color = pal.sub, fontSize = 12.sp, maxLines = 1)
                         }
-                        Text("×${h.playCount}", color = pal.sub, fontSize = 11.sp)
+                        Text(stringResource(R.string.play_count, h.playCount), color = pal.sub, fontSize = 11.sp)
                     }
                 }
             }

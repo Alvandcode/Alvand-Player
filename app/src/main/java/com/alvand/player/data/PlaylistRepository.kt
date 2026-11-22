@@ -31,10 +31,6 @@ class PlaylistRepository @Inject constructor(
         return dao.insertPlaylist(PlaylistEntity(name = clean))
     }
 
-    suspend fun renamePlaylist(id: Long, name: String) {
-        dao.renamePlaylist(id, name.trim().take(60))
-    }
-
     suspend fun deletePlaylist(id: Long) = dao.deletePlaylist(id)
 
     /** اضافه به پلی‌لیست بدون تکرار؛ position خودکار */
@@ -99,7 +95,7 @@ class PlaylistRepository @Inject constructor(
                 playCount = (prev?.playCount ?: 0) + 1
             )
         )
-        // نگه‌داشت ۲۰۰ رکورد آخر
+        // هرس: رکوردهای قدیمی‌تر از ۹۰ روز پاک می‌شوند
         dao.pruneHistory(System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000)
     }
 

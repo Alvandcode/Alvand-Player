@@ -27,8 +27,16 @@ class MainActivity : AppCompatActivity() {
 
     private val vm: AppViewModel by viewModels()
 
-    private val pickAudio = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    // انتخاب فایل صوتی: OpenDocument تا دسترسی ماندگار بگیریم؛
+    // GetContent بعد از ری‌استارت دستگاه دسترسی را از دست می‌داد و پخش خطا می‌داد
+    private val pickAudio = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
+            runCatching {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
             requestNotificationPermission()
             val name = uri.lastPathSegment?.substringAfterLast('/') ?: "Local audio"
             vm.playUri(uri, name)
@@ -76,7 +84,7 @@ class MainActivity : AppCompatActivity() {
             AlvandTheme(darkTheme = dark, accentThemeId = accentId) {
                 AppNavHost(
                     vm = vm,
-                    onPickFile = { pickAudio.launch("audio/*") },
+                    onPickFile = { pickAudio.launch(arrayOf("audio/*")) },
                     onPickBackground = { pickBackground.launch(arrayOf("image/*")) },
                     onRequestAudioPermission = ::requestAudioPermission,
                     onRequestNotificationPermission = ::requestNotificationPermission,
@@ -101,6 +109,8 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent?) {
         val uri = intent?.data ?: (intent?.getStringExtra(Intent.EXTRA_TEXT)?.let {
             Regex("https://\\S+").find(it)?.value
+                // نقطه/علامت انتهای جمله جزو URL نیست
+                ?.replace(Regex("[.,;:!)"]+$"), "")
         }?.let { android.net.Uri.parse(it) })
         if (uri != null && intent?.action in listOf(Intent.ACTION_VIEW, Intent.ACTION_SEND)) {
             val url = uri.toString()

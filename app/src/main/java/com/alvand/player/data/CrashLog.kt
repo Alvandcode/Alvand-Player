@@ -97,15 +97,9 @@ object CrashLog {
             appendLine("---")
         }
         val sw = java.io.StringWriter()
+        // printStackTrace خودش زنجیرهٔ کامل "Caused by" را می‌نویسد؛
+        // چاپ جداگانهٔ cause قبلاً لاگ را دوبله می‌کرد
         e.printStackTrace(java.io.PrintWriter(sw))
-        var cause = e.cause
-        var depth = 0
-        while (cause != null && depth < 3) {
-            sw.append("\nCaused by: ")
-            cause.printStackTrace(java.io.PrintWriter(sw))
-            cause = cause.cause
-            depth++
-        }
         val file = File(dir, "crash-$ts.txt")
         runCatching { file.writeText((header + sw.toString()).take(MAX_CHARS)) }
     }

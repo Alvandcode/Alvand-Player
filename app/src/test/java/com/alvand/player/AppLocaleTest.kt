@@ -11,8 +11,11 @@ import org.robolectric.RobolectricTestRunner
 class AppLocaleTest {
 
     @Test
-    fun `supported locales are english and persian`() {
-        assertEquals(listOf("en", "fa"), AppLocale.all.map { it.code })
+    fun `supported locales cover all shipped translations`() {
+        assertEquals(
+            listOf("en", "fa", "ar", "de", "es", "fr", "hi", "in", "it", "ja", "ko", "pt", "ru", "tr", "ur", "vi", "zh"),
+            AppLocale.all.map { it.code }
+        )
     }
 
     @Test

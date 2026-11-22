@@ -137,4 +137,11 @@
     <string name="widget_prev">Titre précédent</string>
     <string name="widget_repeat">Répéter</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">Trier</string>
+    <string name="lyrics_source_local">Dans le fichier</string>
+    <string name="lyrics_source_manual">Manuel</string>
+    <string name="lyrics_source_online">En ligne</string>
+    <string name="lyrics_source_none">Aucune</string>
+    <string name="play_count">%1$d lectures</string>
+    <string name="sort_shortest">Les plus courtes</string>
 </resources>

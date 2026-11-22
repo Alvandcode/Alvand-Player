@@ -137,4 +137,11 @@
     <string name="widget_prev">Bài trước</string>
     <string name="widget_repeat">Lặp lại</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">Sắp xếp</string>
+    <string name="lyrics_source_local">Trong tệp</string>
+    <string name="lyrics_source_manual">Thủ công</string>
+    <string name="lyrics_source_online">Trực tuyến</string>
+    <string name="lyrics_source_none">Không</string>
+    <string name="play_count">Đã phát %1$d lần</string>
+    <string name="sort_shortest">Ngắn nhất</string>
 </resources>

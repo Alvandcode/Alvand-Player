@@ -137,4 +137,11 @@
     <string name="widget_prev">Lagu sebelumnya</string>
     <string name="widget_repeat">Ulang</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">Urutkan</string>
+    <string name="lyrics_source_local">Di berkas</string>
+    <string name="lyrics_source_manual">Manual</string>
+    <string name="lyrics_source_online">Online</string>
+    <string name="lyrics_source_none">Tidak ada</string>
+    <string name="play_count">%1$d kali diputar</string>
+    <string name="sort_shortest">Terpendek</string>
 </resources>

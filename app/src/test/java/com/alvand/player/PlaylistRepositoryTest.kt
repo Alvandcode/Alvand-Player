@@ -55,12 +55,6 @@ class PlaylistRepositoryTest {
             playlistSongs.value = playlistSongs.value.filterNot { it.playlistId == id }
         }
 
-        override suspend fun renamePlaylist(id: Long, name: String) {
-            playlists.value = playlists.value.map {
-                if (it.id == id) it.copy(name = name) else it
-            }
-        }
-
         override fun observePlaylistSongs(pid: Long): Flow<List<PlaylistSongEntity>> =
             playlistSongs.map { rows ->
                 rows.filter { it.playlistId == pid }

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
 import com.alvand.player.R
+import com.alvand.player.data.LibrarySort
 import com.alvand.player.data.Song
 import com.alvand.player.ui.components.*
 import com.alvand.player.ui.theme.*
@@ -110,6 +111,14 @@ fun PlayerScreen(
     // تب کتابخانه: آهنگ‌ها / پلی‌لیست‌ها / اخیراً پخش‌شده
     var libraryTab by rememberSaveable { mutableStateOf(TAB_SONGS) }
     var songToAdd by remember { mutableStateOf<Song?>(null) }
+    // ابزارهای کتابخانه: جستجو / فقط علاقه‌مندی‌ها / سورت — منطق از قبل تست‌شده بود، UI از قبل نبود
+    var showSearch by rememberSaveable { mutableStateOf(false) }
+    val searchQuery by vm.searchQuery.collectAsState()
+    val favoritesOnly by vm.favoritesOnly.collectAsState()
+    val sortMode by vm.sortMode.collectAsState()
+    val filteredSongs by vm.filteredSongs.collectAsState()
+    val isFiltering = searchQuery.isNotBlank() || favoritesOnly
+    val shownSongs = filteredSongs
     val current = state.current
     val dur = state.durationMs.coerceAtLeast(1L)
     val shownPos = if (dur > 1L) minOf(state.positionMs, dur) else state.positionMs
@@ -184,11 +193,12 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    // هر تب شمارندهٔ خودش را می‌گیرد تا ارتفاع شیت ثابت بماند
+                    // هر تب شمارندهٔ خودش را می‌گیرد تا ارتفاع شیت ثابت بماند؛
+                    // هنگام جستجو/فیلتر، تعداد نمایش‌داده‌شده مهم‌تر است
                     when (libraryTab) {
                         TAB_PLAYLISTS -> "${stringResource(R.string.tab_playlists)} (${playlists.size})"
                         TAB_RECENT -> "${stringResource(R.string.tab_recent)} (${recent.size})"
-                        else -> "${stringResource(R.string.playlist)} (${songs.size})"
+                        else -> "${stringResource(R.string.playlist)} (${shownSongs.size})"
                     },
                     color = pal.ink, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                     modifier = Modifier.weight(1f)
@@ -199,8 +209,78 @@ fun PlayerScreen(
                 TAB_PLAYLISTS -> PlaylistsTab(vm, onRequestNotificationPermission)
                 TAB_RECENT -> RecentTab(vm, onRequestNotificationPermission)
                 else -> {
+            // نوار ابزار کتابخانه: جستجو / فقط علاقه‌مندی‌ها / مرتب‌سازی
+            val sortOptions = listOf(
+                LibrarySort.DEFAULT to stringResource(R.string.sort_default),
+                LibrarySort.TITLE_AZ to stringResource(R.string.sort_title),
+                LibrarySort.ARTIST_AZ to stringResource(R.string.sort_artist),
+                LibrarySort.DURATION_DESC to stringResource(R.string.sort_longest),
+                LibrarySort.DURATION_ASC to stringResource(R.string.sort_shortest)
+            )
+            var showSortMenu by remember { mutableStateOf(false) }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showSearch) {
+                    OutlinedTextField(
+                        searchQuery, { vm.setSearchQuery(it) },
+                        placeholder = { Text(stringResource(R.string.search_hint), color = pal.sub, fontSize = 12.sp, maxLines = 1) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = pal.ink),
+                        trailingIcon = {
+                            IconButton(onClick = { vm.clearSearch(); showSearch = false }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Close, stringResource(R.string.close), tint = pal.sub, modifier = Modifier.size(17.dp))
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = dyn.accent,
+                            unfocusedBorderColor = pal.line,
+                            cursorColor = dyn.accent
+                        )
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+                IconButton(
+                    onClick = { showSearch = !showSearch; if (!showSearch) vm.clearSearch() },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Search, stringResource(R.string.search_hint),
+                        tint = if (showSearch || isFiltering) dyn.accent else pal.sub,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(onClick = { vm.toggleFavoritesOnly() }, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        if (favoritesOnly) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        stringResource(R.string.favorites),
+                        tint = if (favoritesOnly) dyn.accent else pal.sub,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Box {
+                    IconButton(onClick = { showSortMenu = true }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Default.Sort, stringResource(R.string.sort),
+                            tint = if (sortMode != LibrarySort.DEFAULT) dyn.accent else pal.sub,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                        sortOptions.forEach { (id, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label, fontSize = 13.sp, color = if (sortMode == id) dyn.accent else pal.ink) },
+                                onClick = { vm.setSortMode(id); showSortMenu = false }
+                            )
+                        }
+                    }
+                }
+            }
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
-                if (songs.isEmpty()) {
+                if (shownSongs.isEmpty()) {
                     item {
                         Column(
                             Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 28.dp),
@@ -214,16 +294,18 @@ fun PlayerScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                stringResource(
-                                    if (audioPermissionGranted) R.string.scan_songs
-                                    else R.string.allow_access
-                                ),
+                                // جستجو/فیلتر فعال و نتیجه‌ای نیست؟
+                                when {
+                                    isFiltering -> stringResource(R.string.no_results)
+                                    audioPermissionGranted -> stringResource(R.string.scan_songs)
+                                    else -> stringResource(R.string.allow_access)
+                                },
                                 color = pal.sub, fontSize = 13.sp
                             )
                         }
                     }
                 }
-                itemsIndexed(songs, key = { _, s -> s.id }) { i, s ->
+                itemsIndexed(shownSongs, key = { _, s -> s.id }) { i, s ->
                     val active = state.current?.id == s.id
                     val d = if (active) state.durationMs else s.durationMs
                     Row(
@@ -233,7 +315,7 @@ fun PlayerScreen(
                             .background(if (active) pal.glass else androidx.compose.ui.graphics.Color.Transparent)
                             .clickable {
                                 onRequestNotificationPermission()
-                                vm.playList(songs, i)
+                                vm.playList(shownSongs, i)
                             }
                             .padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically

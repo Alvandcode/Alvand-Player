@@ -138,4 +138,11 @@
     <string name="widget_prev">Vorheriger Titel</string>
     <string name="widget_repeat">Wiederholen</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">Sortieren</string>
+    <string name="lyrics_source_local">Aus Datei</string>
+    <string name="lyrics_source_manual">Manuell</string>
+    <string name="lyrics_source_online">Online</string>
+    <string name="lyrics_source_none">Keine</string>
+    <string name="play_count">%1$d-mal gespielt</string>
+    <string name="sort_shortest">Kürzeste</string>
 </resources>

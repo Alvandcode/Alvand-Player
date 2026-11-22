@@ -137,4 +137,11 @@
     <string name="widget_prev">المقطع السابق</string>
     <string name="widget_repeat">تكرار</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">الترتيب</string>
+    <string name="lyrics_source_local">من الملف</string>
+    <string name="lyrics_source_manual">يدوي</string>
+    <string name="lyrics_source_online">عبر الإنترنت</string>
+    <string name="lyrics_source_none">لا يوجد</string>
+    <string name="play_count">%1$d مرات التشغيل</string>
+    <string name="sort_shortest">الأقصر</string>
 </resources>

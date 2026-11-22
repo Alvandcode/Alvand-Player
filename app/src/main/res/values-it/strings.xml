@@ -137,4 +137,11 @@
     <string name="widget_prev">Traccia precedente</string>
     <string name="widget_repeat">Ripeti</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">Ordina</string>
+    <string name="lyrics_source_local">Nel file</string>
+    <string name="lyrics_source_manual">Manuale</string>
+    <string name="lyrics_source_online">Online</string>
+    <string name="lyrics_source_none">Nessuno</string>
+    <string name="play_count">%1$d riproduzioni</string>
+    <string name="sort_shortest">Più corte</string>
 </resources>

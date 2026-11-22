@@ -2,6 +2,57 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.8.0] — 2026-11-21
+
+### Fixed — رفع‌شده
+- 🌍 **ترجمه‌های ۱۵ زبان رسماً فعال شدند**: قبلاً `resourceConfigurations`
+  فقط انگلیسی/فارسی را در APK نگه می‌داشت، `locales_config` و دیالوگ زبان هم
+  فقط دو زبان داشتند — یعنی کارِ ترجمهٔ v1.7.6 هرگز به کاربر نمی‌رسید. حالا
+  هر سه لایه ۱۷ زبان را پشتیبانی می‌کنند.
+  🌍 **All 17 languages wired up**: `resourceConfigurations` was stripping the
+  15 translated locales from the APK and both language pickers offered only
+  en/fa — the v1.7.6 translation work was never shown to users.
+- 📊 **ویجت**: آرگومان‌های `setProgressBar` معکوس بودند و نوار پیشرفت همیشه
+  پر دیده می‌شد؛ ترتیب درست شد و زمان ویجت با زبان اپ رندر می‌شود.
+  📊 **Widget**: swapped `setProgressBar` args made the bar always full;
+  fixed, and widget time now follows the app locale.
+- 💾 **تنظیمات EQ پایدار شد**: اکولایزر/بس/تقویت صدا/حذف نویز در DataStore
+  ذخیره و در اجرای بعدی خودکار بازخوانی می‌شود (قبلاً هر ری‌استارت ریست می‌شد).
+  💾 **EQ settings persist**: eq/bass/boost/denoise now survive restarts via
+  DataStore instead of resetting on every launch.
+
+### Added — افزوده‌شده
+- 🔍 **جستجو + فقط علاقه‌مندی‌ها + مرتب‌سازی در شیت کتابخانه**: منطق از قبل
+  کامل و تست‌شده بود ولی هیچ UI نداشت. حالا نوار ابزار کتابخانه سه دکمه دارد
+  (جستجو، قلب، سورت) و سورت در DataStore می‌ماند.
+  🔍 **Search / favorites-only / sort in the library sheet**: the tested
+  backend had no UI; the library sheet now has a three-button toolbar and
+  the sort choice persists.
+
+### Improved — بهبود
+- 🎚️ اسلایدرهای EQ دیگر در هر فریمِ درگ افکت صوتی را بازتنظیم نمی‌کنند؛
+  مقدار در پایان درگ یک‌بار کامیت می‌شود.
+  🎚️ EQ sliders commit once on release instead of reprogramming the audio
+  effect on every drag frame.
+- 🔋 حلقهٔ پیشرفت UI فقط هنگام پخش فعال است؛ در پاز دیگر هر ۵۰۰ms بیدار نمی‌شود.
+  🔋 The UI progress loop only ticks while playback is running.
+- 🔐 فایل صوتی انتخاب‌شده با دسترسی ماندگار (`OpenDocument`) باز می‌شود و
+  بعد از ری‌استارت دستگاه هم پخش می‌شود؛ URL های اشتراکی نقطهٔ انتهای جمله
+  را دیگر جزو لینک نمی‌گیرند.
+  🔐 Picked audio files use persisted URI permissions and keep playing after
+  a reboot; shared URLs no longer capture trailing punctuation.
+- 🗺️ سورس لیریک به‌جای کد خام انگلیسی، برچسب ترجمه‌شده نشان می‌دهد؛
+  اسکرول خودکار وقتی کاربر در حال اسکرول دستی است مزاحم نمی‌شود.
+  🗺️ Lyrics source shows a localized label; auto-scroll pauses while the
+  user is manually scrolling.
+
+### Removed / Polish — حذف و پولیش
+- 🧹 کد مردهٔ UI حذف شد: `ArtPanel`، `MovingGlow`، `renamePlaylist` (بدون UI).
+- 🧹 لاگ کرش دیگر زنجیرهٔ «Caused by» را دوبل چاپ نمی‌کند؛ متن‌های هاردکد
+  («— 0»، «×n») ترجمه شدند؛ Predictive Back فعال شد؛ کامنت‌های منقضی اصلاح شدند.
+  🧹 Removed dead UI code; de-duplicated crash logs; localized hardcoded
+  strings; enabled predictive back; refreshed stale comments.
+
 ## [1.7.8] — 2026-11-21
 
 ### Fixed — رفع‌شده

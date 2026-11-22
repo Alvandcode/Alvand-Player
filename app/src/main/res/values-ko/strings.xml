@@ -137,4 +137,11 @@
     <string name="widget_prev">이전 곡</string>
     <string name="widget_repeat">반복</string>
     <string name="widget_time_zero">0:00</string>
+    <string name="sort">정렬</string>
+    <string name="lyrics_source_local">파일 내</string>
+    <string name="lyrics_source_manual">수동</string>
+    <string name="lyrics_source_online">온라인</string>
+    <string name="lyrics_source_none">없음</string>
+    <string name="play_count">%1$d회 재생</string>
+    <string name="sort_shortest">가장 짧은 곡</string>
 </resources>
