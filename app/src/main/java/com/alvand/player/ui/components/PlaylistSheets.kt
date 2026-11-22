@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.alvand.player.AppViewModel
 import com.alvand.player.R
 import com.alvand.player.data.Song
+import com.alvand.player.data.local.PlaylistEntity
 import com.alvand.player.ui.theme.LocalAP
 
 /** دیالوگ تغییر نام پلی‌لیست */
