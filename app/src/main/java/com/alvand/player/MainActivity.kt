@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         val uri = intent?.data ?: (intent?.getStringExtra(Intent.EXTRA_TEXT)?.let {
             Regex("https://\\S+").find(it)?.value
                 // نقطه/علامت انتهای جمله جزو URL نیست
-                ?.replace(Regex("[.,;:!)"]+$"), "")
+                ?.replace(Regex("[.,;:!)+\"]+$"), "")
         }?.let { android.net.Uri.parse(it) })
         if (uri != null && intent?.action in listOf(Intent.ACTION_VIEW, Intent.ACTION_SEND)) {
             val url = uri.toString()
