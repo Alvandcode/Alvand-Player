@@ -101,6 +101,7 @@ fun PlayerScreen(
     val audioPermissionGranted by vm.audioPermissionGranted.collectAsState()
     val isScanning by vm.isScanning.collectAsState()
     val bgUri by vm.backgroundUri.collectAsState()
+    val liked by vm.liked.collectAsState()
     val pal = LocalAP.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -342,6 +343,11 @@ fun PlayerScreen(
                             Spacer(Modifier.width(10.dp))
                         }
                         Text(fmtTime(d), color = pal.sub, fontSize = 12.5.sp)
+                        // نشانگر علاقه‌مندی: قلب کوچک کنار زمان برای آهنگ‌های لایک‌شده
+                        if (s.id in liked) {
+                            Icon(Icons.Default.Favorite, null, tint = dyn.accent, modifier = Modifier.size(13.dp))
+                            Spacer(Modifier.width(5.dp))
+                        }
                         // افزودن همین آهنگ به پلی‌لیست، بدون رفتن به منو
                         IconButton(
                             onClick = { songToAdd = s },
@@ -403,6 +409,23 @@ fun PlayerScreen(
                                 .background(pal.card.copy(alpha = 0.92f), CircleShape)
                         ) { Icon(Icons.Default.Menu, null, tint = pal.ink) }
                         Spacer(Modifier.weight(1f))
+                        // قلب علاقه‌مندی آهنگ فعلی (تا حالا فقط از ویجت ممکن بود)
+                        IconButton(
+                            onClick = { current?.let { vm.toggleLike(it.id) } },
+                            enabled = current != null,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(pal.card.copy(alpha = 0.92f), CircleShape)
+                        ) {
+                            val likedNow = current != null && current.id in liked
+                            Icon(
+                                if (likedNow) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                stringResource(if (likedNow) R.string.unlike else R.string.like),
+                                tint = if (likedNow) dyn.accent else pal.sub,
+                                modifier = Modifier.size(21.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
                         SleepChip(vm, onClick = { showSleep = true })
                     }
                     Spacer(Modifier.height(16.dp))

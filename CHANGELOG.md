@@ -2,6 +2,20 @@
 
 همه تغییرات مهم این فایل ثبت می‌شود. قالب بر اساس [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.8.2] — 2026-11-22
+
+### Added — افزوده‌شده
+- ❤️ **دکمهٔ لایک در خود اپ**: قلب کنار تایمر خواب در نوار بالای پلیر علاقه‌مندی
+  آهنگ فعلی را عوض می‌کند (تا حالا فقط از ویجت ممکن بود) و ردیف‌های لایک‌شده
+  در کتابخانه قلب کوچک دارند.
+  ❤️ **Like button in the app**: a heart next to the sleep chip toggles the
+  current song's favourite (previously widget-only); liked rows show a small
+  heart in the library.
+- 💾 **صف پخش ماندگار**: صف، آهنگ فعلی و موقعیت پخش روی دیسک ذخیره می‌شود؛
+  بعد از ری‌استارت اپ/سرویس، همان آهنگ همان‌جا (متوقف، بدون autoplay) برمی‌گردد.
+  💾 **Persistent queue**: queue, current track and position are saved to disk;
+  after an app/service restart playback resumes paused exactly where it was.
+
 ## [1.8.1] — 2026-11-22
 
 ### Fixed — رفع‌شده

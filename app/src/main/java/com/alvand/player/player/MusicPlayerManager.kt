@@ -2,7 +2,11 @@ package com.alvand.player.player
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.util.Log
+import java.io.File
+import org.json.JSONArray
+import org.json.JSONObject
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -84,10 +88,20 @@ class MusicPlayerManager @Inject constructor(
         }
         override fun onIsPlayingChanged(v: Boolean) {
             if (v && _ui.value.error != null) _ui.value = _ui.value.copy(error = null)
-            if (v) startProgress() // حلقهٔ پیشرفت فقط در حال پخش فعال بماند
+            if (v) {
+                startProgress() // حلقهٔ پیشرفت فقط در حال پخش فعال بماند
+            } else {
+                // پاز → موقعیت ذخیره تا بعد از ری‌استارت همان‌جا ادامه یابد
+                controller?.let { c -> persistPosition(runCatching { c.currentPosition }.getOrDefault(0L)) }
+            }
             push()
         }
-        override fun onMediaItemTransition(item: MediaItem?, r: Int) { push() }
+        override fun onMediaItemTransition(item: MediaItem?, r: Int) {
+            // گذار آهنگ → ایندکس جدید در دیسک (فایل صف؛ موقعیت با تیک‌های بعدی)
+            val c = controller
+            if (c != null) persistQueue(_ui.value.queue, c.currentMediaItemIndex)
+            push()
+        }
         override fun onPositionDiscontinuity(oldPos: Player.PositionInfo, newPos: Player.PositionInfo, reason: Int) { push() }
         override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) { push() }
         override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
@@ -136,6 +150,16 @@ class MusicPlayerManager @Inject constructor(
                                 else -> 0
                             }
                         )
+                    }
+                    // بازیابی صف آخرین اجرا: اگر کاربر هنوز چیزی انتخاب نکرده و
+                    // صف خالی است، همان آهنگ/جای قبلی برمی‌گردد (بدون autoplay)
+                    if (c.mediaItemCount == 0 && pendingQueue == null) {
+                        loadPersistedQueue()?.let { (songs, idx) ->
+                            val pos = runCatching { posFile.readText().trim().toLongOrNull() }.getOrNull() ?: 0L
+                            applyQueue(songs, idx, autoplay = false)
+                            runCatching { c.seekTo(pos.coerceAtLeast(0L)) }
+                            push()
+                        }
                     }
                 }
                 scheduleEqAttach()
@@ -203,6 +227,7 @@ class MusicPlayerManager @Inject constructor(
             // صف خالی: کنترلر و UI را تمیز کن، بی‌صدا رها نکن
             runCatching { c.stop(); c.clearMediaItems() }
             _ui.value = _ui.value.copy(queue = emptyList(), current = null, positionMs = 0, durationMs = 0)
+            clearPersisted()
             return
         }
         val items = songs.map { s ->
@@ -234,6 +259,9 @@ class MusicPlayerManager @Inject constructor(
         if (autoplay) runCatching { c.play() }
         startProgress()
         scheduleEqAttach(400)
+        // صف جدید روی دیسک؛ موقعیت از نو شروع می‌شود
+        persistQueue(songs, startIndex)
+        persistPosition(0L)
     }
 
     /** پخش تک لینک مستقیم */
@@ -377,9 +405,16 @@ class MusicPlayerManager @Inject constructor(
         if (progressJob?.isActive == true) return
         progressJob?.cancel()
         progressJob = scope.launch {
+            var ticks = 0
             while (true) {
                 runCatching { push() }.onFailure { Log.w("Player", "push failed", it) }
                 delay(500)
+                // هر ~۱۰ ثانیه موقعیت را برای بازیابی بعد از ری‌استارت ذخیره کن
+                ticks++
+                if (ticks % 20 == 0) {
+                    val c = controller
+                    if (c != null) persistPosition(runCatching { c.currentPosition }.getOrDefault(0L))
+                }
                 // پاز/توقف → حلقه تمام؛ با شروع دوبارهٔ پخش از onIsPlayingChanged روشن می‌شود
                 val c = controller
                 if (c == null || !c.isPlaying) break
@@ -407,6 +442,73 @@ class MusicPlayerManager @Inject constructor(
             positionMs = (c?.currentPosition ?: 0L).coerceAtLeast(0),
             durationMs = dur
         )
+    }
+
+    // ---- پایدارسازی صف پخش بین اجراها ----
+    // دو فایل کوچک: last_queue.json (صف + ایندکس) و last_pos.json (موقعیت)
+    // تا بعد از ری‌استارت سرویس/اپ، صف با همان آهنگ و جای آن برگردد (بدون autoplay)
+    private val queueFile: File get() = File(app.filesDir, "last_queue.json")
+    private val posFile: File get() = File(app.filesDir, "last_pos.json")
+
+    private fun persistQueue(songs: List<Song>, index: Int) {
+        scope.launch(Dispatchers.IO) {
+            runCatching {
+                val arr = JSONArray()
+                songs.forEach { s ->
+                    arr.put(
+                        JSONObject()
+                            .put("id", s.id)
+                            .put("title", s.title)
+                            .put("artist", s.artist)
+                            .put("album", s.album)
+                            .put("uri", s.uri.toString())
+                            .put("durationMs", s.durationMs)
+                            .put("isRemote", s.isRemote)
+                            .putOpt("mimeHint", s.mimeHint)
+                    )
+                }
+                val f = queueFile
+                f.parentFile?.mkdirs()
+                f.writeText(JSONObject().put("index", index).put("songs", arr).toString())
+            }
+        }
+    }
+
+    private fun persistPosition(positionMs: Long) {
+        scope.launch(Dispatchers.IO) {
+            runCatching { posFile.writeText(positionMs.toString()) }
+        }
+    }
+
+    private fun clearPersisted() {
+        scope.launch(Dispatchers.IO) {
+            runCatching { queueFile.delete(); posFile.delete() }
+        }
+    }
+
+    private fun loadPersistedQueue(): Pair<List<Song>, Int>? {
+        val f = queueFile
+        if (!f.isFile) return null
+        return runCatching {
+            val obj = JSONObject(f.readText())
+            val arr = obj.getJSONArray("songs")
+            val songs = ArrayList<Song>(arr.length())
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                songs += Song(
+                    id = o.getLong("id"),
+                    title = o.optString("title"),
+                    artist = o.optString("artist"),
+                    album = o.optString("album"),
+                    uri = Uri.parse(o.getString("uri")),
+                    durationMs = o.optLong("durationMs"),
+                    isRemote = o.optBoolean("isRemote"),
+                    mimeHint = o.optString("mimeHint").takeIf { it.isNotEmpty() }
+                )
+            }
+            if (songs.isEmpty()) null
+            else songs to obj.optInt("index", 0).coerceIn(0, songs.size - 1)
+        }.getOrNull()
     }
 
     fun release() {
